@@ -1,31 +1,3 @@
-/**
- * Sync GitHub Issues / Pull Requests to Notion Issues DB.
- *
- * Required GitHub secret:
- * - NOTION_TOKEN
- * - NOTION_ISSUES_DATA_SOURCE_ID
- *
- * Optional GitHub variable:
- * - NOTION_VERSION, default: 2025-09-03
- *
- * Expected Notion properties:
- * - Issue (title)
- * - Issue ID (rich text)
- * - GitHub Issue Number (number)
- * - GitHub PR Number (number)
- * - GitHub Link (url)
- * - PR Link (url)
- * - GitHub Repo (rich text)
- * - GitHub State (rich text)
- * - GitHub Event (select)
- * - GitHub Synced At (date)
- * - Kanban Status (select)
- * - Status (status)
- * - Type (select)
- * - Priority (select)
- * - Done Criteria (rich text)
- */
-
 import fs from "node:fs";
 
 const {
@@ -38,12 +10,22 @@ const {
   GITHUB_EVENT_PATH,
 } = process.env;
 
+const ALLOWED_LABELS = new Set([
+  "blocked",
+  "chore",
+  "docs",
+  "feature",
+  "fix",
+  "question",
+  "refactor",
+  "style",
+]);
+
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
 if (!NOTION_ISSUES_DATA_SOURCE_ID) fail("Missing NOTION_ISSUES_DATA_SOURCE_ID secret.");
 if (!GITHUB_EVENT_PATH) fail("Missing GITHUB_EVENT_PATH.");
 
 const payload = JSON.parse(fs.readFileSync(GITHUB_EVENT_PATH, "utf8"));
-
 const notionBaseUrl = "https://api.notion.com/v1";
 
 main().catch((error) => {
@@ -69,7 +51,7 @@ async function syncIssue(issue, action) {
   if (!issue) fail("Issue payload is missing.");
 
   const issueNumber = issue.number;
-  const existingPage = await findNotionIssuePage({ issueNumber, repo: GITHUB_REPOSITORY });
+  const existingPage = await findNotionIssuePage({ issueNumber });
 
   const properties = {
     "Issue": title(issue.title),
@@ -80,23 +62,37 @@ async function syncIssue(issue, action) {
     "GitHub State": richText(issue.state),
     "GitHub Event": select(`issue_${action}`),
     "GitHub Synced At": dateNow(),
+    "GitHub Labels": multiSelect(mapGitHubLabels(issue)),
     "Kanban Status": select(mapIssueToKanban(action, issue)),
     "Status": status(mapIssueToStatus(action, issue)),
     "Type": select(mapIssueType(issue)),
-    "Done Criteria": richText(issue.body ? trim(issue.body, 1800) : "GitHub Issue에서 생성됨"),
   };
 
   if (existingPage) {
     await updatePage(existingPage.id, properties);
     console.log(`Updated Notion page for issue #${issueNumber}`);
-  } else {
-    await createPage(properties, [
-      paragraph(`GitHub Issue: #${issueNumber}`),
+    return;
+  }
+
+  await createPage(
+    {
+      ...properties,
+      "Priority": select("Medium"),
+    },
+    [
+      heading2("GitHub Issue 원문"),
+      paragraph(`Issue: #${issueNumber}`),
       paragraph(issue.html_url),
       paragraph(issue.body ? trim(issue.body, 1900) : "No GitHub issue body."),
-    ]);
-    console.log(`Created Notion page for issue #${issueNumber}`);
-  }
+      heading2("Notion에서 보완할 항목"),
+      bulletedListItem("Sprint"),
+      bulletedListItem("Domain"),
+      bulletedListItem("Owner"),
+      bulletedListItem("Done Criteria"),
+    ],
+  );
+
+  console.log(`Created Notion page for issue #${issueNumber}`);
 }
 
 async function syncPullRequest(pr, action) {
@@ -115,7 +111,7 @@ async function syncPullRequest(pr, action) {
 
   if (linkedIssueNumbers.length > 0) {
     for (const issueNumber of linkedIssueNumbers) {
-      const existingPage = await findNotionIssuePage({ issueNumber, repo: GITHUB_REPOSITORY });
+      const existingPage = await findNotionIssuePage({ issueNumber });
 
       const properties = {
         "GitHub PR Number": number(prNumber),
@@ -132,33 +128,35 @@ async function syncPullRequest(pr, action) {
         await updatePage(existingPage.id, properties);
         console.log(`Updated Notion issue #${issueNumber} from PR #${prNumber}`);
       } else {
-        await createPage({
-          "Issue": title(`[GitHub 연결 필요] Issue #${issueNumber}`),
-          "Issue ID": richText(`#${issueNumber}`),
-          "GitHub Issue Number": number(issueNumber),
-          "GitHub PR Number": number(prNumber),
-          "PR Link": url(pr.html_url),
-          "GitHub Repo": richText(GITHUB_REPOSITORY),
-          "GitHub State": richText(pr.merged ? "merged" : pr.state),
-          "GitHub Event": select(eventName),
-          "GitHub Synced At": dateNow(),
-          "Kanban Status": select(kanbanStatus),
-          "Status": status(taskStatus),
-          "Type": select("Task"),
-          "Priority": select("Medium"),
-        }, [
-          paragraph(`PR #${prNumber}에서 참조된 Issue #${issueNumber}입니다.`),
-          paragraph(pr.html_url),
-          paragraph("Notion에서 Sprint, Domain, Owner, Done Criteria를 보완하세요."),
-        ]);
+        await createPage(
+          {
+            "Issue": title(`[GitHub 연결 필요] Issue #${issueNumber}`),
+            "Issue ID": richText(`#${issueNumber}`),
+            "GitHub Issue Number": number(issueNumber),
+            "GitHub PR Number": number(prNumber),
+            "PR Link": url(pr.html_url),
+            "GitHub Repo": richText(GITHUB_REPOSITORY),
+            "GitHub State": richText(pr.merged ? "merged" : pr.state),
+            "GitHub Event": select(eventName),
+            "GitHub Synced At": dateNow(),
+            "Kanban Status": select(kanbanStatus),
+            "Status": status(taskStatus),
+            "Type": select("Task"),
+            "Priority": select("Medium"),
+          },
+          [
+            paragraph(`PR #${prNumber}에서 참조된 Issue #${issueNumber}입니다.`),
+            paragraph(pr.html_url),
+            paragraph("Notion에서 Sprint, Domain, Owner, Done Criteria를 보완하세요."),
+          ],
+        );
         console.log(`Created placeholder Notion issue #${issueNumber} from PR #${prNumber}`);
       }
     }
     return;
   }
 
-  // No linked issue found: create or update a PR tracking row.
-  const existingPrPage = await findNotionPrPage({ prNumber, repo: GITHUB_REPOSITORY });
+  const existingPrPage = await findNotionPrPage({ prNumber });
 
   const properties = {
     "Issue": title(`[PR] ${pr.title}`),
@@ -172,7 +170,6 @@ async function syncPullRequest(pr, action) {
     "Status": status(taskStatus),
     "Type": select("Task"),
     "Priority": select("Medium"),
-    "Done Criteria": richText("PR에 Closes #이슈번호 또는 Notion Issue ID를 연결하세요."),
   };
 
   if (existingPrPage) {
@@ -183,16 +180,42 @@ async function syncPullRequest(pr, action) {
       paragraph(`Linked GitHub PR: #${prNumber}`),
       paragraph(pr.html_url),
       paragraph("연결된 GitHub Issue 번호를 찾지 못해 PR 추적용 항목으로 생성했습니다."),
+      paragraph("PR 본문에 Closes #이슈번호를 추가하면 기존 이슈와 연결됩니다."),
     ]);
     console.log(`Created standalone PR row #${prNumber}`);
   }
+}
+
+function mapGitHubLabels(issue) {
+  const labels = (issue.labels ?? [])
+    .map((label) => String(label.name ?? "").trim())
+    .filter(Boolean);
+
+  return labels.filter((label) => ALLOWED_LABELS.has(label));
+}
+
+function mapIssueType(issue) {
+  // GitHub Issue Types: Task / Bug / Feature
+  // GitHub REST payload may expose type as { name }, depending on repository/org configuration.
+  const typeName = issue.type?.name ?? issue.issue_type?.name ?? "";
+  const normalizedType = String(typeName).toLowerCase();
+
+  if (normalizedType === "bug") return "Bug";
+  if (normalizedType === "feature") return "Feature";
+  if (normalizedType === "task") return "Task";
+
+  // Fallback: infer only from labels, but still return one of Task/Bug/Feature.
+  const labels = (issue.labels ?? []).map((label) => String(label.name ?? "").toLowerCase());
+  if (labels.includes("fix")) return "Bug";
+  if (labels.includes("feature")) return "Feature";
+
+  return "Task";
 }
 
 function extractLinkedIssueNumbers(text) {
   const patterns = [
     /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi,
     /(?:issue|notion issue id|notion issue|관련 이슈|연결 이슈)\s*[:#]?\s*#?(\d+)/gi,
-    /#(\d+)/g,
   ];
 
   const numbers = new Set();
@@ -207,32 +230,32 @@ function extractLinkedIssueNumbers(text) {
   return [...numbers];
 }
 
-async function findNotionIssuePage({ issueNumber, repo }) {
+async function findNotionIssuePage({ issueNumber }) {
   const response = await queryDataSource({
-    filter: {
-      and: [
-        { property: "GitHub Issue Number", number: { equals: issueNumber } },
-        { property: "GitHub Repo", rich_text: { equals: repo } },
-      ],
-    },
-    page_size: 1,
+    filter: { property: "GitHub Issue Number", number: { equals: issueNumber } },
+    page_size: 10,
   });
 
-  return response.results?.[0] ?? null;
+  const results = response.results ?? [];
+  if (results.length > 1) {
+    console.warn(`Found ${results.length} Notion rows for GitHub issue #${issueNumber}. Updating the first one only.`);
+  }
+
+  return results[0] ?? null;
 }
 
-async function findNotionPrPage({ prNumber, repo }) {
+async function findNotionPrPage({ prNumber }) {
   const response = await queryDataSource({
-    filter: {
-      and: [
-        { property: "GitHub PR Number", number: { equals: prNumber } },
-        { property: "GitHub Repo", rich_text: { equals: repo } },
-      ],
-    },
-    page_size: 1,
+    filter: { property: "GitHub PR Number", number: { equals: prNumber } },
+    page_size: 10,
   });
 
-  return response.results?.[0] ?? null;
+  const results = response.results ?? [];
+  if (results.length > 1) {
+    console.warn(`Found ${results.length} Notion rows for GitHub PR #${prNumber}. Updating the first one only.`);
+  }
+
+  return results[0] ?? null;
 }
 
 async function queryDataSource(body) {
@@ -279,7 +302,7 @@ async function notionRequest(method, path, body, options = {}) {
   const response = await fetch(`${notionBaseUrl}${path}`, {
     method,
     headers: {
-      "Authorization": `Bearer ${NOTION_TOKEN}`,
+      Authorization: `Bearer ${NOTION_TOKEN}`,
       "Notion-Version": NOTION_VERSION,
       "Content-Type": "application/json",
     },
@@ -297,6 +320,9 @@ async function notionRequest(method, path, body, options = {}) {
 }
 
 function mapIssueToKanban(action, issue) {
+  const labels = (issue.labels ?? []).map((label) => String(label.name ?? "").toLowerCase());
+
+  if (labels.includes("blocked")) return "Blocked";
   if (action === "closed" || issue.state === "closed") return "Done";
   if (action === "reopened") return "To Do";
   if (action === "opened") return "To Do";
@@ -330,15 +356,6 @@ function mapPullRequestToStatus(action, pr) {
   return "진행 중";
 }
 
-function mapIssueType(issue) {
-  const labels = (issue.labels ?? []).map((label) => label.name?.toLowerCase?.() ?? "");
-  if (labels.some((label) => label.includes("bug"))) return "Bug";
-  if (labels.some((label) => label.includes("docs") || label.includes("문서"))) return "Docs";
-  if (labels.some((label) => label.includes("refactor"))) return "Refactor";
-  if (labels.some((label) => label.includes("feature") || label.includes("feat"))) return "Feature";
-  return "Task";
-}
-
 function title(content) {
   return { title: [{ text: { content: String(content).slice(0, 2000) } }] };
 }
@@ -359,6 +376,10 @@ function select(name) {
   return { select: name ? { name } : null };
 }
 
+function multiSelect(names) {
+  return { multi_select: [...new Set(names)].map((name) => ({ name })) };
+}
+
 function status(name) {
   return { status: name ? { name } : null };
 }
@@ -372,6 +393,26 @@ function paragraph(content) {
     object: "block",
     type: "paragraph",
     paragraph: {
+      rich_text: [{ type: "text", text: { content: String(content).slice(0, 2000) } }],
+    },
+  };
+}
+
+function heading2(content) {
+  return {
+    object: "block",
+    type: "heading_2",
+    heading_2: {
+      rich_text: [{ type: "text", text: { content: String(content).slice(0, 2000) } }],
+    },
+  };
+}
+
+function bulletedListItem(content) {
+  return {
+    object: "block",
+    type: "bulleted_list_item",
+    bulleted_list_item: {
       rich_text: [{ type: "text", text: { content: String(content).slice(0, 2000) } }],
     },
   };
