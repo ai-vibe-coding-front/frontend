@@ -1,0 +1,36 @@
+name: Sync GitHub with Notion
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened, assigned, unassigned, labeled, unlabeled]
+  pull_request:
+    types: [opened, edited, closed, reopened, ready_for_review, converted_to_draft, synchronize]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  sync-notion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sync GitHub event to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_ISSUES_DATA_SOURCE_ID: ${{ secrets.NOTION_ISSUES_DATA_SOURCE_ID }}
+          NOTION_VERSION: ${{ vars.NOTION_VERSION || '2025-09-03' }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_ACTION_NAME: ${{ github.event.action }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: node scripts/sync-github-notion.mjs
