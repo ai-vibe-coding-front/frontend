@@ -174,15 +174,16 @@ model EventItemTag {
 }
 
 model WeatherSnapshot {
-  id          String    @id @default(cuid())
-  eventItemId String?
-  areaCode    String?
-  observedAt  DateTime
-  temperature Decimal?  @db.Decimal(5, 2)
-  condition   String?
-  rawData     Json?
-  createdAt   DateTime  @default(now())
-  eventItem   EventItem? @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+  id                 String              @id @default(cuid())
+  eventItemId        String?
+  areaCode           String?
+  observedAt         DateTime
+  temperature        Decimal?            @db.Decimal(5, 2)
+  condition          String?
+  rawData            Json?
+  createdAt          DateTime            @default(now())
+  eventItem          EventItem?          @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+  recommendationRuns RecommendationRun[]
 
   @@index([eventItemId])
   @@index([areaCode, observedAt])
@@ -231,15 +232,15 @@ model Favorite {
 }
 
 model EventLog {
-  id        String       @id @default(cuid())
-  userId    String?
+  id          String       @id @default(cuid())
+  userId      String?
   eventItemId String?
-  sessionId String?
-  type      EventLogType
-  metadata  Json?
-  createdAt DateTime     @default(now())
-  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  eventItem EventItem?   @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+  sessionId   String?
+  type        EventLogType
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventItem   EventItem?   @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([eventItemId])
