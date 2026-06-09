@@ -29,6 +29,8 @@ const METADATA_ONLY_ISSUE_ACTIONS = new Set([
   "unassigned",
 ]);
 
+const NOTION_USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const githubAssigneeToNotionUserId = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
 
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
@@ -253,12 +255,26 @@ function mapIssueAssigneesToOwner(issue) {
 function parseAssigneeMap(rawValue) {
   try {
     const parsed = JSON.parse(rawValue || "{}");
-    return new Map(
-      Object.entries(parsed).map(([githubLogin, notionUserId]) => [
-        String(githubLogin).toLowerCase(),
-        String(notionUserId),
-      ]),
-    );
+    const entries = [];
+
+    for (const [githubLogin, notionUserId] of Object.entries(parsed)) {
+      const normalizedGitHubLogin = String(githubLogin).trim().toLowerCase();
+      const normalizedNotionUserId = String(notionUserId).trim();
+
+      if (!normalizedGitHubLogin || !normalizedNotionUserId) {
+        console.warn("Skipping empty GitHub assignee mapping entry.");
+        continue;
+      }
+
+      if (!NOTION_USER_ID_PATTERN.test(normalizedNotionUserId)) {
+        console.warn(`Skipping invalid Notion user id for GitHub assignee: ${normalizedGitHubLogin}.`);
+        continue;
+      }
+
+      entries.push([normalizedGitHubLogin, normalizedNotionUserId]);
+    }
+
+    return new Map(entries);
   } catch (error) {
     console.warn("Invalid NOTION_GITHUB_ASSIGNEE_MAP. Owner sync will be skipped.");
     console.warn(error);
