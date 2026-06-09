@@ -236,16 +236,25 @@ async function mapIssueAssigneesToOwner(issue) {
 
   try {
     const notionUsers = await fetchNotionUsers();
-    const notionUserIds = assignees
-      .map((assignee) => String(assignee.login ?? "").toLowerCase())
-      .map((login) => githubAssigneeToNotionName.get(login))
-      .filter(Boolean)
-      .map((notionName) => findNotionUserIdByName(notionUsers, notionName))
-      .filter(Boolean);
+    const notionUserIds = [];
 
-    if (notionUserIds.length === 0) {
-      console.warn("No Notion users matched GitHub assignees. Skipping Owner sync.");
-      return null;
+    for (const assignee of assignees) {
+      const login = String(assignee.login ?? "").toLowerCase();
+      const notionName = githubAssigneeToNotionName.get(login);
+
+      if (!notionName) {
+        console.warn(`Missing Notion owner mapping for GitHub assignee: ${login}. Skipping Owner sync.`);
+        return null;
+      }
+
+      const notionUserId = findNotionUserIdByName(notionUsers, notionName);
+
+      if (!notionUserId) {
+        console.warn(`No Notion user matched mapped assignee name: ${notionName}. Skipping Owner sync.`);
+        return null;
+      }
+
+      notionUserIds.push(notionUserId);
     }
 
     return people(notionUserIds);
