@@ -5,10 +5,8 @@ export type ApiSuccessResponse<T> = {
 
 export type ApiErrorResponse = {
   success: false;
-  error: {
-    code: string;
-    message: string;
-  };
+  code: string;
+  message: string;
 };
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
@@ -23,9 +21,7 @@ export function successResponse<T>(data: T): ApiSuccessResponse<T> {
 export function errorResponse(code: string, message: string): ApiErrorResponse {
   return {
     success: false,
-    error: {
-      code,
-      message,
-    },
+    code,
+    message,
   };
 }
