@@ -29,8 +29,7 @@ const METADATA_ONLY_ISSUE_ACTIONS = new Set([
   "unassigned",
 ]);
 
-const githubAssigneeToNotionName = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
-let notionUsersCache = null;
+const githubAssigneeToNotionUserId = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
 
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
 if (!NOTION_ISSUES_DATA_SOURCE_ID) fail("Missing NOTION_ISSUES_DATA_SOURCE_ID secret.");
@@ -78,7 +77,7 @@ async function syncIssue(issue, action) {
     "Type": select(mapIssueType(issue)),
   };
 
-  const ownerProperty = await mapIssueAssigneesToOwner(issue);
+  const ownerProperty = mapIssueAssigneesToOwner(issue);
   if (ownerProperty) {
     properties["Owner"] = ownerProperty;
   }
@@ -229,75 +228,35 @@ function mapIssueType(issue) {
   return "Task";
 }
 
-async function mapIssueAssigneesToOwner(issue) {
+function mapIssueAssigneesToOwner(issue) {
   const assignees = issue.assignees ?? [];
   if (assignees.length === 0) return people([]);
-  if (githubAssigneeToNotionName.size === 0) return null;
+  if (githubAssigneeToNotionUserId.size === 0) return null;
 
-  try {
-    const notionUsers = await fetchNotionUsers();
-    const notionUserIds = [];
+  const notionUserIds = [];
 
-    for (const assignee of assignees) {
-      const login = String(assignee.login ?? "").toLowerCase();
-      const notionName = githubAssigneeToNotionName.get(login);
+  for (const assignee of assignees) {
+    const login = String(assignee.login ?? "").toLowerCase();
+    const notionUserId = githubAssigneeToNotionUserId.get(login);
 
-      if (!notionName) {
-        console.warn(`Missing Notion owner mapping for GitHub assignee: ${login}. Skipping Owner sync.`);
-        return null;
-      }
-
-      const notionUserId = findNotionUserIdByName(notionUsers, notionName);
-
-      if (!notionUserId) {
-        console.warn(`No Notion user matched mapped assignee name: ${notionName}. Skipping Owner sync.`);
-        return null;
-      }
-
-      notionUserIds.push(notionUserId);
+    if (!notionUserId) {
+      console.warn(`Missing Notion owner user id for GitHub assignee: ${login}. Skipping Owner sync.`);
+      return null;
     }
 
-    return people(notionUserIds);
-  } catch (error) {
-    console.warn("Failed to map GitHub assignees to Notion Owner. Skipping Owner sync.");
-    console.warn(error);
-    return null;
+    notionUserIds.push(notionUserId);
   }
-}
 
-async function fetchNotionUsers() {
-  if (notionUsersCache) return notionUsersCache;
-
-  const users = [];
-  let startCursor = null;
-
-  do {
-    const query = new URLSearchParams({ page_size: "100" });
-    if (startCursor) query.set("start_cursor", startCursor);
-
-    const response = await notionRequest("GET", `/users?${query.toString()}`);
-    const results = response.json.results ?? [];
-    users.push(...results);
-    startCursor = response.json.has_more ? response.json.next_cursor : null;
-  } while (startCursor);
-
-  notionUsersCache = users;
-  return users;
-}
-
-function findNotionUserIdByName(users, name) {
-  const targetName = normalizeName(name);
-  const user = users.find((candidate) => normalizeName(candidate.name) === targetName);
-  return user?.id ?? null;
+  return people(notionUserIds);
 }
 
 function parseAssigneeMap(rawValue) {
   try {
     const parsed = JSON.parse(rawValue || "{}");
     return new Map(
-      Object.entries(parsed).map(([githubLogin, notionName]) => [
+      Object.entries(parsed).map(([githubLogin, notionUserId]) => [
         String(githubLogin).toLowerCase(),
-        String(notionName),
+        String(notionUserId),
       ]),
     );
   } catch (error) {
@@ -305,10 +264,6 @@ function parseAssigneeMap(rawValue) {
     console.warn(error);
     return new Map();
   }
-}
-
-function normalizeName(value) {
-  return String(value ?? "").trim().toLowerCase();
 }
 
 function isMetadataOnlyIssueAction(action) {
