@@ -3,6 +3,7 @@ import fs from "node:fs";
 const {
   NOTION_TOKEN,
   NOTION_ISSUES_DATA_SOURCE_ID,
+  NOTION_GITHUB_ASSIGNEE_MAP = "{}",
   NOTION_VERSION = "2025-09-03",
   GITHUB_EVENT_NAME,
   GITHUB_ACTION_NAME,
@@ -27,6 +28,9 @@ const METADATA_ONLY_ISSUE_ACTIONS = new Set([
   "assigned",
   "unassigned",
 ]);
+
+const githubAssigneeToNotionName = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
+let notionUsersCache = null;
 
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
 if (!NOTION_ISSUES_DATA_SOURCE_ID) fail("Missing NOTION_ISSUES_DATA_SOURCE_ID secret.");
@@ -73,6 +77,11 @@ async function syncIssue(issue, action) {
     "GitHub Labels": multiSelect(mapGitHubLabels(issue)),
     "Type": select(mapIssueType(issue)),
   };
+
+  const ownerProperty = await mapIssueAssigneesToOwner(issue);
+  if (ownerProperty) {
+    properties["Owner"] = ownerProperty;
+  }
 
   if (shouldUpdateStatus) {
     properties["Kanban Status"] = select(mapIssueToKanban(action, issue));
@@ -206,8 +215,6 @@ function mapGitHubLabels(issue) {
 }
 
 function mapIssueType(issue) {
-  // GitHub Issue Types: Task / Bug / Feature
-  // GitHub REST payload may expose type as { name }, depending on repository/org configuration.
   const typeName = issue.type?.name ?? issue.issue_type?.name ?? "";
   const normalizedType = String(typeName).toLowerCase();
 
@@ -215,12 +222,84 @@ function mapIssueType(issue) {
   if (normalizedType === "feature") return "Feature";
   if (normalizedType === "task") return "Task";
 
-  // Fallback: infer only from labels, but still return one of Task/Bug/Feature.
   const labels = (issue.labels ?? []).map((label) => String(label.name ?? "").toLowerCase());
   if (labels.includes("fix")) return "Bug";
   if (labels.includes("feature")) return "Feature";
 
   return "Task";
+}
+
+async function mapIssueAssigneesToOwner(issue) {
+  const assignees = issue.assignees ?? [];
+  if (assignees.length === 0) return people([]);
+  if (githubAssigneeToNotionName.size === 0) return null;
+
+  try {
+    const notionUsers = await fetchNotionUsers();
+    const notionUserIds = assignees
+      .map((assignee) => String(assignee.login ?? "").toLowerCase())
+      .map((login) => githubAssigneeToNotionName.get(login))
+      .filter(Boolean)
+      .map((notionName) => findNotionUserIdByName(notionUsers, notionName))
+      .filter(Boolean);
+
+    if (notionUserIds.length === 0) {
+      console.warn("No Notion users matched GitHub assignees. Skipping Owner sync.");
+      return null;
+    }
+
+    return people(notionUserIds);
+  } catch (error) {
+    console.warn("Failed to map GitHub assignees to Notion Owner. Skipping Owner sync.");
+    console.warn(error);
+    return null;
+  }
+}
+
+async function fetchNotionUsers() {
+  if (notionUsersCache) return notionUsersCache;
+
+  const users = [];
+  let startCursor = null;
+
+  do {
+    const query = new URLSearchParams({ page_size: "100" });
+    if (startCursor) query.set("start_cursor", startCursor);
+
+    const response = await notionRequest("GET", `/users?${query.toString()}`);
+    const results = response.json.results ?? [];
+    users.push(...results);
+    startCursor = response.json.has_more ? response.json.next_cursor : null;
+  } while (startCursor);
+
+  notionUsersCache = users;
+  return users;
+}
+
+function findNotionUserIdByName(users, name) {
+  const targetName = normalizeName(name);
+  const user = users.find((candidate) => normalizeName(candidate.name) === targetName);
+  return user?.id ?? null;
+}
+
+function parseAssigneeMap(rawValue) {
+  try {
+    const parsed = JSON.parse(rawValue || "{}");
+    return new Map(
+      Object.entries(parsed).map(([githubLogin, notionName]) => [
+        String(githubLogin).toLowerCase(),
+        String(notionName),
+      ]),
+    );
+  } catch (error) {
+    console.warn("Invalid NOTION_GITHUB_ASSIGNEE_MAP. Owner sync will be skipped.");
+    console.warn(error);
+    return new Map();
+  }
+}
+
+function normalizeName(value) {
+  return String(value ?? "").trim().toLowerCase();
 }
 
 function isMetadataOnlyIssueAction(action) {
@@ -397,6 +476,10 @@ function multiSelect(names) {
 
 function status(name) {
   return { status: name ? { name } : null };
+}
+
+function people(ids) {
+  return { people: [...new Set(ids)].map((id) => ({ id })) };
 }
 
 function dateNow() {
