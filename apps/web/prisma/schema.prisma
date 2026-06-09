@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  KAKAO
+}
+
+enum ExplorationQuestionKey {
+  ENERGY
+  MOOD
+  EXPERIENCE_TYPE
+  COMPANION
+  AREA
+}
+
+enum EventSource {
+  CULTURE_API
+  MANUAL
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  ENDED
+  ARCHIVED
+}
+
+enum RecommendationReasonType {
+  MOOD_MATCH
+  DISTANCE_MATCH
+  WEATHER_MATCH
+  TAG_MATCH
+  POPULARITY
+}
+
+enum EventLogType {
+  QUESTION_FLOW_STARTED
+  QUESTION_FLOW_COMPLETED
+  RECOMMENDATION_VIEWED
+  RECOMMENDATION_CARD_CLICKED
+  EVENT_DETAIL_VIEWED
+  FAVORITE_CREATED
+  FAVORITE_DELETED
+}
+
+model User {
+  id                  String               @id @default(cuid())
+  email               String?              @unique
+  nickname            String?
+  role                UserRole             @default(USER)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+  authCredentials     AuthCredential[]
+  refreshTokens       RefreshToken[]
+  explorationSessions ExplorationSession[]
+  favorites           Favorite[]
+  eventLogs           EventLog[]
+}
+
+model AuthCredential {
+  id             String       @id @default(cuid())
+  userId         String
+  provider       AuthProvider
+  providerUserId String?
+  passwordHash   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ExplorationSession {
+  id                 String                 @id @default(cuid())
+  userId             String?
+  anonymousId        String?
+  completedAt        DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  user               User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  answers            ExplorationAnswer[]
+  recommendationRuns RecommendationRun[]
+
+  @@index([userId])
+  @@index([anonymousId])
+  @@index([createdAt])
+}
+
+model ExplorationAnswer {
+  id        String                 @id @default(cuid())
+  sessionId String
+  question  ExplorationQuestionKey
+  value     String
+  createdAt DateTime               @default(now())
+  session   ExplorationSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, question])
+  @@index([question])
+}
+
+model Tag {
+  id        String         @id @default(cuid())
+  code      String         @unique
+  name      String
+  createdAt DateTime       @default(now())
+  eventTags EventItemTag[]
+}
+
+model EventItem {
+  id                  String               @id @default(cuid())
+  source              EventSource           @default(CULTURE_API)
+  externalId          String?
+  title               String
+  description         String?
+  placeName           String?
+  address             String?
+  latitude            Decimal?             @db.Decimal(10, 7)
+  longitude           Decimal?             @db.Decimal(10, 7)
+  startDate           DateTime?
+  endDate             DateTime?
+  imageUrl            String?
+  detailUrl           String?
+  status              EventStatus           @default(PUBLISHED)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  tags                EventItemTag[]
+  weatherSnapshots    WeatherSnapshot[]
+  recommendationItems RecommendationItem[]
+  favorites           Favorite[]
+  eventLogs           EventLog[]
+
+  @@unique([source, externalId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([latitude, longitude])
+}
+
+model EventItemTag {
+  eventItemId String
+  tagId       String
+  eventItem   EventItem @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([eventItemId, tagId])
+  @@index([tagId])
+}
+
+model WeatherSnapshot {
+  id          String    @id @default(cuid())
+  eventItemId String?
+  areaCode    String?
+  observedAt  DateTime
+  temperature Decimal?  @db.Decimal(5, 2)
+  condition   String?
+  rawData     Json?
+  createdAt   DateTime  @default(now())
+  eventItem   EventItem? @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+
+  @@index([eventItemId])
+  @@index([areaCode, observedAt])
+}
+
+model RecommendationRun {
+  id                  String               @id @default(cuid())
+  sessionId           String
+  weatherSnapshotId   String?
+  createdAt           DateTime             @default(now())
+  session             ExplorationSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  weatherSnapshot     WeatherSnapshot?     @relation(fields: [weatherSnapshotId], references: [id], onDelete: SetNull)
+  recommendationItems RecommendationItem[]
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model RecommendationItem {
+  id               String                   @id @default(cuid())
+  recommendationId String
+  eventItemId      String
+  rank             Int
+  score            Decimal?                 @db.Decimal(6, 3)
+  reasonType       RecommendationReasonType?
+  reasonText       String?
+  createdAt        DateTime                 @default(now())
+  recommendation   RecommendationRun        @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  eventItem         EventItem                @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
+
+  @@unique([recommendationId, eventItemId])
+  @@unique([recommendationId, rank])
+  @@index([eventItemId])
+}
+
+model Favorite {
+  id          String    @id @default(cuid())
+  userId      String
+  eventItemId String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventItem   EventItem @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventItemId])
+  @@index([eventItemId])
+}
+
+model EventLog {
+  id        String       @id @default(cuid())
+  userId    String?
+  eventItemId String?
+  sessionId String?
+  type      EventLogType
+  metadata  Json?
+  createdAt DateTime     @default(now())
+  user      User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventItem EventItem?   @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventItemId])
+  @@index([sessionId])
+  @@index([type])
+  @@index([createdAt])
+}
