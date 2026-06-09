@@ -21,6 +21,13 @@ const ALLOWED_LABELS = new Set([
   "style",
 ]);
 
+const METADATA_ONLY_ISSUE_ACTIONS = new Set([
+  "labeled",
+  "unlabeled",
+  "assigned",
+  "unassigned",
+]);
+
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
 if (!NOTION_ISSUES_DATA_SOURCE_ID) fail("Missing NOTION_ISSUES_DATA_SOURCE_ID secret.");
 if (!GITHUB_EVENT_PATH) fail("Missing GITHUB_EVENT_PATH.");
@@ -52,6 +59,7 @@ async function syncIssue(issue, action) {
 
   const issueNumber = issue.number;
   const existingPage = await findNotionIssuePage({ issueNumber });
+  const shouldUpdateStatus = !existingPage || !isMetadataOnlyIssueAction(action);
 
   const properties = {
     "Issue": title(issue.title),
@@ -63,10 +71,13 @@ async function syncIssue(issue, action) {
     "GitHub Event": select(`issue_${action}`),
     "GitHub Synced At": dateNow(),
     "GitHub Labels": multiSelect(mapGitHubLabels(issue)),
-    "Kanban Status": select(mapIssueToKanban(action, issue)),
-    "Status": status(mapIssueToStatus(action, issue)),
     "Type": select(mapIssueType(issue)),
   };
+
+  if (shouldUpdateStatus) {
+    properties["Kanban Status"] = select(mapIssueToKanban(action, issue));
+    properties["Status"] = status(mapIssueToStatus(action, issue));
+  }
 
   if (existingPage) {
     await updatePage(existingPage.id, properties);
@@ -210,6 +221,10 @@ function mapIssueType(issue) {
   if (labels.includes("feature")) return "Feature";
 
   return "Task";
+}
+
+function isMetadataOnlyIssueAction(action) {
+  return METADATA_ONLY_ISSUE_ACTIONS.has(action);
 }
 
 function extractLinkedIssueNumbers(text) {
