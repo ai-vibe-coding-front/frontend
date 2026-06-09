@@ -2,7 +2,7 @@ name: Sync GitHub with Notion
 
 on:
   issues:
-    types: [opened, edited, closed, reopened]
+    types: [opened, edited, closed, reopened, labeled, unlabeled, assigned, unassigned]
   pull_request:
     types: [opened, edited, closed, reopened, ready_for_review, converted_to_draft, synchronize]
 
