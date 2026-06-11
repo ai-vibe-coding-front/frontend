@@ -26,13 +26,7 @@ const ALLOWED_LABELS = new Set([
   "style",
 ]);
 
-const METADATA_ONLY_ISSUE_ACTIONS = new Set([
-  "labeled",
-  "unlabeled",
-  "assigned",
-  "unassigned",
-]);
-
+const STATUS_CHANGING_ISSUE_ACTIONS = new Set(["opened", "closed", "reopened"]);
 const NOTION_USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const githubAssigneeToNotionUserId = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
@@ -69,7 +63,6 @@ async function syncIssue(issue, action) {
 
   const issueNumber = issue.number;
   const existingPage = await findNotionIssuePage({ issueNumber });
-  const shouldUpdateStatus = !existingPage || !isMetadataOnlyIssueAction(action);
   const issueDateProperties = await mapIssueDateFieldsToNotionProperties(issue);
 
   const properties = {
@@ -77,10 +70,6 @@ async function syncIssue(issue, action) {
     "Issue ID": richText(`#${issueNumber}`),
     "GitHub Issue Number": number(issueNumber),
     "GitHub Link": url(issue.html_url),
-    "GitHub Repo": richText(GITHUB_REPOSITORY),
-    "GitHub State": richText(issue.state),
-    "GitHub Event": select(`issue_${action}`),
-    "GitHub Synced At": dateNow(),
     "GitHub Labels": multiSelect(mapGitHubLabels(issue)),
     "Type": select(mapIssueType(issue)),
     ...issueDateProperties,
@@ -91,7 +80,7 @@ async function syncIssue(issue, action) {
     properties["Owner"] = ownerProperty;
   }
 
-  if (shouldUpdateStatus) {
+  if (shouldUpdateIssueStatus(action, existingPage)) {
     properties["Kanban Status"] = select(mapIssueToKanban(action, issue));
     properties["Status"] = status(mapIssueToStatus(action, issue));
   }
@@ -133,7 +122,6 @@ async function syncPullRequest(pr, action) {
     pr.head?.ref ?? "",
   ].join("\n"));
 
-  const eventName = mapPullRequestEvent(action, pr);
   const kanbanStatus = mapPullRequestToKanban(action, pr);
   const taskStatus = mapPullRequestToStatus(action, pr);
 
@@ -144,10 +132,6 @@ async function syncPullRequest(pr, action) {
       const properties = {
         "GitHub PR Number": number(prNumber),
         "PR Link": url(pr.html_url),
-        "GitHub Repo": richText(GITHUB_REPOSITORY),
-        "GitHub State": richText(pr.merged ? "merged" : pr.state),
-        "GitHub Event": select(eventName),
-        "GitHub Synced At": dateNow(),
         "Kanban Status": select(kanbanStatus),
         "Status": status(taskStatus),
       };
@@ -163,10 +147,6 @@ async function syncPullRequest(pr, action) {
             "GitHub Issue Number": number(issueNumber),
             "GitHub PR Number": number(prNumber),
             "PR Link": url(pr.html_url),
-            "GitHub Repo": richText(GITHUB_REPOSITORY),
-            "GitHub State": richText(pr.merged ? "merged" : pr.state),
-            "GitHub Event": select(eventName),
-            "GitHub Synced At": dateNow(),
             "Kanban Status": select(kanbanStatus),
             "Status": status(taskStatus),
             "Type": select("Task"),
@@ -190,10 +170,6 @@ async function syncPullRequest(pr, action) {
     "Issue": title(`[PR] ${pr.title}`),
     "GitHub PR Number": number(prNumber),
     "PR Link": url(pr.html_url),
-    "GitHub Repo": richText(GITHUB_REPOSITORY),
-    "GitHub State": richText(pr.merged ? "merged" : pr.state),
-    "GitHub Event": select(eventName),
-    "GitHub Synced At": dateNow(),
     "Kanban Status": select(kanbanStatus),
     "Status": status(taskStatus),
     "Type": select("Task"),
@@ -408,7 +384,7 @@ function parseAssigneeMap(rawValue) {
         continue;
       }
 
-      entries.push([normalizedGitHubLogin, normalizedNotionUserId]);
+      entries.push([normalizedGitHubLogin, notionUserId]);
     }
 
     return new Map(entries);
@@ -448,8 +424,8 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function isMetadataOnlyIssueAction(action) {
-  return METADATA_ONLY_ISSUE_ACTIONS.has(action);
+function shouldUpdateIssueStatus(action, existingPage) {
+  return !existingPage || STATUS_CHANGING_ISSUE_ACTIONS.has(action);
 }
 
 function extractLinkedIssueNumbers(text) {
@@ -585,22 +561,13 @@ function mapIssueToKanban(action, issue) {
   if (labels.includes("blocked")) return "Blocked";
   if (action === "closed" || issue.state === "closed") return "Done";
   if (action === "reopened") return "To Do";
-  if (action === "opened") return "To Do";
-  return "In Progress";
+  return "To Do";
 }
 
 function mapIssueToStatus(action, issue) {
   if (action === "closed" || issue.state === "closed") return "완료";
   if (action === "opened" || action === "reopened") return "시작 전";
-  return "진행 중";
-}
-
-function mapPullRequestEvent(action, pr) {
-  if (action === "closed" && pr.merged) return "pr_merged";
-  if (action === "closed") return "pr_closed";
-  if (action === "synchronize") return "pr_sync";
-  if (action === "ready_for_review") return "pr_ready_for_review";
-  return `pr_${action}`;
+  return "시작 전";
 }
 
 function mapPullRequestToKanban(action, pr) {
@@ -646,10 +613,6 @@ function status(name) {
 
 function people(ids) {
   return { people: [...new Set(ids)].map((id) => ({ id })) };
-}
-
-function dateNow() {
-  return { date: { start: new Date().toISOString() } };
 }
 
 function dateValue(start) {
