@@ -8,9 +8,10 @@ const {
   GITHUB_TOKEN,
   GITHUB_API_URL = "https://api.github.com",
   GITHUB_API_VERSION = "2026-03-10",
-  GITHUB_DATE_FIELD_MAP = '{"Start":"Start","Start Date":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date"}',
-  GITHUB_FIELD_MAP = '{"Priority":"Priority","Effort":"Estimate","Estimate":"Estimate","Domain":"Domain"}',
-  GITHUB_SYNC_WINDOW_DAYS = "14",
+  GITHUB_DATE_FIELD_MAP = '{"Start":"Start","Start Date":"Start","시작일":"Start","시작 예정일":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date","마감일":"Due Date","목표일":"Due Date","완료 목표일":"Due Date"}',
+  GITHUB_FIELD_MAP = '{"Priority":"Priority","우선순위":"Priority","Effort":"Estimate","Estimate":"Estimate","작업량":"Estimate","난이도":"Estimate","Domain":"Domain","담당 영역":"Domain","영역":"Domain"}',
+  GITHUB_ISSUE_FIELD_ID_MAP = "{}",
+  GITHUB_SYNC_WINDOW_DAYS = "9999",
   GITHUB_EVENT_NAME,
   GITHUB_ACTION_NAME,
   GITHUB_REPOSITORY,
@@ -34,6 +35,7 @@ const NOTION_USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 const githubAssigneeToNotionUserId = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
 const githubDateFieldToNotionProperty = parseNameMap(GITHUB_DATE_FIELD_MAP);
 const githubFieldToNotionProperty = parseNameMap(GITHUB_FIELD_MAP);
+const githubIssueFieldIdToNotionProperty = parseIssueFieldIdMap(GITHUB_ISSUE_FIELD_ID_MAP);
 
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
 if (!NOTION_ISSUES_DATA_SOURCE_ID) fail("Missing NOTION_ISSUES_DATA_SOURCE_ID secret.");
@@ -68,7 +70,7 @@ async function main() {
 
 async function syncRecentIssues() {
   const issues = await listRecentlyUpdatedIssues();
-  console.log(`Syncing ${issues.length} recently updated GitHub issues.`);
+  console.log(`Syncing ${issues.length} GitHub issues.`);
 
   for (const issue of issues) {
     await syncIssue(issue, "scheduled");
@@ -209,7 +211,7 @@ async function syncPullRequest(pr, action) {
 
 async function listRecentlyUpdatedIssues() {
   const syncWindowDays = Number.parseInt(GITHUB_SYNC_WINDOW_DAYS, 10);
-  const days = Number.isFinite(syncWindowDays) && syncWindowDays > 0 ? syncWindowDays : 14;
+  const days = Number.isFinite(syncWindowDays) && syncWindowDays > 0 ? syncWindowDays : 9999;
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   const [owner, repo] = String(GITHUB_REPOSITORY ?? "").split("/");
   if (!owner || !repo) return [];
@@ -270,19 +272,10 @@ async function mapIssueFieldsToNotionProperties(issue) {
   const issueFields = await getGitHubIssueFields(issue);
 
   for (const field of issueFields) {
-    const fieldName = normalizeName(field.name ?? field.field_name ?? field.field?.name);
-    if (!fieldName) continue;
-
     const value = normalizeIssueFieldValue(field);
+    const notionPropertyName = resolveNotionPropertyForIssueField(field, value);
 
-    const datePropertyName = githubDateFieldToNotionProperty.get(fieldName);
-    if (datePropertyName) {
-      const dateText = normalizeDateString(value);
-      if (dateText) properties[datePropertyName] = dateValue(dateText);
-      continue;
-    }
-
-    const notionPropertyName = githubFieldToNotionProperty.get(fieldName);
+    logIssueFieldMapping(field, value, notionPropertyName);
     if (!notionPropertyName) continue;
 
     const notionProperty = mapIssueFieldValueToNotionProperty(notionPropertyName, value);
@@ -303,8 +296,44 @@ function mapIssueBodyDatesToNotionProperties(body) {
   return properties;
 }
 
+function resolveNotionPropertyForIssueField(field, value) {
+  const fieldName = normalizeName(field.name ?? field.field_name ?? field.field?.name ?? field.issue_field?.name);
+  const fieldId = String(field.issue_field_id ?? field.field_id ?? field.id ?? "").trim();
+  const nodeId = String(field.node_id ?? "").trim();
+
+  const mappedByFieldId = githubIssueFieldIdToNotionProperty.get(fieldId) ?? githubIssueFieldIdToNotionProperty.get(nodeId);
+  if (mappedByFieldId) return mappedByFieldId;
+
+  const mappedDateByName = githubDateFieldToNotionProperty.get(fieldName);
+  if (mappedDateByName) return mappedDateByName;
+
+  const mappedByName = githubFieldToNotionProperty.get(fieldName);
+  if (mappedByName) return mappedByName;
+
+  const dataType = String(field.data_type ?? field.type ?? "").toLowerCase();
+  const rawText = normalizeName([fieldName, nodeId, value].filter(Boolean).join(" "));
+
+  if (dataType === "date") {
+    if (rawText.includes("start") || rawText.includes("시작")) return "Start";
+    if (rawText.includes("target") || rawText.includes("due") || rawText.includes("deadline") || rawText.includes("마감") || rawText.includes("목표")) return "Due Date";
+    return null;
+  }
+
+  if (dataType === "number") return "Estimate";
+
+  if (normalizePriority(value)) return "Priority";
+  if (normalizeDomain(value)) return "Domain";
+
+  return null;
+}
+
 function mapIssueFieldValueToNotionProperty(propertyName, value) {
   if (value == null || value === "") return null;
+
+  if (propertyName === "Start" || propertyName === "Due Date") {
+    const dateText = normalizeDateString(value);
+    return dateText ? dateValue(dateText) : null;
+  }
 
   if (propertyName === "Priority") {
     return select(normalizePriority(value));
@@ -316,22 +345,76 @@ function mapIssueFieldValueToNotionProperty(propertyName, value) {
   }
 
   if (propertyName === "Domain") {
-    return select(String(value).trim());
+    const domain = normalizeDomain(value);
+    return domain ? select(domain) : null;
   }
 
   return richText(value);
 }
 
 function normalizePriority(value) {
-  const normalized = String(value).trim().toLowerCase();
-  if (["p0", "p1", "high", "높음"].includes(normalized)) return "High";
-  if (["p2", "medium", "중간"].includes(normalized)) return "Medium";
-  if (["p3", "p4", "low", "낮음"].includes(normalized)) return "Low";
-  return String(value).trim();
+  const normalized = normalizeName(value);
+  if (!normalized) return null;
+  if (["p0", "p1", "critical", "urgent", "high", "긴급", "높음"].includes(normalized)) return "High";
+  if (["p2", "medium", "mid", "normal", "중간", "보통"].includes(normalized)) return "Medium";
+  if (["p3", "p4", "low", "lowest", "낮음"].includes(normalized)) return "Low";
+  if (["high", "medium", "low"].includes(String(value).trim())) return String(value).trim();
+  return null;
+}
+
+function normalizeDomain(value) {
+  const normalized = normalizeName(value);
+  if (!normalized) return null;
+
+  const domainMap = new Map([
+    ["common", "공통"],
+    ["shared", "공통"],
+    ["공통", "공통"],
+    ["planning", "기획"],
+    ["plan", "기획"],
+    ["prd", "기획"],
+    ["기획", "기획"],
+    ["auth", "인증"],
+    ["authentication", "인증"],
+    ["login", "인증"],
+    ["인증", "인증"],
+    ["frontend", "프론트엔드"],
+    ["front-end", "프론트엔드"],
+    ["front", "프론트엔드"],
+    ["fe", "프론트엔드"],
+    ["프론트", "프론트엔드"],
+    ["프론트엔드", "프론트엔드"],
+    ["backend", "백엔드"],
+    ["back-end", "백엔드"],
+    ["back", "백엔드"],
+    ["be", "백엔드"],
+    ["백엔드", "백엔드"],
+    ["db", "DB"],
+    ["database", "DB"],
+    ["데이터베이스", "DB"],
+    ["api", "API"],
+    ["deploy", "배포"],
+    ["deployment", "배포"],
+    ["devops", "배포"],
+    ["infra", "배포"],
+    ["배포", "배포"],
+    ["qa", "QA"],
+    ["test", "QA"],
+    ["testing", "QA"],
+    ["테스트", "QA"],
+    ["docs", "문서"],
+    ["document", "문서"],
+    ["documentation", "문서"],
+    ["문서", "문서"],
+  ]);
+
+  return domainMap.get(normalized) ?? null;
 }
 
 function normalizeEstimate(value) {
-  const normalized = String(value).trim().toLowerCase();
+  const normalized = normalizeName(value);
+  if (!normalized) return null;
+
   if (normalized === "xs") return 1;
   if (normalized === "s") return 2;
   if (normalized === "m") return 3;
@@ -371,13 +454,17 @@ async function getGitHubIssueFields(issue) {
   if (!owner || !repo || !issue?.number) return [];
 
   const candidates = [
-    `/repos/${owner}/${repo}/issues/${issue.number}/fields`,
-    `/repos/${owner}/${repo}/issues/${issue.number}/issue-fields`,
+    `/repos/${owner}/${repo}/issues/${issue.number}/issue-field-values?per_page=100`,
+    `/repos/${owner}/${repo}/issues/${issue.number}/fields?per_page=100`,
+    `/repos/${owner}/${repo}/issues/${issue.number}/issue-fields?per_page=100`,
   ];
 
   for (const path of candidates) {
     const response = await githubRequest("GET", path, { allowFailure: true });
-    if (!response.ok) continue;
+    if (!response.ok) {
+      console.warn(`GitHub issue field request failed for #${issue.number}: ${path} ${response.status}`);
+      continue;
+    }
 
     const fields = normalizeIssueFieldsResponse(response.json);
     if (fields.length > 0) return fields;
@@ -393,10 +480,12 @@ function collectIssueFieldsFromPayload(issue) {
     issue?.issue_fields,
     issue?.field_values,
     issue?.issue_field_values,
+    issue?.issue_field_values?.nodes,
     payload?.fields,
     payload?.issue_fields,
     payload?.field_values,
     payload?.issue_field_values,
+    payload?.issue_field_values?.nodes,
   ];
 
   return candidates.flatMap((candidate) => normalizeIssueFieldsResponse(candidate));
@@ -408,19 +497,42 @@ function normalizeIssueFieldsResponse(json) {
   if (Array.isArray(json.fields)) return json.fields;
   if (Array.isArray(json.issue_fields)) return json.issue_fields;
   if (Array.isArray(json.values)) return json.values;
+  if (Array.isArray(json.nodes)) return json.nodes;
   if (Array.isArray(json.field_values)) return json.field_values;
   if (Array.isArray(json.issue_field_values)) return json.issue_field_values;
+  if (Array.isArray(json.issue_field_values?.nodes)) return json.issue_field_values.nodes;
   return [];
 }
 
 function normalizeIssueFieldValue(field) {
-  const raw = field.value ?? field.date ?? field.text ?? field.number ?? field.option?.name ?? field.single_select?.name ?? field.field_value?.value;
+  const raw =
+    field.single_select_option?.name ??
+    field.option?.name ??
+    field.single_select?.name ??
+    field.value ??
+    field.date ??
+    field.text ??
+    field.number ??
+    field.field_value?.value;
 
   if (raw && typeof raw === "object") {
     return raw.start ?? raw.value ?? raw.date ?? raw.name ?? raw.text ?? raw.number ?? null;
   }
 
   return raw;
+}
+
+function logIssueFieldMapping(field, value, notionPropertyName) {
+  const payload = {
+    issue_field_id: field.issue_field_id ?? field.field_id ?? field.id ?? null,
+    node_id: field.node_id ?? null,
+    name: field.name ?? field.field_name ?? field.field?.name ?? field.issue_field?.name ?? null,
+    data_type: field.data_type ?? field.type ?? null,
+    value,
+    notion_property: notionPropertyName ?? null,
+  };
+
+  console.log(`Issue field mapping: ${JSON.stringify(payload)}`);
 }
 
 function normalizeDateString(value) {
@@ -446,10 +558,7 @@ function parseAssigneeMap(rawValue) {
       const normalizedGitHubLogin = String(githubLogin).trim().toLowerCase();
       const normalizedNotionUserId = String(notionUserId).trim();
 
-      if (!normalizedGitHubLogin || !normalizedNotionUserId) {
-        console.warn("Skipping empty GitHub assignee mapping entry.");
-        continue;
-      }
+      if (!normalizedGitHubLogin || !normalizedNotionUserId) continue;
 
       if (!NOTION_USER_ID_PATTERN.test(normalizedNotionUserId)) {
         console.warn(`Skipping invalid Notion user id for GitHub assignee: ${normalizedGitHubLogin}.`);
@@ -483,6 +592,27 @@ function parseNameMap(rawValue) {
     return new Map(entries);
   } catch (error) {
     console.warn("Invalid field map. Field sync will be skipped.");
+    console.warn(error);
+    return new Map();
+  }
+}
+
+function parseIssueFieldIdMap(rawValue) {
+  try {
+    const parsed = JSON.parse(rawValue || "{}");
+    const entries = [];
+
+    for (const [githubFieldId, notionPropertyName] of Object.entries(parsed)) {
+      const normalizedGitHubFieldId = String(githubFieldId ?? "").trim();
+      const normalizedNotionPropertyName = String(notionPropertyName ?? "").trim();
+
+      if (!normalizedGitHubFieldId || !normalizedNotionPropertyName) continue;
+      entries.push([normalizedGitHubFieldId, normalizedNotionPropertyName]);
+    }
+
+    return new Map(entries);
+  } catch (error) {
+    console.warn("Invalid GITHUB_ISSUE_FIELD_ID_MAP. Field ID sync will be skipped.");
     console.warn(error);
     return new Map();
   }
