@@ -5,6 +5,9 @@ on:
     types: [opened, edited, closed, reopened, labeled, unlabeled, assigned, unassigned]
   pull_request:
     types: [opened, edited, closed, reopened, ready_for_review, converted_to_draft, synchronize]
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -37,6 +40,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_ISSUE_FIELDS_TOKEN || github.token }}
           GITHUB_API_VERSION: ${{ vars.GITHUB_API_VERSION || '2026-03-10' }}
           GITHUB_DATE_FIELD_MAP: ${{ vars.GITHUB_DATE_FIELD_MAP || '{"Start":"Start","Start Date":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date"}' }}
+          GITHUB_FIELD_MAP: ${{ vars.GITHUB_FIELD_MAP || '{"Priority":"Priority","Effort":"Estimate","Estimate":"Estimate","Domain":"Domain"}' }}
+          GITHUB_SYNC_WINDOW_DAYS: ${{ vars.GITHUB_SYNC_WINDOW_DAYS || '14' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_ACTION_NAME: ${{ github.event.action }}
           GITHUB_REPOSITORY: ${{ github.repository }}
