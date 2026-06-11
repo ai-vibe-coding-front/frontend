@@ -9,6 +9,8 @@ const {
   GITHUB_API_URL = "https://api.github.com",
   GITHUB_API_VERSION = "2026-03-10",
   GITHUB_DATE_FIELD_MAP = '{"Start":"Start","Start Date":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date"}',
+  GITHUB_FIELD_MAP = '{"Priority":"Priority","Effort":"Estimate","Estimate":"Estimate","Domain":"Domain"}',
+  GITHUB_SYNC_WINDOW_DAYS = "14",
   GITHUB_EVENT_NAME,
   GITHUB_ACTION_NAME,
   GITHUB_REPOSITORY,
@@ -31,6 +33,7 @@ const NOTION_USER_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}
 
 const githubAssigneeToNotionUserId = parseAssigneeMap(NOTION_GITHUB_ASSIGNEE_MAP);
 const githubDateFieldToNotionProperty = parseNameMap(GITHUB_DATE_FIELD_MAP);
+const githubFieldToNotionProperty = parseNameMap(GITHUB_FIELD_MAP);
 
 if (!NOTION_TOKEN) fail("Missing NOTION_TOKEN secret.");
 if (!NOTION_ISSUES_DATA_SOURCE_ID) fail("Missing NOTION_ISSUES_DATA_SOURCE_ID secret.");
@@ -55,7 +58,21 @@ async function main() {
     return;
   }
 
+  if (GITHUB_EVENT_NAME === "schedule" || GITHUB_EVENT_NAME === "workflow_dispatch") {
+    await syncRecentIssues();
+    return;
+  }
+
   console.log(`Unsupported event: ${GITHUB_EVENT_NAME}`);
+}
+
+async function syncRecentIssues() {
+  const issues = await listRecentlyUpdatedIssues();
+  console.log(`Syncing ${issues.length} recently updated GitHub issues.`);
+
+  for (const issue of issues) {
+    await syncIssue(issue, "scheduled");
+  }
 }
 
 async function syncIssue(issue, action) {
@@ -63,7 +80,7 @@ async function syncIssue(issue, action) {
 
   const issueNumber = issue.number;
   const existingPage = await findNotionIssuePage({ issueNumber });
-  const issueDateProperties = await mapIssueDateFieldsToNotionProperties(issue);
+  const issueFieldProperties = await mapIssueFieldsToNotionProperties(issue);
 
   const properties = {
     "Issue": title(issue.title),
@@ -72,7 +89,7 @@ async function syncIssue(issue, action) {
     "GitHub Link": url(issue.html_url),
     "GitHub Labels": multiSelect(mapGitHubLabels(issue)),
     "Type": select(mapIssueType(issue)),
-    ...issueDateProperties,
+    ...issueFieldProperties,
   };
 
   const ownerProperty = mapIssueAssigneesToOwner(issue);
@@ -94,7 +111,7 @@ async function syncIssue(issue, action) {
   await createPage(
     {
       ...properties,
-      "Priority": select("Medium"),
+      "Priority": properties["Priority"] ?? select("Medium"),
     },
     [
       heading2("GitHub Issue 원문"),
@@ -190,6 +207,19 @@ async function syncPullRequest(pr, action) {
   }
 }
 
+async function listRecentlyUpdatedIssues() {
+  const syncWindowDays = Number.parseInt(GITHUB_SYNC_WINDOW_DAYS, 10);
+  const days = Number.isFinite(syncWindowDays) && syncWindowDays > 0 ? syncWindowDays : 14;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const [owner, repo] = String(GITHUB_REPOSITORY ?? "").split("/");
+  if (!owner || !repo) return [];
+
+  const path = `/repos/${owner}/${repo}/issues?state=all&since=${encodeURIComponent(since)}&per_page=100&sort=updated&direction=desc`;
+  const response = await githubRequest("GET", path);
+  const issues = Array.isArray(response.json) ? response.json : [];
+  return issues.filter((issue) => !issue.pull_request);
+}
+
 function mapGitHubLabels(issue) {
   const labels = (issue.labels ?? [])
     .map((label) => String(label.name ?? "").trim())
@@ -235,25 +265,28 @@ function mapIssueAssigneesToOwner(issue) {
   return people(notionUserIds);
 }
 
-async function mapIssueDateFieldsToNotionProperties(issue) {
+async function mapIssueFieldsToNotionProperties(issue) {
   const properties = mapIssueBodyDatesToNotionProperties(issue?.body ?? "");
-
-  if (githubDateFieldToNotionProperty.size === 0) return properties;
-
   const issueFields = await getGitHubIssueFields(issue);
 
   for (const field of issueFields) {
     const fieldName = normalizeName(field.name ?? field.field_name ?? field.field?.name);
     if (!fieldName) continue;
 
-    const notionPropertyName = githubDateFieldToNotionProperty.get(fieldName);
+    const value = normalizeIssueFieldValue(field);
+
+    const datePropertyName = githubDateFieldToNotionProperty.get(fieldName);
+    if (datePropertyName) {
+      const dateText = normalizeDateString(value);
+      if (dateText) properties[datePropertyName] = dateValue(dateText);
+      continue;
+    }
+
+    const notionPropertyName = githubFieldToNotionProperty.get(fieldName);
     if (!notionPropertyName) continue;
 
-    const value = normalizeIssueFieldValue(field);
-    const dateText = normalizeDateString(value);
-    if (!dateText) continue;
-
-    properties[notionPropertyName] = dateValue(dateText);
+    const notionProperty = mapIssueFieldValueToNotionProperty(notionPropertyName, value);
+    if (notionProperty) properties[notionPropertyName] = notionProperty;
   }
 
   return properties;
@@ -268,6 +301,45 @@ function mapIssueBodyDatesToNotionProperties(body) {
   if (dueDate) properties["Due Date"] = dateValue(dueDate);
 
   return properties;
+}
+
+function mapIssueFieldValueToNotionProperty(propertyName, value) {
+  if (value == null || value === "") return null;
+
+  if (propertyName === "Priority") {
+    return select(normalizePriority(value));
+  }
+
+  if (propertyName === "Estimate") {
+    const estimate = normalizeEstimate(value);
+    return estimate == null ? null : number(estimate);
+  }
+
+  if (propertyName === "Domain") {
+    return select(String(value).trim());
+  }
+
+  return richText(value);
+}
+
+function normalizePriority(value) {
+  const normalized = String(value).trim().toLowerCase();
+  if (["p0", "p1", "high", "높음"].includes(normalized)) return "High";
+  if (["p2", "medium", "중간"].includes(normalized)) return "Medium";
+  if (["p3", "p4", "low", "낮음"].includes(normalized)) return "Low";
+  return String(value).trim();
+}
+
+function normalizeEstimate(value) {
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "xs") return 1;
+  if (normalized === "s") return 2;
+  if (normalized === "m") return 3;
+  if (normalized === "l") return 5;
+  if (normalized === "xl") return 8;
+
+  const parsed = Number.parseFloat(normalized.replace(/[^0-9.]/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function extractDateFromIssueBody(body, labels) {
@@ -291,7 +363,7 @@ async function getGitHubIssueFields(issue) {
   if (fromPayload.length > 0) return fromPayload;
 
   if (!GITHUB_TOKEN) {
-    console.warn("GITHUB_TOKEN is missing. Skipping GitHub issue date field sync.");
+    console.warn("GITHUB_TOKEN is missing. Skipping GitHub issue field sync.");
     return [];
   }
 
@@ -342,10 +414,10 @@ function normalizeIssueFieldsResponse(json) {
 }
 
 function normalizeIssueFieldValue(field) {
-  const raw = field.value ?? field.date ?? field.text ?? field.name ?? field.option?.name ?? field.single_select?.name;
+  const raw = field.value ?? field.date ?? field.text ?? field.number ?? field.option?.name ?? field.single_select?.name ?? field.field_value?.value;
 
   if (raw && typeof raw === "object") {
-    return raw.start ?? raw.value ?? raw.date ?? raw.name ?? raw.text ?? null;
+    return raw.start ?? raw.value ?? raw.date ?? raw.name ?? raw.text ?? raw.number ?? null;
   }
 
   return raw;
@@ -384,7 +456,7 @@ function parseAssigneeMap(rawValue) {
         continue;
       }
 
-      entries.push([normalizedGitHubLogin, notionUserId]);
+      entries.push([normalizedGitHubLogin, normalizedNotionUserId]);
     }
 
     return new Map(entries);
@@ -410,7 +482,7 @@ function parseNameMap(rawValue) {
 
     return new Map(entries);
   } catch (error) {
-    console.warn("Invalid GITHUB_DATE_FIELD_MAP. Date field sync will be skipped.");
+    console.warn("Invalid field map. Field sync will be skipped.");
     console.warn(error);
     return new Map();
   }
