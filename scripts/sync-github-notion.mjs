@@ -347,7 +347,7 @@ function extractDateFromIssueBody(body, labels) {
   const patterns = [
     new RegExp(`(?:^|\\n)\\s*[-*]?\\s*(?:${escapedLabels})\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})`, "i"),
     new RegExp(`(?:^|\\n)\\s*[-*]?\\s*\\*\\*(?:${escapedLabels})\\*\\*\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})`, "i"),
-    new RegExp(`(?:^|\\n)\\s*[-*]?\\s*\\`(?:${escapedLabels})\\`\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})`, "i"),
+    new RegExp('(?:^|\\n)\\s*[-*]?\\s*`(?:' + escapedLabels + ')`\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})', "i"),
   ];
 
   for (const pattern of patterns) {
