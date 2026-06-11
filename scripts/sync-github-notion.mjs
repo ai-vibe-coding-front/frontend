@@ -291,7 +291,7 @@ function mapIssueFieldValueToNotionProperty(propertyName, value) {
 
   if (propertyName === "Estimate") {
     const estimate = normalizeEstimate(value);
-    return estimate == null ? null : number(estimate);
+    return estimate ? select(estimate) : null;
   }
 
   if (propertyName === "Domain") {
@@ -315,18 +315,11 @@ function normalizeEstimate(value) {
   const normalized = normalizeName(value);
   if (!normalized) return null;
 
-  if (["xs", "very low", "very-low", "very_low"].includes(normalized)) return 1;
-  if (["s", "small"].includes(normalized)) return 2;
-  if (["m", "medium", "mid", "normal"].includes(normalized)) return 3;
-  if (["l", "large"].includes(normalized)) return 5;
-  if (["xl", "very high", "very-high", "very_high"].includes(normalized)) return 8;
+  if (["low", "낮음", "xs", "s", "small", "1", "2"].includes(normalized)) return "Low";
+  if (["medium", "mid", "normal", "중간", "보통", "m", "3"].includes(normalized)) return "Medium";
+  if (["high", "높음", "l", "xl", "large", "5", "8"].includes(normalized)) return "High";
 
-  if (["low", "낮음"].includes(normalized)) return 1;
-  if (["중간", "보통"].includes(normalized)) return 3;
-  if (["high", "높음"].includes(normalized)) return 5;
-
-  const parsed = Number.parseFloat(normalized.replace(/[^0-9.]/g, ""));
-  return Number.isFinite(parsed) ? parsed : null;
+  return null;
 }
 
 function normalizeDomain(value) {
