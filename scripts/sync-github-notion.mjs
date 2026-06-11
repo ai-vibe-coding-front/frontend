@@ -8,7 +8,7 @@ const {
   GITHUB_TOKEN,
   GITHUB_API_URL = "https://api.github.com",
   GITHUB_API_VERSION = "2026-03-10",
-  GITHUB_DATE_FIELD_MAP = '{"Start":"Start","Start Date":"Start","Target":"Target","Target Date":"Target","Due Date":"Target"}',
+  GITHUB_DATE_FIELD_MAP = '{"Start":"Start","Start Date":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date"}',
   GITHUB_EVENT_NAME,
   GITHUB_ACTION_NAME,
   GITHUB_REPOSITORY,
@@ -260,10 +260,11 @@ function mapIssueAssigneesToOwner(issue) {
 }
 
 async function mapIssueDateFieldsToNotionProperties(issue) {
-  if (githubDateFieldToNotionProperty.size === 0) return {};
+  const properties = mapIssueBodyDatesToNotionProperties(issue?.body ?? "");
+
+  if (githubDateFieldToNotionProperty.size === 0) return properties;
 
   const issueFields = await getGitHubIssueFields(issue);
-  const properties = {};
 
   for (const field of issueFields) {
     const fieldName = normalizeName(field.name ?? field.field_name ?? field.field?.name);
@@ -280,6 +281,33 @@ async function mapIssueDateFieldsToNotionProperties(issue) {
   }
 
   return properties;
+}
+
+function mapIssueBodyDatesToNotionProperties(body) {
+  const startDate = extractDateFromIssueBody(body, ["Start", "Start Date", "시작일", "시작 예정일"]);
+  const dueDate = extractDateFromIssueBody(body, ["Target", "Target Date", "Due Date", "마감일", "목표일", "완료 목표일"]);
+  const properties = {};
+
+  if (startDate) properties["Start"] = dateValue(startDate);
+  if (dueDate) properties["Due Date"] = dateValue(dueDate);
+
+  return properties;
+}
+
+function extractDateFromIssueBody(body, labels) {
+  const escapedLabels = labels.map((label) => escapeRegExp(label)).join("|");
+  const patterns = [
+    new RegExp(`(?:^|\\n)\\s*[-*]?\\s*(?:${escapedLabels})\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})`, "i"),
+    new RegExp(`(?:^|\\n)\\s*[-*]?\\s*\\*\\*(?:${escapedLabels})\\*\\*\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})`, "i"),
+    new RegExp(`(?:^|\\n)\\s*[-*]?\\s*\\`(?:${escapedLabels})\\`\\s*[:：]\\s*(\\d{4}-\\d{2}-\\d{2})`, "i"),
+  ];
+
+  for (const pattern of patterns) {
+    const match = String(body ?? "").match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
 }
 
 async function getGitHubIssueFields(issue) {
@@ -414,6 +442,10 @@ function parseNameMap(rawValue) {
 
 function normalizeName(value) {
   return String(value ?? "").trim().toLowerCase();
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function isMetadataOnlyIssueAction(action) {
