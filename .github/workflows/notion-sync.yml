@@ -39,8 +39,9 @@ jobs:
           NOTION_VERSION: ${{ vars.NOTION_VERSION || '2025-09-03' }}
           GITHUB_TOKEN: ${{ secrets.GH_ISSUE_FIELDS_TOKEN || github.token }}
           GITHUB_API_VERSION: ${{ vars.GITHUB_API_VERSION || '2026-03-10' }}
-          GITHUB_DATE_FIELD_MAP: ${{ vars.GITHUB_DATE_FIELD_MAP || '{"Start":"Start","Start Date":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date"}' }}
-          GITHUB_FIELD_MAP: ${{ vars.GITHUB_FIELD_MAP || '{"Priority":"Priority","Effort":"Estimate","Estimate":"Estimate","Domain":"Domain"}' }}
+          GITHUB_DATE_FIELD_MAP: ${{ vars.GITHUB_DATE_FIELD_MAP || '{"Start":"Start","Start Date":"Start","시작일":"Start","시작 예정일":"Start","Target":"Due Date","Target Date":"Due Date","Due Date":"Due Date","마감일":"Due Date","목표일":"Due Date","완료 목표일":"Due Date"}' }}
+          GITHUB_FIELD_MAP: ${{ vars.GITHUB_FIELD_MAP || '{"Priority":"Priority","우선순위":"Priority","Effort":"Estimate","Estimate":"Estimate","작업량":"Estimate","난이도":"Estimate","Domain":"Domain","담당 영역":"Domain","영역":"Domain"}' }}
+          GITHUB_ISSUE_FIELD_ID_MAP: ${{ vars.GITHUB_ISSUE_FIELD_ID_MAP || '{}' }}
           GITHUB_SYNC_WINDOW_DAYS: ${{ vars.GITHUB_SYNC_WINDOW_DAYS || '9999' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_ACTION_NAME: ${{ github.event.action }}
