@@ -1,2 +1,42 @@
-.env*
-node_modules
+# Next.js
+.next/
+out/
+.vercel/
+
+# Production build
+dist/
+build/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Cache
+.turbo/
+.cache/
+
+# Env
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.*.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Test coverage
+coverage/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
