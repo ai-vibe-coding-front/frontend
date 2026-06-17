@@ -1,3 +1,5 @@
+import { twMerge } from "tailwind-merge";
+
 type Category =
   | "전시"
   | "음악/콘서트"
@@ -29,7 +31,7 @@ interface EmojiBoxProps {
 export function EmojiBox({ category, className }: EmojiBoxProps) {
   return (
     <div
-      className={`bg-[#f5ede0] flex items-center justify-center rounded-xl size-11 shrink-0 ${className ?? ""}`}
+      className={twMerge("bg-[#f5ede0] flex items-center justify-center rounded-xl size-11 shrink-0", className)}
     >
       <span className="text-[18px] leading-[27px]">
         {CATEGORY_EMOJI[category] ?? "🎨"}

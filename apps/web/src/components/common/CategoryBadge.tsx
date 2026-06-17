@@ -1,3 +1,5 @@
+import { twMerge } from "tailwind-merge";
+
 type Category =
   | "전시"
   | "음악/콘서트"
@@ -37,7 +39,7 @@ export function CategoryBadge({ category, size = "default", className }: Categor
   const { wrap, text } = sizeClass[size];
   return (
     <div
-      className={`inline-flex items-center justify-center ${wrap} rounded-full ${className ?? ""}`}
+      className={twMerge(`inline-flex items-center justify-center ${wrap} rounded-full`, className)}
       style={{ backgroundColor: bg }}
     >
       <span className={`${text} text-[#3f2a24] font-normal whitespace-nowrap`}>
