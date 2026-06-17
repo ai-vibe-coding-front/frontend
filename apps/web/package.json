@@ -11,7 +11,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -29,9 +31,10 @@
     "@types/react-dom": "latest",
     "autoprefixer": "10.4.20",
     "dotenv": "^17.4.2",
-    "eslint": "latest",
+    "eslint": "^9.39.4",
     "eslint-config-next": "latest",
     "postcss": "8.4.49",
+    "prettier": "^3.8.4",
     "prisma": "latest",
     "tailwindcss": "3.4.17",
     "typescript": "latest"
