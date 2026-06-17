@@ -1,16 +1,18 @@
 # AGENTS.md
 
-## Project Context
+## 프로젝트 맥락
 
-This project uses AI-assisted development. Follow the team rules in `docs/ai-rules.md`.
+이 프로젝트는 AI 보조 개발을 허용합니다.
+팀 공통 기준은 `docs/ai-rules.md`를 따릅니다.
 
-## Main Rule
+## 기본 원칙
 
-Help the developer implement only the requested feature within the allowed scope. Do not make broad architectural changes unless explicitly requested.
+요청받은 기능을 정해진 작업 범위 안에서만 구현합니다.
+명시적으로 요청받지 않은 대규모 구조 변경, 폴더 구조 변경, 공통 로직 변경은 하지 않습니다.
 
-## Protected Areas
+## 수정 보호 영역
 
-Do not directly modify the following files or directories unless the team lead explicitly allows it.
+팀장 또는 지정 담당자의 명시적 승인 없이 아래 파일과 디렉터리를 직접 수정하지 않습니다.
 
 - `prisma/schema.prisma`
 - `prisma/migrations/**`
@@ -27,40 +29,40 @@ Do not directly modify the following files or directories unless the team lead e
 - `.env`
 - `.env.example`
 
-If a protected file seems to require changes, stop and explain:
+보호 영역 변경이 필요해 보이면 바로 수정하지 말고 아래 내용을 먼저 설명합니다.
 
-1. Why the change is needed
-2. Which file would be affected
-3. What the risk is
-4. What exact change you recommend
+1. 변경이 필요한 이유
+2. 영향을 받는 파일
+3. 예상 리스크
+4. 권장 변경안
 
-## Coding Rules
+## 코드 작성 규칙
 
-- Keep changes small and focused.
-- Do not rewrite unrelated code.
-- Do not change API response shapes without approval.
-- Do not add dependencies without approval.
-- Do not expose secrets or environment variables.
-- Keep page-specific components inside the page folder unless commonization is approved.
-- Preserve existing naming conventions and folder structure.
-- Add loading, empty, and error states when implementing UI connected to API data.
-- Add basic validation for user input.
+- 변경 범위는 작고 명확하게 유지합니다.
+- 관련 없는 코드를 다시 작성하지 않습니다.
+- 승인 없이 API 응답 구조를 바꾸지 않습니다.
+- 승인 없이 의존성을 추가하지 않습니다.
+- 환경변수, API Key, 토큰 등 민감 정보를 노출하지 않습니다.
+- 특정 페이지에서만 쓰는 컴포넌트는 해당 페이지 또는 기능 폴더 안에 둡니다.
+- 기존 네이밍 규칙과 폴더 구조를 유지합니다.
+- API 데이터와 연결되는 UI에는 loading, empty, error 상태를 고려합니다.
+- 사용자 입력에는 기본적인 검증을 추가합니다.
 
-## Review Rules
+## PR 리뷰 규칙
 
-When reviewing a pull request, check:
+PR을 리뷰할 때는 아래 항목을 확인합니다.
 
-- Whether the change matches the related issue.
-- Whether the change modifies files outside the requested scope.
-- Whether protected files are changed without approval.
-- Whether unnecessary formatting-only changes are included.
-- Whether API response shapes or shared types changed unexpectedly.
-- Whether secrets or environment variables are exposed.
-- Whether the author can reasonably explain the generated code.
+- 관련 이슈의 완료 조건을 만족하는가?
+- 요청 범위 밖의 파일을 수정하지 않았는가?
+- 보호 영역을 승인 없이 수정하지 않았는가?
+- 기능 변경과 무관한 포맷 변경이 포함되지 않았는가?
+- API 응답 구조나 공통 타입이 의도치 않게 변경되지 않았는가?
+- 민감 정보가 노출되지 않았는가?
+- 작성자가 생성된 코드를 설명할 수 있는가?
 
-## Verification
+## 검증 규칙
 
-After changes, run the available checks:
+변경 후 가능한 범위에서 아래 명령어를 실행합니다.
 
 ```bash
 pnpm lint
@@ -68,4 +70,4 @@ pnpm typecheck
 pnpm build
 ```
 
-If a check fails, explain the cause and fix it when it is within the requested scope.
+검증이 실패하면 원인을 설명하고, 요청 범위 안에서 해결 가능한 문제만 수정합니다.
