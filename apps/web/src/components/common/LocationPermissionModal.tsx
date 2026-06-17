@@ -10,14 +10,19 @@ interface LocationPermissionModalProps {
 
 export function LocationPermissionModal({ onAllow, onSkip }: LocationPermissionModalProps) {
   return (
-    <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50">
-      <div className="bg-[#fefefe] rounded-[26px] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-[360px] flex flex-col items-center gap-3 p-4">
+    <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50" role="presentation">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="location-modal-title"
+        className="bg-[#fefefe] rounded-[26px] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-[360px] flex flex-col items-center gap-3 p-4"
+      >
         <div className="bg-[rgba(245,243,238,0.95)] rounded-full size-12 flex items-center justify-center shrink-0">
           <MapPinIcon className="w-[19px] h-[23px]" />
         </div>
 
         <div className="flex flex-col items-center gap-0">
-          <p className="font-bold text-[24px] text-[#251e19] leading-[31px] text-center">
+          <p id="location-modal-title" className="font-bold text-[24px] text-[#251e19] leading-[31px] text-center">
             정확한 추천을 위해
           </p>
           <p className="font-bold text-[24px] text-[#251e19] leading-[31px] text-center">
