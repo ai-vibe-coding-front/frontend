@@ -12,18 +12,28 @@
 
 팀장 또는 지정 담당자의 명시적 승인 없이 아래 파일과 디렉터리를 직접 수정하지 않습니다.
 
-- `prisma/schema.prisma`
-- `prisma/migrations/**`
-- `src/auth.ts`
-- `src/middleware.ts`
-- `src/types/**`
-- `src/lib/**`
-- `src/components/common/**`
-- `src/components/layout/**`
+### 앱 내부 보호 경로
+
+- `apps/web/prisma/schema.prisma`
+- `apps/web/prisma/migrations/**`
+- `apps/web/src/auth.ts`
+- `apps/web/src/middleware.ts`
+- `apps/web/src/types/**`
+- `apps/web/src/lib/**`
+- `apps/web/src/components/common/**`
+- `apps/web/src/components/layout/**`
+- `apps/web/package.json`
+- `apps/web/next.config.ts`
+- `apps/web/tailwind.config.ts`
+- `apps/web/.env`
+- `apps/web/.env.local`
+- `apps/web/.env.example`
+
+### 저장소 루트 보호 경로
+
 - `package.json`
 - `pnpm-lock.yaml`
-- `next.config.ts`
-- `tailwind.config.ts`
+- `pnpm-workspace.yaml`
 - `.env`
 - `.env.example`
 
@@ -67,13 +77,13 @@ Claude Code에서 Figma 관련 커맨드를 실행하기 전에는 Figma MCP 연
 
 ## 공통 컴포넌트 수정 규칙
 
-`src/components/common/`, `src/components/layout/`, `src/features/` 내 파일을 수정할 때 아래 기준을 지킵니다.
+`apps/web/src/components/common/`, `apps/web/src/components/layout/`, `apps/web/src/features/` 내 파일을 수정할 때 아래 기준을 지킵니다.
 
 - 색상: `design-tokens.md`의 hex 값을 사용합니다. 토큰에 없는 값은 Figma 수치를 따릅니다.
 - `className`: Tailwind 인라인 방식을 사용합니다. 동일 className이 2회 이상 반복되면 파일 상단 const로 추출합니다.
 - Props: Figma variant는 `isActive`, `size` 같은 props로 표현합니다. 불필요한 prop은 추가하지 않습니다.
 - 구조: 기존 컴포넌트 파일의 패턴을 유지합니다.
 - 아이콘: `public/icons/`의 SVG만 사용합니다. 승인 없이 custom path를 직접 작성하지 않습니다.
-- 수정 후: `src/components/` 또는 `src/features/` 파일을 변경한 PR에서만 `/figma-verify`를 실행합니다. 로직, API, 문서만 변경한 PR은 생략합니다.
+- 수정 후: `apps/web/src/components/` 또는 `apps/web/src/features/` 파일을 변경한 PR에서만 `/figma-verify`를 실행합니다. 로직, API, 문서만 변경한 PR은 생략합니다.
 
 상세 체크리스트: `.claude/commands/ui-component.md`
