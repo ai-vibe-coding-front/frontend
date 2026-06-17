@@ -1,1 +1,32 @@
 * @deonggu
+
+/apps/web/src/app/page.* @deonggu
+/apps/web/src/features/home/** @deonggu
+/apps/web/src/components/home/** @deonggu
+
+/apps/web/src/app/mypage/** @deonggu
+/apps/web/src/app/favorites/** @deonggu
+/apps/web/src/features/mypage/** @deonggu
+/apps/web/src/features/favorites/** @deonggu
+
+/apps/web/src/app/login/** @JunbyeongChae
+/apps/web/src/app/signup/** @JunbyeongChae
+/apps/web/src/app/events/** @JunbyeongChae
+/apps/web/src/features/auth/** @JunbyeongChae
+/apps/web/src/features/event-detail/** @JunbyeongChae
+
+/apps/web/src/app/curation/** @mmjjaa
+/apps/web/src/features/curation/** @mmjjaa
+/apps/web/src/components/curation/** @mmjjaa
+
+/apps/web/src/app/curation-result/** @awesomesong
+/apps/web/src/app/curation/results/** @awesomesong
+/apps/web/src/features/curation-result/** @awesomesong
+/apps/web/src/features/curation-results/** @awesomesong
+
+/apps/web/src/app/map/** @khusan7700
+/apps/web/src/app/explore/** @khusan7700
+/apps/web/src/app/nearby/** @khusan7700
+/apps/web/src/features/map/** @khusan7700
+/apps/web/src/features/explore/** @khusan7700
+/apps/web/src/features/nearby/** @khusan7700
