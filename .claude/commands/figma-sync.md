@@ -11,30 +11,30 @@ Figma URL이 주어지면 해당 화면만 코드화한다.
 
 | 순서 | 화면 | Figma Node ID | 상태 |
 |------|------|---------------|------|
-| 1 | onboarding 로그인 | 390:6027 | ✅ 완료 |
-| 2 | onboarding 비로그인 | 390:6331 | ✅ 완료 |
-| 3 | 위치동의 모달 | 390:6389 | ✅ 완료 |
-| 4 | 동의 후 핀형 | 390:6446 | ✅ 완료 |
-| 5 | 로그인 | 390:6525 | ✅ 완료 |
-| 6 | 회원가입 | 390:6560 | ✅ 완료 |
-| 7 | 큐레이션 (버튼 활성화) | 390:6614 | ✅ 완료 |
-| 8 | 큐레이션 (버튼 비활성화) | 390:6669 | ✅ 완료 |
-| 9 | 큐레이션 결과 O | 390:7200 | ✅ 완료 |
-| 10 | 큐레이션 결과 X | 390:7319 | ✅ 완료 |
-| 11 | 문화생활 상세보기 | 390:7408 | ✅ 완료 |
-| 12 | 문화 생활지도 | 390:7456 | ✅ 완료 |
-| 13 | 마이페이지 | 390:7673 | ✅ 완료 |
-| 14 | WeatherCard | 422:8967 | ✅ 완료 |
+| 1 | onboarding 로그인 | 390:6027 | ⏳ 미작업 |
+| 2 | onboarding 비로그인 | 390:6331 | ⏳ 미작업 |
+| 3 | 위치동의 모달 | 390:6389 | ⏳ 미작업 |
+| 4 | 동의 후 핀형 | 390:6446 | ⏳ 미작업 |
+| 5 | 로그인 | 390:6525 | ⏳ 미작업 |
+| 6 | 회원가입 | 390:6560 | ⏳ 미작업 |
+| 7 | 큐레이션 (버튼 활성화) | 390:6614 | ⏳ 미작업 |
+| 8 | 큐레이션 (버튼 비활성화) | 390:6669 | ⏳ 미작업 |
+| 9 | 큐레이션 결과 O | 390:7200 | ⏳ 미작업 |
+| 10 | 큐레이션 결과 X | 390:7319 | ⏳ 미작업 |
+| 11 | 문화생활 상세보기 | 390:7408 | ⏳ 미작업 |
+| 12 | 문화 생활지도 | 390:7456 | ⏳ 미작업 |
+| 13 | 마이페이지 | 390:7673 | ⏳ 미작업 |
+| 14 | WeatherCard | 422:8967 | ⏳ 미작업 |
 
 **완료된 컴포넌트 (스킵):**
-- CategoryBadge → src/components/common/CategoryBadge.tsx ✅
-- CTAButton → src/components/common/CTAButton.tsx ✅
-- DDayBadge → src/components/common/DDayBadge.tsx ✅
-- EmojiBox → src/components/common/EmojiBox.tsx ✅
-- Header → src/components/layout/Header.tsx ✅
-- BottomNav → src/components/layout/BottomNav.tsx ✅
-- TodayMoodCard → src/features/recommendations/TodayMoodCard.tsx ✅
-- EventCard → src/features/recommendations/EventCard.tsx ✅
+- CategoryBadge → apps/web/src/components/common/CategoryBadge.tsx ✅
+- CTAButton → apps/web/src/components/common/CTAButton.tsx ✅
+- DDayBadge → apps/web/src/components/common/DDayBadge.tsx ✅
+- EmojiBox → apps/web/src/components/common/EmojiBox.tsx ✅
+- Header → apps/web/src/components/layout/Header.tsx ✅
+- BottomNav → apps/web/src/components/layout/BottomNav.tsx ✅
+- TodayMoodCard → apps/web/src/features/recommendations/TodayMoodCard.tsx ✅
+- EventCard → apps/web/src/features/recommendations/EventCard.tsx ✅
 
 ---
 
@@ -51,11 +51,11 @@ Figma URL이 주어지면 해당 화면만 코드화한다.
 아래 규칙을 따른다.
 
 **폴더 규칙:**
-- 공통 UI (버튼, 배지 등) → `src/components/common/`
-- 레이아웃 (헤더, 네비) → `src/components/layout/`
-- 온보딩/인증 화면 → `src/app/onboarding/`, `src/app/login/`, `src/app/signup/`
-- 기능별 컴포넌트 → `src/features/<기능명>/`
-- 모달 → `src/components/common/<Name>Modal.tsx`
+- 공통 UI (버튼, 배지 등) → `apps/web/src/components/common/`
+- 레이아웃 (헤더, 네비) → `apps/web/src/components/layout/`
+- 온보딩/인증 화면 → `apps/web/src/app/onboarding/`, `apps/web/src/app/login/`, `apps/web/src/app/signup/`
+- 기능별 컴포넌트 → `apps/web/src/features/<기능명>/`
+- 모달 → `apps/web/src/components/common/<Name>Modal.tsx`
 
 **네이밍 규칙:**
 - 영어 이름 → 그대로 사용
