@@ -35,26 +35,36 @@ AI는 다음 작업에 사용할 수 있다.
 
 아래 파일은 AI가 직접 수정하도록 요청하지 않는다. 필요한 경우 AI에게 변경 제안만 요청하고, 실제 수정은 팀장 또는 지정 담당자가 진행한다.
 
-- `prisma/schema.prisma`
-- `prisma/migrations/**`
-- `src/auth.ts`
-- `src/middleware.ts`
-- `src/types/**`
-- `src/lib/**`
-- `src/components/common/**`
-- `src/components/layout/**`
+### 앱 내부 보호 경로
+
+- `apps/web/prisma/schema.prisma`
+- `apps/web/prisma/migrations/**`
+- `apps/web/src/auth.ts`
+- `apps/web/src/middleware.ts`
+- `apps/web/src/types/**`
+- `apps/web/src/lib/**`
+- `apps/web/src/components/common/**`
+- `apps/web/src/components/layout/**`
+- `apps/web/package.json`
+- `apps/web/next.config.ts`
+- `apps/web/tailwind.config.ts`
+- `apps/web/.env`
+- `apps/web/.env.local`
+- `apps/web/.env.example`
+
+### 저장소 루트 보호 경로
+
 - `package.json`
 - `pnpm-lock.yaml`
-- `next.config.ts`
-- `tailwind.config.ts`
+- `pnpm-workspace.yaml`
 - `.env`
 - `.env.example`
 
 ## 5. DB 스키마 변경 규칙
 
 - DB 스키마 변경은 팀장 승인 후 진행한다.
-- 팀원은 임의로 `schema.prisma`를 수정하지 않는다.
-- 팀원은 임의로 migration 파일을 생성하지 않는다.
+- 팀원은 임의로 `apps/web/prisma/schema.prisma`를 수정하지 않는다.
+- 팀원은 임의로 `apps/web/prisma/migrations/**` 파일을 생성하지 않는다.
 - 스키마 변경이 필요하면 아래 형식으로 팀장에게 요청한다.
 
 ```markdown
@@ -77,7 +87,7 @@ AI는 다음 작업에 사용할 수 있다.
 
 - 개인 페이지에서만 사용하는 컴포넌트는 해당 페이지 폴더 내부에 둔다.
 - 2개 이상 페이지에서 반복 사용될 때 공통화 여부를 논의한다.
-- `components/common`, `components/layout` 변경은 팀장 또는 공통 담당자 리뷰가 필요하다.
+- `apps/web/src/components/common`, `apps/web/src/components/layout` 변경은 팀장 또는 공통 담당자 리뷰가 필요하다.
 - AI가 공통 컴포넌트 수정을 제안하더라도 바로 적용하지 않는다.
 
 ## 7. 작업 전 AI 프롬프트 규칙
@@ -114,14 +124,15 @@ AI에게 작업을 요청할 때는 반드시 아래 정보를 포함한다.
 - apps/web/src/app/api/favorites/**
 
 수정 금지 파일:
-- prisma/schema.prisma
-- prisma/migrations/**
-- src/auth.ts
-- src/middleware.ts
-- src/components/common/**
-- src/components/layout/**
-- src/types/**
-- src/lib/**
+- apps/web/prisma/schema.prisma
+- apps/web/prisma/migrations/**
+- apps/web/src/auth.ts
+- apps/web/src/middleware.ts
+- apps/web/src/components/common/**
+- apps/web/src/components/layout/**
+- apps/web/src/types/**
+- apps/web/src/lib/**
+- apps/web/.env*
 
 요구사항:
 - 기존 API 응답 형식은 변경하지 않는다.
@@ -135,7 +146,7 @@ AI가 작성한 코드를 적용한 뒤 담당자는 아래 항목을 확인한�
 
 - [ ] 내가 이해하지 못하는 코드가 포함되지 않았는가?
 - [ ] 내 담당 범위 밖의 파일이 수정되지 않았는가?
-- [ ] `schema.prisma` 또는 migration 파일이 변경되지 않았는가?
+- [ ] `apps/web/prisma/schema.prisma` 또는 migration 파일이 변경되지 않았는가?
 - [ ] 공통 컴포넌트가 임의로 변경되지 않았는가?
 - [ ] 인증/인가 로직이 임의로 변경되지 않았는가?
 - [ ] 기존 API 응답 형식이 바뀌지 않았는가?
