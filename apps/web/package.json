@@ -23,6 +23,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@figma/code-connect": "^1.4.8",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
