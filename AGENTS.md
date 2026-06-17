@@ -14,18 +14,28 @@
 
 팀장 또는 지정 담당자의 명시적 승인 없이 아래 파일과 디렉터리를 직접 수정하지 않습니다.
 
-- `prisma/schema.prisma`
-- `prisma/migrations/**`
-- `src/auth.ts`
-- `src/middleware.ts`
-- `src/types/**`
-- `src/lib/**`
-- `src/components/common/**`
-- `src/components/layout/**`
+### 앱 내부 보호 경로
+
+- `apps/web/prisma/schema.prisma`
+- `apps/web/prisma/migrations/**`
+- `apps/web/src/auth.ts`
+- `apps/web/src/middleware.ts`
+- `apps/web/src/types/**`
+- `apps/web/src/lib/**`
+- `apps/web/src/components/common/**`
+- `apps/web/src/components/layout/**`
+- `apps/web/package.json`
+- `apps/web/next.config.ts`
+- `apps/web/tailwind.config.ts`
+- `apps/web/.env`
+- `apps/web/.env.local`
+- `apps/web/.env.example`
+
+### 저장소 루트 보호 경로
+
 - `package.json`
 - `pnpm-lock.yaml`
-- `next.config.ts`
-- `tailwind.config.ts`
+- `pnpm-workspace.yaml`
 - `.env`
 - `.env.example`
 
