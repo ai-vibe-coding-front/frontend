@@ -15,9 +15,6 @@ export const queryKeys = {
   },
   explorationSessions: {
     all: () => ['exploration-sessions'] as const,
-    details: () => ['exploration-sessions', 'detail'] as const,
-    detail: (explorationSessionId: string) =>
-      ['exploration-sessions', 'detail', explorationSessionId] as const,
   },
   recommendations: {
     all: () => ['recommendations'] as const,
