@@ -632,8 +632,7 @@ API, DB, 서버 로직 변경이 있는 경우 리뷰어는 추가로 아래 내
 - auth / users
 - exploration sessions
 - recommendations
-- events
-- nearby events
+- events (행사 상세 / 주변 행사)
 - favorites
 - event logs
 
@@ -650,7 +649,7 @@ queryKeys.users.me();
 queryKeys.recommendations.detail(runId);
 queryKeys.recommendations.recent();
 queryKeys.events.detail(eventItemId);
-queryKeys.nearbyEvents.list({ lat, lng, radius, realmCode });
+queryKeys.events.nearby.list({ lat, lng, radiusKm, limit, category });
 queryKeys.favorites.list();
 queryKeys.favorites.count();
 ```
@@ -659,6 +658,8 @@ queryKeys.favorites.count();
 
 - 첫 요소는 API 도메인과 대응하는 복수형 kebab-case 문자열을 사용합니다.
 - 목록, 상세, 최근 결과처럼 캐시 성격이 다르면 두 번째 요소에서 구분합니다.
+- `all`, `list`, `lists`, `detail`, `details`, `recent`는 API URL과 1:1로 대응하는 값이 아니라 TanStack Query의 캐시 범위와 무효화 단위를 표현하는 프론트엔드 컨벤션입니다.
+- 주변 행사 조회는 API 명세서상 `GET /api/events/nearby`이므로 별도 도메인으로 분리하지 않고 `events.nearby` 하위에서 관리합니다.
 - ID와 조회 조건은 뒤쪽 요소에 넣습니다.
 - 화면이나 hook에서 `['users', 'me']` 같은 배열을 직접 만들지 않습니다.
 - 무효화 범위를 조절할 수 있도록 `all`, `lists` 또는 `details`, 개별 key 순서로 계층을 만듭니다.
@@ -730,7 +731,7 @@ export function useMeQuery() {
 ```ts
 export function useNearbyEventsQuery(query: NearbyEventsQuery) {
   return useQuery({
-    queryKey: queryKeys.nearbyEvents.list(query),
+    queryKey: queryKeys.events.nearby.list(query),
     queryFn: () => getNearbyEvents(query),
   });
 }
@@ -759,7 +760,9 @@ export function useAddFavoriteMutation() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.events.detail(variables.eventItemId),
       });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.nearbyEvents.all() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.events.nearby.lists(),
+      });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.recommendations.all(),
       });
@@ -778,11 +781,11 @@ export function useAddFavoriteMutation() {
 
 | mutation | 성공 후 처리 기준 |
 | --- | --- |
-| 회원가입 / 로그인 | `users.me()`, `favorites.all()`, `recommendations.recent()`, `events.all()`, `nearbyEvents.all()`을 무효화합니다. 사용자별 `isFavorite` 또는 최근 추천 정보가 섞일 수 있기 때문입니다. |
-| 로그아웃 | 사용자별 데이터가 다음 사용자에게 남지 않도록 `users`, `favorites`, `recommendations` 캐시를 제거하고, `events`, `nearbyEvents`는 무효화합니다. |
+| 회원가입 / 로그인 | `users.me()`, `favorites.all()`, `recommendations.recent()`, `events.all()`을 무효화합니다. 사용자별 `isFavorite` 또는 최근 추천 정보가 섞일 수 있기 때문입니다. |
+| 로그아웃 | 사용자별 데이터가 다음 사용자에게 남지 않도록 `users`, `favorites`, `recommendations` 캐시를 제거하고, `events.all()`을 무효화합니다. |
 | 탐색 세션 생성 / 상태 변경 | 현재 조회 API가 없으므로 query cache를 만들거나 무효화하지 않습니다. |
 | 추천 실행 | 반환된 `runId` 상세 캐시를 저장할 수 있으며 `recommendations.recent()`를 무효화합니다. 현재 탐색 세션 조회 API는 없으므로 관련 조회 캐시를 만들지 않습니다. |
-| 관심행사 저장 / 해제 | `favorites.all()`, `users.me()`, 변경된 `events.detail(eventItemId)`, `nearbyEvents.all()`, `recommendations.all()`을 무효화합니다. |
+| 관심행사 저장 / 해제 | `favorites.all()`, `users.me()`, 변경된 `events.detail(eventItemId)`, `events.nearby.lists()`, `recommendations.all()`을 무효화합니다. |
 | 이벤트 로그 저장 | 화면 데이터 캐시를 무효화하지 않습니다. 로그 저장 실패가 주요 사용자 플로우를 막지 않도록 처리합니다. |
 
 행사 상세 조회와 주변 행사 조회는 GET이므로 조회 성공만으로 다른 캐시를 무효화하지 않습니다. 두 화면의 `isFavorite` 상태는 관심행사 mutation 성공 시 함께 갱신합니다.
@@ -802,7 +805,7 @@ export function useAddFavoriteMutation() {
 | `GET /api/recommendations/:runId` | `queryKeys.recommendations.detail(runId)` |
 | `GET /api/recommendations/recent` | `queryKeys.recommendations.recent()` |
 | `GET /api/events/:eventItemId` | `queryKeys.events.detail(eventItemId)` |
-| `GET /api/events/nearby` | `queryKeys.nearbyEvents.list(query)` |
+| `GET /api/events/nearby` | `queryKeys.events.nearby.list(query)` |
 | `POST /api/favorites` | mutation |
 | `DELETE /api/favorites/:eventItemId` | mutation |
 | `GET /api/favorites` | `queryKeys.favorites.list()` |

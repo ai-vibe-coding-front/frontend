@@ -1,8 +1,9 @@
 export type NearbyEventsQuery = Readonly<{
   lat: number;
   lng: number;
-  radius?: number;
-  realmCode?: string;
+  radiusKm?: number;
+  limit?: number;
+  category?: string;
 }>;
 
 export const queryKeys = {
@@ -20,18 +21,18 @@ export const queryKeys = {
     all: () => ['recommendations'] as const,
     details: () => ['recommendations', 'detail'] as const,
     detail: (runId: string) => ['recommendations', 'detail', runId] as const,
-    recent: () => ['recommendations', 'recent'] as const,
+    recent: (limit?: number) =>
+      ['recommendations', 'recent', { limit }] as const,
   },
   events: {
     all: () => ['events'] as const,
     details: () => ['events', 'detail'] as const,
-    detail: (eventItemId: string) => ['events', 'detail', eventItemId] as const,
-  },
-  nearbyEvents: {
-    all: () => ['nearby-events'] as const,
-    lists: () => ['nearby-events', 'list'] as const,
-    list: (query: NearbyEventsQuery) =>
-      ['nearby-events', 'list', query] as const,
+    detail: (eventId: string) => ['events', 'detail', eventId] as const,
+    nearby: {
+      lists: () => ['events', 'nearby', 'list'] as const,
+      list: (query: NearbyEventsQuery) =>
+        ['events', 'nearby', 'list', query] as const,
+    },
   },
   favorites: {
     all: () => ['favorites'] as const,
