@@ -60,9 +60,11 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
 
 export function EventCard({ event, onClick, onLike, shadow = true }: EventCardProps) {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
       aria-label={event.title}
       className={`bg-white rounded-[20px] w-full overflow-hidden cursor-pointer shrink-0 text-left ${shadow ? "shadow-[0px_4px_20px_0px_rgba(63,42,36,0.1)]" : ""}`}
     >
@@ -110,6 +112,6 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
           </span>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
