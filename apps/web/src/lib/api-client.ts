@@ -23,7 +23,7 @@ function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
   }
 
   if (value.success === true) {
-    return 'data' in value;
+    return 'data' in value && value.data !== undefined;
   }
 
   return (
