@@ -1,27 +1,38 @@
-export type ApiSuccessResponse<T> = {
-  success: true;
-  data: T;
-};
+import { NextResponse } from 'next/server';
 
-export type ApiErrorResponse = {
-  success: false;
-  code: string;
-  message: string;
-};
+import type { ApiError, ApiSuccess } from '@/types/api';
 
-export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-export function successResponse<T>(data: T): ApiSuccessResponse<T> {
-  return {
-    success: true,
-    data,
-  };
+export function ok<T>(data: T): NextResponse<ApiSuccess<T>> {
+  return NextResponse.json(
+    {
+      success: true,
+      data,
+    },
+    { status: 200 },
+  );
 }
 
-export function errorResponse(code: string, message: string): ApiErrorResponse {
-  return {
-    success: false,
-    code,
-    message,
-  };
+export function created<T>(data: T): NextResponse<ApiSuccess<T>> {
+  return NextResponse.json(
+    {
+      success: true,
+      data,
+    },
+    { status: 201 },
+  );
+}
+
+export function fail(
+  code: string,
+  message: string,
+  status = 400,
+): NextResponse<ApiError> {
+  return NextResponse.json(
+    {
+      success: false,
+      code,
+      message,
+    },
+    { status },
+  );
 }
