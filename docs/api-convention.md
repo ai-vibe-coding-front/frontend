@@ -754,14 +754,14 @@ export function useAddFavoriteMutation() {
   return useMutation({
     mutationFn: addFavorite,
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.favorites.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.favorites.all() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.events.detail(variables.eventItemId),
       });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.nearbyEvents.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.nearbyEvents.all() });
       void queryClient.invalidateQueries({
-        queryKey: queryKeys.recommendations.all,
+        queryKey: queryKeys.recommendations.all(),
       });
     },
   });
@@ -774,11 +774,11 @@ export function useAddFavoriteMutation() {
 
 | mutation | 성공 후 처리 기준 |
 | --- | --- |
-| 회원가입 / 로그인 | `users.me`, `favorites.all`, `recommendations.recent`, `events.all`, `nearbyEvents.all`을 무효화합니다. 사용자별 `isFavorite` 또는 최근 추천 정보가 섞일 수 있기 때문입니다. |
+| 회원가입 / 로그인 | `users.me()`, `favorites.all()`, `recommendations.recent()`, `events.all()`, `nearbyEvents.all()`을 무효화합니다. 사용자별 `isFavorite` 또는 최근 추천 정보가 섞일 수 있기 때문입니다. |
 | 로그아웃 | 사용자별 데이터가 다음 사용자에게 남지 않도록 `users`, `favorites`, `recommendations` 캐시를 제거하고, `events`, `nearbyEvents`는 무효화합니다. |
 | 탐색 세션 생성 / 상태 변경 | 응답으로 받은 `explorationSessionId`의 상세 key가 실제로 사용 중일 때만 해당 상세를 갱신하거나 무효화합니다. 조회 API가 없으면 불필요한 캐시를 만들지 않습니다. |
 | 추천 실행 | 반환된 `runId` 상세 캐시를 저장할 수 있으며 `recommendations.recent`를 무효화합니다. 연결된 탐색 세션 상세 조회가 있다면 해당 key도 무효화합니다. |
-| 관심행사 저장 / 해제 | `favorites.all`, `users.me`, 변경된 `events.detail(eventItemId)`, `nearbyEvents.all`, `recommendations.all`을 무효화합니다. |
+| 관심행사 저장 / 해제 | `favorites.all()`, `users.me()`, 변경된 `events.detail(eventItemId)`, `nearbyEvents.all()`, `recommendations.all()`을 무효화합니다. |
 | 이벤트 로그 저장 | 화면 데이터 캐시를 무효화하지 않습니다. 로그 저장 실패가 주요 사용자 플로우를 막지 않도록 처리합니다. |
 
 행사 상세 조회와 주변 행사 조회는 GET이므로 조회 성공만으로 다른 캐시를 무효화하지 않습니다. 두 화면의 `isFavorite` 상태는 관심행사 mutation 성공 시 함께 갱신합니다.
