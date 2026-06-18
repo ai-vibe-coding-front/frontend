@@ -753,6 +753,7 @@ export function useAddFavoriteMutation() {
   return useMutation({
     mutationFn: addFavorite,
     onSuccess: (_data, variables) => {
+      // 화면 전환이나 후속 처리에서 완료를 기다릴 필요가 없어 백그라운드로 무효화합니다.
       void queryClient.invalidateQueries({ queryKey: queryKeys.favorites.all() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
       void queryClient.invalidateQueries({
@@ -769,13 +770,17 @@ export function useAddFavoriteMutation() {
 
 실제 구현에서는 API 명세의 request/response 타입과 화면의 optimistic update 필요 여부를 확인한 뒤 적용합니다. 기본값은 서버 성공 후 관련 query를 무효화하는 방식입니다.
 
+- `void`는 무효화 완료를 기다리지 않고 mutation 성공 처리를 이어가도 되는 경우에 사용합니다.
+- 최신 캐시 반영 이후 화면을 이동하거나 다음 로직을 실행해야 한다면 `onSuccess`를 `async`로 선언하고 `await queryClient.invalidateQueries(...)`를 사용합니다.
+- 여러 무효화를 모두 기다려야 한다면 순차 호출보다 `await Promise.all([...])`을 우선 검토합니다.
+
 ### 21.5 캐시 무효화 기준
 
 | mutation | 성공 후 처리 기준 |
 | --- | --- |
 | 회원가입 / 로그인 | `users.me()`, `favorites.all()`, `recommendations.recent()`, `events.all()`, `nearbyEvents.all()`을 무효화합니다. 사용자별 `isFavorite` 또는 최근 추천 정보가 섞일 수 있기 때문입니다. |
 | 로그아웃 | 사용자별 데이터가 다음 사용자에게 남지 않도록 `users`, `favorites`, `recommendations` 캐시를 제거하고, `events`, `nearbyEvents`는 무효화합니다. |
-| 탐색 세션 생성 / 상태 변경 | 응답으로 받은 `explorationSessionId`의 상세 key가 실제로 사용 중일 때만 해당 상세를 갱신하거나 무효화합니다. 조회 API가 없으면 불필요한 캐시를 만들지 않습니다. |
+| 탐색 세션 생성 / 상태 변경 | 현재 조회 API가 없으므로 query cache를 만들거나 무효화하지 않습니다. |
 | 추천 실행 | 반환된 `runId` 상세 캐시를 저장할 수 있으며 `recommendations.recent()`를 무효화합니다. 현재 탐색 세션 조회 API는 없으므로 관련 조회 캐시를 만들지 않습니다. |
 | 관심행사 저장 / 해제 | `favorites.all()`, `users.me()`, 변경된 `events.detail(eventItemId)`, `nearbyEvents.all()`, `recommendations.all()`을 무효화합니다. |
 | 이벤트 로그 저장 | 화면 데이터 캐시를 무효화하지 않습니다. 로그 저장 실패가 주요 사용자 플로우를 막지 않도록 처리합니다. |
