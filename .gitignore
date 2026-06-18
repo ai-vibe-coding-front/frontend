@@ -38,3 +38,6 @@ coverage/
 Thumbs.db
 .vscode/
 .idea/
+
+# Claude Code - 토큰 포함, git 업로드 금지
+.claude/settings.json
