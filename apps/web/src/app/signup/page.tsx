@@ -111,6 +111,7 @@ export default function SignupPage() {
               rules={{
                 required: '비밀번호를 입력해주세요',
                 minLength: { value: 8, message: '비밀번호는 8자 이상이어야 합니다' },
+                pattern: { value: /^(?=.*[A-Za-z])(?=.*\d).+$/, message: '영문과 숫자를 조합해주세요' },
               }}
               render={({ field }) => (
                 <Input placeholder="비밀번호" type="password" value={field.value} onChange={field.onChange} />
