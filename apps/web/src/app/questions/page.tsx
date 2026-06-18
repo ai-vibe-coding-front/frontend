@@ -29,11 +29,11 @@ export default function QuestionsPage() {
   const hasSelected = selected !== null;
 
   return (
-    <>
+    <main className="h-dvh flex flex-col overflow-hidden bg-[#fbf9f4]">
 
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
-          <button onClick={() => router.back()} className="size-4 shrink-0">
+          <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
             <img src="/icons/back-arrow.svg" alt="뒤로가기" className="size-full" />
           </button>
           <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
@@ -42,7 +42,7 @@ export default function QuestionsPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col px-6 overflow-y-auto">
+        <div className="min-h-0 flex-1 flex flex-col px-6 pb-6 overflow-y-auto">
 
           {/* 진행바 */}
           <div className="flex flex-col pt-4 pb-1 shrink-0">
@@ -69,12 +69,15 @@ export default function QuestionsPage() {
           </div>
 
           {/* 선택지 */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3" role="radiogroup" aria-label="오늘의 무드 선택">
             {OPTIONS.map((option) => {
               const isActive = selected === option.id;
               return (
                 <button
                   key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
                   onClick={() => setSelected(option.id)}
                   className={`flex items-center gap-4 h-[71px] px-[17.5px] rounded-[16px] w-full transition-all ${
                     isActive
@@ -110,12 +113,14 @@ export default function QuestionsPage() {
         <div className="bg-[rgba(251,249,244,0.9)] shadow-[0px_-4px_4px_0px_rgba(0,0,0,0.05)] shrink-0">
           <div className="flex gap-3 p-6">
             <button
+              type="button"
               onClick={() => router.back()}
               className="flex-1 bg-[#fefefe] border border-[#8edfd2] rounded-[16px] py-[13px] flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)]"
             >
               <span className="font-semibold text-[14px] text-[#245b6b] leading-[21px]">이전</span>
             </button>
             <button
+              type="button"
               disabled={!hasSelected}
               className={`flex-1 bg-[#8edfd2] rounded-[16px] py-3 flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)] transition-opacity ${hasSelected ? "opacity-100" : "opacity-50"}`}
             >
@@ -123,6 +128,6 @@ export default function QuestionsPage() {
             </button>
           </div>
         </div>
-    </>
+    </main>
   );
 }
