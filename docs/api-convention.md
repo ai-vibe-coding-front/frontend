@@ -623,3 +623,187 @@ API, DB, 서버 로직 변경이 있는 경우 리뷰어는 추가로 아래 내
 * 이해하지 못한 코드는 그대로 병합하지 않습니다.
 * GitHub에 남기는 기록은 포트폴리오와 협업 과정의 근거가 되므로, 제목과 설명을 최소한의 수준으로라도 명확하게 작성합니다.
 
+## 21. Query Key Factory와 API Hook 작성 규칙
+
+이 절은 GitHub Issue #61과 TDD v1.5, API 명세서 v1.0, 요구사항 정의서 v1.0, ERD v1.0을 기준으로 합니다.
+
+이번 기준의 대상 도메인은 다음과 같습니다.
+
+- auth / users
+- exploration sessions
+- recommendations
+- events
+- nearby events
+- favorites
+- event logs
+
+실제 API 함수와 `useQuery`, `useMutation` hook은 각 도메인 구현 이슈에서 작성합니다. 이 절에서는 query key와 작성 위치, 캐시 처리 기준만 정의합니다.
+
+### 21.1 Query Key Factory
+
+Query key는 `apps/web/src/lib/query-keys.ts`의 `queryKeys`에서만 생성합니다.
+
+```ts
+import { queryKeys } from '@/lib/query-keys';
+
+queryKeys.users.me();
+queryKeys.explorationSessions.detail(explorationSessionId);
+queryKeys.recommendations.detail(runId);
+queryKeys.recommendations.recent();
+queryKeys.events.detail(eventItemId);
+queryKeys.nearbyEvents.list({ lat, lng, radius, realmCode });
+queryKeys.favorites.list();
+queryKeys.favorites.count();
+```
+
+작성 기준:
+
+- 첫 요소는 API 도메인과 대응하는 복수형 kebab-case 문자열을 사용합니다.
+- 목록, 상세, 최근 결과처럼 캐시 성격이 다르면 두 번째 요소에서 구분합니다.
+- ID와 조회 조건은 뒤쪽 요소에 넣습니다.
+- 화면이나 hook에서 `['users', 'me']` 같은 배열을 직접 만들지 않습니다.
+- 무효화 범위를 조절할 수 있도록 `all`, `lists` 또는 `details`, 개별 key 순서로 계층을 만듭니다.
+- query string에 영향을 주는 값은 모두 key에 포함합니다.
+- key에 함수, 클래스 인스턴스, `undefined`가 섞인 임시 객체를 넣지 않습니다.
+- mutation 전용 도메인도 이후 캐시 확장과 도메인 식별을 위해 root key를 유지할 수 있습니다.
+
+`auth`는 현재 회원가입, 로그인, 로그아웃, 토큰 재발급이 mutation이므로 조회 key를 만들지 않고 root만 둡니다. 사용자 인증 상태 조회는 `queryKeys.users.me()`를 사용합니다.
+
+`exploration sessions`와 `event logs`도 현재 명세상 mutation 중심입니다. 실제 조회 API가 추가되기 전에는 임의의 조회 hook을 만들지 않습니다.
+
+### 21.2 Feature API와 Hook 위치
+
+도메인 코드는 다음 구조를 기본으로 합니다.
+
+```txt
+apps/web/src/features/<domain>/
+├─ api/
+│  └─ <verb>-<resource>.ts
+├─ queries/
+│  └─ use-<resource>-query.ts
+└─ mutations/
+   └─ use-<action>-mutation.ts
+```
+
+예:
+
+```txt
+features/users/api/get-me.ts
+features/users/queries/use-me-query.ts
+features/recommendations/api/get-recommendation.ts
+features/recommendations/queries/use-recommendation-query.ts
+features/favorites/mutations/use-add-favorite-mutation.ts
+```
+
+작성 기준:
+
+- `api/` 함수는 `apiClient` 호출과 request/response 타입만 담당하며 React와 TanStack Query에 의존하지 않습니다.
+- GET 요청은 `queries/`의 `useQuery` hook으로 감쌉니다.
+- POST, PATCH, DELETE 요청은 `mutations/`의 `useMutation` hook으로 감쌉니다.
+- 컴포넌트에서 `apiClient`, `useQuery`, `useMutation`을 직접 조합하지 않습니다.
+- hook은 `queryKeys`를 import해 사용하고 문자열 배열을 직접 작성하지 않습니다.
+- API 명세의 URL, method, 인증 여부, request/response 구조를 임의로 바꾸지 않습니다.
+- 쿠키 인증을 위해 공통 `apiClient`의 `credentials: 'include'` 기준을 유지합니다.
+- API 연동 UI는 loading, empty, error 상태를 구분합니다.
+- 서버 컴포넌트와 서버 서비스에서는 내부 API를 다시 호출하기보다 service 함수를 직접 호출하는 기존 기준을 따릅니다.
+
+### 21.3 최소 Query Hook 예시
+
+아래 코드는 작성 형태를 설명하기 위한 예시이며 실제 hook 파일을 추가한 것이 아닙니다.
+
+```ts
+import { useQuery } from '@tanstack/react-query';
+
+import { queryKeys } from '@/lib/query-keys';
+
+import { getMe } from '../api/get-me';
+
+export function useMeQuery() {
+  return useQuery({
+    queryKey: queryKeys.users.me(),
+    queryFn: getMe,
+  });
+}
+```
+
+파라미터가 필요한 조회는 query key와 query function에 같은 값을 전달합니다.
+
+```ts
+export function useNearbyEventsQuery(query: NearbyEventsQuery) {
+  return useQuery({
+    queryKey: queryKeys.nearbyEvents.list(query),
+    queryFn: () => getNearbyEvents(query),
+  });
+}
+```
+
+필수 ID나 위치 값이 아직 없으면 잘못된 값으로 요청하지 않도록 `enabled`를 사용합니다.
+
+### 21.4 최소 Mutation Hook 예시
+
+```ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { queryKeys } from '@/lib/query-keys';
+
+import { addFavorite } from '../api/add-favorite';
+
+export function useAddFavoriteMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: addFavorite,
+    onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.favorites.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.me() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.events.detail(variables.eventItemId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.nearbyEvents.all });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.recommendations.all,
+      });
+    },
+  });
+}
+```
+
+실제 구현에서는 API 명세의 request/response 타입과 화면의 optimistic update 필요 여부를 확인한 뒤 적용합니다. 기본값은 서버 성공 후 관련 query를 무효화하는 방식입니다.
+
+### 21.5 캐시 무효화 기준
+
+| mutation | 성공 후 처리 기준 |
+| --- | --- |
+| 회원가입 / 로그인 | `users.me`, `favorites.all`, `recommendations.recent`, `events.all`, `nearbyEvents.all`을 무효화합니다. 사용자별 `isFavorite` 또는 최근 추천 정보가 섞일 수 있기 때문입니다. |
+| 로그아웃 | 사용자별 데이터가 다음 사용자에게 남지 않도록 `users`, `favorites`, `recommendations` 캐시를 제거하고, `events`, `nearbyEvents`는 무효화합니다. |
+| 탐색 세션 생성 / 상태 변경 | 응답으로 받은 `explorationSessionId`의 상세 key가 실제로 사용 중일 때만 해당 상세를 갱신하거나 무효화합니다. 조회 API가 없으면 불필요한 캐시를 만들지 않습니다. |
+| 추천 실행 | 반환된 `runId` 상세 캐시를 저장할 수 있으며 `recommendations.recent`를 무효화합니다. 연결된 탐색 세션 상세 조회가 있다면 해당 key도 무효화합니다. |
+| 관심행사 저장 / 해제 | `favorites.all`, `users.me`, 변경된 `events.detail(eventItemId)`, `nearbyEvents.all`, `recommendations.all`을 무효화합니다. |
+| 이벤트 로그 저장 | 화면 데이터 캐시를 무효화하지 않습니다. 로그 저장 실패가 주요 사용자 플로우를 막지 않도록 처리합니다. |
+
+행사 상세 조회와 주변 행사 조회는 GET이므로 조회 성공만으로 다른 캐시를 무효화하지 않습니다. 두 화면의 `isFavorite` 상태는 관심행사 mutation 성공 시 함께 갱신합니다.
+
+### 21.6 API 명세와 Query Key 대응
+
+| API | Query key 또는 처리 |
+| --- | --- |
+| `POST /api/auth/signup` | mutation, 성공 후 인증 관련 캐시 갱신 |
+| `POST /api/auth/login` | mutation, 성공 후 인증 관련 캐시 갱신 |
+| `POST /api/auth/logout` | mutation, 성공 후 사용자별 캐시 제거 |
+| `POST /api/auth/refresh` | mutation, 자동 retry는 별도 이슈 |
+| `GET /api/users/me` | `queryKeys.users.me()` |
+| `POST /api/exploration-sessions` | mutation |
+| `PATCH /api/exploration-sessions/:explorationSessionId/status` | mutation |
+| `POST /api/recommendations` | mutation |
+| `GET /api/recommendations/:runId` | `queryKeys.recommendations.detail(runId)` |
+| `GET /api/recommendations/recent` | `queryKeys.recommendations.recent()` |
+| `GET /api/events/:eventItemId` | `queryKeys.events.detail(eventItemId)` |
+| `GET /api/events/nearby` | `queryKeys.nearbyEvents.list(query)` |
+| `POST /api/favorites` | mutation |
+| `DELETE /api/favorites/:eventItemId` | mutation |
+| `GET /api/favorites` | `queryKeys.favorites.list()` |
+| `GET /api/favorites/count` | `queryKeys.favorites.count()` |
+| `POST /api/event-logs` | mutation, 화면 데이터 무효화 없음 |
+
+질문 Q1~Q4 답변은 질문마다 mutation hook으로 저장하지 않습니다. 요구사항 정의서 v1.0과 ERD v1.0 기준대로 프론트 상태에 임시 보관하고 `POST /api/recommendations` 요청에서 한 번에 전달합니다.
+
