@@ -27,6 +27,7 @@ export default function SignupPage() {
     control,
     handleSubmit,
     watch,
+    getValues,
     setError,
     trigger,
     formState: { errors, isSubmitting },
@@ -136,7 +137,7 @@ export default function SignupPage() {
               control={control}
               rules={{
                 required: '비밀번호 확인을 입력해주세요',
-                validate: (value) => value === watch('password') || '비밀번호가 일치하지 않습니다',
+                validate: (value) => value === getValues('password') || '비밀번호가 일치하지 않습니다',
               }}
               render={({ field }) => (
                 <Input placeholder="비밀번호 확인" type="password" value={field.value} onChange={field.onChange} />
@@ -170,8 +171,6 @@ export default function SignupPage() {
                 </button>
               )}
             />
-            {errors.agreed && <p className={fieldErrorClass}>{errors.agreed.message}</p>}
-
             {/* 개인정보 테이블 */}
             <div className="bg-white border border-[#e2e2e2] rounded-[10px] overflow-hidden">
               <div className="flex items-center px-[14px] py-[9px] border-b border-[#e2e2e2]">
