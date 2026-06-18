@@ -11,6 +11,10 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
           queries: {
             retry: 1,
             refetchOnWindowFocus: false,
+            staleTime: 5 * 60 * 1000,
+          },
+          mutations: {
+            retry: false,
           },
         },
       }),
@@ -18,3 +22,6 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
 
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
+
+// Usage example:
+// useQuery({ queryKey: ['me'], queryFn: getMe });
