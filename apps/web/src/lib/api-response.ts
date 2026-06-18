@@ -22,16 +22,24 @@ export function created<T>(data: T): NextResponse<ApiSuccess<T>> {
   );
 }
 
+/**
+ * @example
+ * return fail('INVALID_REQUEST', '요청값이 올바르지 않습니다.', 400, {
+ *   field: 'email',
+ * });
+ */
 export function fail(
-  code: string,
+  errorCode: string,
   message: string,
   status = 400,
+  details?: unknown,
 ): NextResponse<ApiError> {
   return NextResponse.json(
     {
       success: false,
-      code,
+      errorCode,
       message,
+      ...(details === undefined ? {} : { details }),
     },
     { status },
   );

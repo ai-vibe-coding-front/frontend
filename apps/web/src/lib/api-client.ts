@@ -4,14 +4,16 @@ const UNKNOWN_ERROR_CODE = 'UNKNOWN_ERROR';
 const UNKNOWN_ERROR_MESSAGE = '요청을 처리하는 중 오류가 발생했습니다.';
 
 export class ApiClientError extends Error {
-  readonly code: string;
+  readonly errorCode: string;
   readonly status: number;
+  readonly details?: unknown;
 
   constructor(error: ApiError, status: number) {
     super(error.message);
     this.name = 'ApiClientError';
-    this.code = error.code;
+    this.errorCode = error.errorCode;
     this.status = status;
+    this.details = error.details;
   }
 }
 
@@ -26,8 +28,8 @@ function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
 
   return (
     value.success === false &&
-    'code' in value &&
-    typeof value.code === 'string' &&
+    'errorCode' in value &&
+    typeof value.errorCode === 'string' &&
     'message' in value &&
     typeof value.message === 'string'
   );
@@ -37,7 +39,7 @@ function createUnknownError(status: number): ApiClientError {
   return new ApiClientError(
     {
       success: false,
-      code: UNKNOWN_ERROR_CODE,
+      errorCode: UNKNOWN_ERROR_CODE,
       message: UNKNOWN_ERROR_MESSAGE,
     },
     status,
@@ -46,7 +48,13 @@ function createUnknownError(status: number): ApiClientError {
 
 /**
  * @example
- * const user = await apiClient<User>('/api/users/me');
+ * try {
+ *   const user = await apiClient<User>('/api/users/me');
+ * } catch (error) {
+ *   if (error instanceof ApiClientError) {
+ *     console.error(error.errorCode);
+ *   }
+ * }
  */
 export async function apiClient<T>(
   input: RequestInfo | URL,
@@ -81,7 +89,7 @@ export async function apiClient<T>(
     const error: ApiError = body.success
       ? {
           success: false,
-          code: UNKNOWN_ERROR_CODE,
+          errorCode: UNKNOWN_ERROR_CODE,
           message: UNKNOWN_ERROR_MESSAGE,
         }
       : body;

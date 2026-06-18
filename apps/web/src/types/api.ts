@@ -5,8 +5,9 @@ export type ApiSuccess<T> = {
 
 export type ApiError = {
   success: false;
-  code: string;
+  errorCode: string;
   message: string;
+  details?: unknown;
 };
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
