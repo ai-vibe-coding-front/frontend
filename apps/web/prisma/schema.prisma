@@ -6,239 +6,430 @@ datasource db {
   provider = "postgresql"
 }
 
+/**
+ * 사용자 권한
+ */
+enum UserRole {
+  USER  @map("user")
+  ADMIN @map("admin")
+
+  @@map("user_role")
+}
+
+/**
+ * 탐색 세션 상태
+ */
+enum ExplorationSessionStatus {
+  LOCATION_CONFIRMED       @map("LOCATION_CONFIRMED")
+  QUESTION_IN_PROGRESS     @map("QUESTION_IN_PROGRESS")
+  RECOMMENDATION_REQUESTED @map("RECOMMENDATION_REQUESTED")
+  RECOMMENDATION_COMPLETED @map("RECOMMENDATION_COMPLETED")
+  RESULT_VIEWED            @map("RESULT_VIEWED")
+  EXPIRED                  @map("EXPIRED")
+
+  @@map("exploration_session_status")
+}
+
+/**
+ * 질문 키
+ */
+enum QuestionKey {
+  Q1 @map("q1")
+  Q2 @map("q2")
+  Q3 @map("q3")
+  Q4 @map("q4")
+
+  @@map("question_key")
+}
+
+/**
+ * 이벤트 로그명
+ * 이벤트명이 자주 바뀔 가능성이 크면 EventLog.eventName을 String으로 바꿔도 된다.
+ * 현재는 ERD/API 명세 정합성을 위해 enum으로 관리한다.
+ */
+enum EventName {
+  LOCATION_PERMISSION_VIEWED  @map("LOCATION_PERMISSION_VIEWED")
+  LOCATION_CONFIRMED          @map("LOCATION_CONFIRMED")
+  QUESTION_FLOW_STARTED       @map("QUESTION_FLOW_STARTED")
+  QUESTION_STEP_VIEWED        @map("QUESTION_STEP_VIEWED")
+  QUESTION_ANSWERED           @map("QUESTION_ANSWERED")
+  RECOMMENDATION_REQUESTED    @map("RECOMMENDATION_REQUESTED")
+  RECOMMENDATION_COMPLETED    @map("RECOMMENDATION_COMPLETED")
+  RESULT_VIEWED               @map("RESULT_VIEWED")
+  RECOMMENDATION_CARD_CLICKED @map("RECOMMENDATION_CARD_CLICKED")
+  EVENT_DETAIL_VIEWED         @map("EVENT_DETAIL_VIEWED")
+  FAVORITE_ATTEMPTED          @map("FAVORITE_ATTEMPTED")
+  FAVORITE_COMPLETED          @map("FAVORITE_COMPLETED")
+  MAP_VIEWED                  @map("MAP_VIEWED")
+  MAP_EVENT_CARD_CLICKED      @map("MAP_EVENT_CARD_CLICKED")
+
+  @@map("event_name")
+}
+
+/**
+ * 사용자
+ * 위치정보는 User에 저장하지 않는다.
+ * 위치는 추천 탐색 세션 단위로 ExplorationSession에 저장한다.
+ */
 model User {
-  id        String    @id @default(uuid()) @db.Uuid
-  email     String    @unique @db.VarChar(255)
-  nickname  String?   @db.VarChar(100)
-  role      String    @default("user") @db.VarChar(50)
+  id       String   @id @default(uuid()) @db.Uuid
+  email    String   @unique @db.VarChar(255)
+  nickname String   @db.VarChar(50)
+  role     UserRole @default(USER)
+
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  authCredential      AuthCredential?
+  credential          AuthCredential?
   refreshTokens       RefreshToken[]
   explorationSessions ExplorationSession[]
+  recommendationRuns  RecommendationRun[]
   favorites           Favorite[]
   eventLogs           EventLog[]
 
   @@map("users")
 }
 
+/**
+ * 이메일/비밀번호 인증 정보
+ * MVP는 이메일/비밀번호 단일 인증 기준이므로 User와 1:1 구조다.
+ * Supabase Auth는 사용하지 않는다.
+ */
 model AuthCredential {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @unique @map("user_id") @db.Uuid
-  passwordHash String   @map("password_hash") @db.VarChar(255)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id           String @id @default(uuid()) @db.Uuid
+  userId       String @unique @map("user_id") @db.Uuid
+  passwordHash String @map("password_hash") @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("auth_credentials")
 }
 
+/**
+ * Refresh Token
+ * 쿠키 세션 기반 인증에서도 유지한다.
+ * HttpOnly Cookie에는 refresh token 식별값 또는 토큰값이 들어가고,
+ * DB에는 token 원문이 아니라 hash만 저장하는 것을 기준으로 한다.
+ */
 model RefreshToken {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @map("user_id") @db.Uuid
   tokenHash String    @map("token_hash") @db.VarChar(255)
   expiresAt DateTime  @map("expires_at")
   revokedAt DateTime? @map("revoked_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([revokedAt])
   @@map("refresh_tokens")
 }
 
+/**
+ * 추천 탐색 세션
+ * explorationSessionId의 실체다.
+ * 위치 확정 시 생성된다.
+ * sessionKey는 프론트가 Request Body로 보내는 값이 아니다.
+ * 서버가 guestSessionKey 쿠키를 확인하거나 새로 생성한 뒤 저장하는
+ * 브라우저 단위 임시 식별자다.
+ * 회원의 신원 판단은 userId 기준이다.
+ * 비회원의 추천 흐름 식별은 sessionKey 기준이다.
+ */
 model ExplorationSession {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String?   @map("user_id") @db.Uuid
-  sessionKey  String    @map("session_key") @db.VarChar(255)
-  isGuest     Boolean   @default(true) @map("is_guest")
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String? @map("user_id") @db.Uuid
+
+  /// 서버가 관리하는 브라우저 단위 임시 식별자.
+  /// 프론트가 Request Body로 전달하지 않는다.
+  /// 비회원은 guestSessionKey 쿠키 기반으로 생성/조회한다.
+  sessionKey String @map("session_key") @db.VarChar(255)
+
+  isGuest Boolean @default(true) @map("is_guest")
+
+  status      ExplorationSessionStatus @default(LOCATION_CONFIRMED)
+  currentStep String?                  @map("current_step") @db.VarChar(50)
+
+  /**
+   * 위치 정보
+   * User에 저장하지 않고 추천 세션 단위로 저장한다.
+   */
+  lat         Float?
+  lng         Float?
+  nx          Int?
+  ny          Int?
+  sido        String? @db.VarChar(50)
+  address     String?
+  stationName String? @map("station_name") @db.VarChar(100)
+
   startedAt   DateTime  @default(now()) @map("started_at")
   completedAt DateTime? @map("completed_at")
+  expiresAt   DateTime? @map("expires_at")
   createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  explorationAnswers ExplorationAnswer[]
+  answers            ExplorationAnswer[]
   recommendationRuns RecommendationRun[]
   eventLogs          EventLog[]
 
   @@index([sessionKey])
   @@index([userId])
-  @@index([completedAt])
+  @@index([status])
+  @@index([currentStep])
+  @@index([expiresAt])
   @@map("exploration_sessions")
 }
 
+/**
+ * 질문 답변
+ * Q1~Q4 답변을 저장한다.
+ * 질문 선택 시점마다 저장하지 않고,
+ * 추천 실행 API 호출 시 4건을 일괄 저장한다.
+ */
 model ExplorationAnswer {
-  id          String   @id @default(uuid()) @db.Uuid
-  sessionId   String   @map("session_id") @db.Uuid
-  questionKey String   @map("question_key") @db.VarChar(100)
-  answerValue String   @map("answer_value") @db.VarChar(255)
-  answerLabel String?  @map("answer_label") @db.VarChar(255)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id                   String      @id @default(uuid()) @db.Uuid
+  explorationSessionId String      @map("exploration_session_id") @db.Uuid
+  questionKey          QuestionKey @map("question_key")
+  answerValue          String      @map("answer_value") @db.VarChar(100)
 
-  session ExplorationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answeredAt DateTime @default(now()) @map("answered_at")
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  @@index([sessionId])
+  explorationSession ExplorationSession @relation(fields: [explorationSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([explorationSessionId, questionKey])
   @@index([questionKey])
-  @@unique([sessionId, questionKey])
   @@map("exploration_answers")
 }
 
+/**
+ * 문화행사 데이터
+ * 외부 문화행사 API 기반 행사 정보를 저장하거나 캐싱한다.
+ * EventItem은 Favorite, RecommendationItem, EventLog 기록 보존을 위해 hard delete하지 않는다.
+ * 외부 API에서 사라지거나 운영상 숨겨야 하는 경우 deletedAt 기반 soft delete로 처리한다.
+ * 목록/주변/추천 후보 조회에서는 deletedAt IS NULL 조건으로 필터링한다.
+ * 찜 목록/추천 결과 이력에서는 deletedAt이 있어도 조회 가능하게 유지할 수 있다.
+ */
+model EventItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  externalId String? @unique @map("external_id") @db.VarChar(255)
+
+  title     String  @db.VarChar(255)
+  realmCode String? @map("realm_code") @db.VarChar(50)
+  realmName String? @map("realm_name") @db.VarChar(100)
+
+  startDate DateTime? @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+
+  place   String? @db.VarChar(255)
+  address String?
+  lat     Float?
+  lng     Float?
+
+  imageUrl    String?  @map("image_url")
+  price       String?  @db.VarChar(255)
+  description String?
+  bookingUrl  String?  @map("booking_url")
+  isIndoor    Boolean? @map("is_indoor")
+  source      String?  @db.VarChar(100)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  recommendationItems RecommendationItem[]
+  favorites           Favorite[]
+  eventLogs           EventLog[]
+  tags                EventItemTag[]
+
+  @@index([realmCode])
+  @@index([realmName])
+  @@index([startDate, endDate])
+  @@index([lat, lng])
+  @@index([deletedAt])
+  @@map("event_items")
+}
+
+/**
+ * 추천/행사 태그
+ * MVP에서 바로 태그 기반 추천을 쓰지 않더라도,
+ * ERD v1.0과 정합성을 위해 포함한다.
+ */
 model Tag {
-  id        String   @id @default(uuid()) @db.Uuid
-  code      String   @unique @db.VarChar(100)
-  name      String   @db.VarChar(100)
-  type      String   @db.VarChar(50)
+  id   String  @id @default(uuid()) @db.Uuid
+  name String  @unique @db.VarChar(100)
+  type String? @db.VarChar(50)
+
   createdAt DateTime @default(now()) @map("created_at")
 
-  eventItemTags EventItemTag[]
+  eventItems EventItemTag[]
 
   @@index([type])
   @@map("tags")
 }
 
-model EventItem {
-  id          String    @id @default(uuid()) @db.Uuid
-  externalId  String?   @unique @map("external_id") @db.VarChar(255)
-  title       String    @db.VarChar(255)
-  description String?   @db.Text
-  realmCode   String?   @map("realm_code") @db.VarChar(50)
-  category    String?   @db.VarChar(100)
-  placeName   String?   @map("place_name") @db.VarChar(255)
-  address     String?   @db.VarChar(500)
-  latitude    Decimal?  @db.Decimal(10, 7)
-  longitude   Decimal?  @db.Decimal(10, 7)
-  startDate   DateTime? @map("start_date") @db.Date
-  endDate     DateTime? @map("end_date") @db.Date
-  priceText   String?   @map("price_text") @db.VarChar(255)
-  imageUrl    String?   @map("image_url") @db.Text
-  externalUrl String?   @map("external_url") @db.Text
-  isIndoor    Boolean?  @map("is_indoor")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  eventItemTags       EventItemTag[]
-  recommendationItems RecommendationItem[]
-  favorites           Favorite[]
-  eventLogs           EventLog[]
-
-  @@index([externalId])
-  @@index([realmCode])
-  @@index([startDate])
-  @@index([endDate])
-  @@index([isIndoor])
-  @@index([latitude, longitude])
-  @@map("event_items")
-}
-
+/**
+ * 행사-태그 N:M 관계
+ */
 model EventItemTag {
-  eventItemId String   @map("event_item_id") @db.Uuid
-  tagId       String   @map("tag_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          String @id @default(uuid()) @db.Uuid
+  eventItemId String @map("event_item_id") @db.Uuid
+  tagId       String @map("tag_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   eventItem EventItem @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
   tag       Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  @@id([eventItemId, tagId])
+  @@unique([eventItemId, tagId])
   @@index([tagId])
   @@map("event_item_tags")
 }
 
-model WeatherSnapshot {
-  id                       String   @id @default(uuid()) @db.Uuid
-  locationKey              String?  @map("location_key") @db.VarChar(255)
-  latitude                 Decimal? @db.Decimal(10, 7)
-  longitude                Decimal? @db.Decimal(10, 7)
-  weatherStatus            String?  @map("weather_status") @db.VarChar(100)
-  temperature              Decimal? @db.Decimal(5, 2)
-  precipitationType        String?  @map("precipitation_type") @db.VarChar(100)
-  precipitationProbability Int?     @map("precipitation_probability")
-  rawPayload               Json?    @map("raw_payload") @db.JsonB
-  createdAt                DateTime @default(now()) @map("created_at")
-
-  recommendationRuns RecommendationRun[]
-
-  @@index([locationKey])
-  @@index([createdAt])
-  @@map("weather_snapshots")
-}
-
+/**
+ * 추천 실행 기록
+ * 추천 실행은 항상 ExplorationSession을 기준으로 생성된다.
+ */
 model RecommendationRun {
-  id                   String   @id @default(uuid()) @db.Uuid
-  sessionId            String   @map("session_id") @db.Uuid
-  weatherSnapshotId    String?  @map("weather_snapshot_id") @db.Uuid
-  resultCount          Int      @map("result_count")
-  situationSummary     String?  @map("situation_summary") @db.Text
-  weatherSummary       String?  @map("weather_summary") @db.Text
-  recommendationReason String?  @map("recommendation_reason") @db.Text
-  createdAt            DateTime @default(now()) @map("created_at")
+  id                   String  @id @default(uuid()) @db.Uuid
+  explorationSessionId String  @map("exploration_session_id") @db.Uuid
+  userId               String? @map("user_id") @db.Uuid
 
-  session             ExplorationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  weatherSnapshot     WeatherSnapshot?   @relation(fields: [weatherSnapshotId], references: [id], onDelete: SetNull)
-  recommendationItems RecommendationItem[]
+  curation       String?
+  indoorForced   Boolean @default(false) @map("indoor_forced")
+  nearbyExpanded Boolean @default(false) @map("nearby_expanded")
+  resultCount    Int     @default(0) @map("result_count")
 
-  @@index([sessionId])
-  @@index([weatherSnapshotId])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  explorationSession ExplorationSession @relation(fields: [explorationSessionId], references: [id], onDelete: Cascade)
+  user               User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  items           RecommendationItem[]
+  weatherSnapshot WeatherSnapshot?
+  eventLogs       EventLog[]
+
+  @@index([explorationSessionId])
+  @@index([userId])
   @@index([createdAt])
   @@map("recommendation_runs")
 }
 
-model RecommendationItem {
-  id                  String   @id @default(uuid()) @db.Uuid
-  recommendationRunId String   @map("recommendation_run_id") @db.Uuid
-  eventItemId         String   @map("event_item_id") @db.Uuid
-  rank                Int
-  score               Decimal? @db.Decimal(8, 4)
-  reason              String?  @db.Text
-  createdAt           DateTime @default(now()) @map("created_at")
+/**
+ * 추천 당시 날씨/미세먼지 스냅샷
+ * 추천 실행 1건당 날씨 스냅샷 1건.
+ */
+model WeatherSnapshot {
+  id                  String @id @default(uuid()) @db.Uuid
+  recommendationRunId String @unique @map("recommendation_run_id") @db.Uuid
+
+  sido String? @db.VarChar(50)
+  nx   Int?
+  ny   Int?
+
+  skyLabel    String? @map("sky_label") @db.VarChar(50)
+  pty         Int?
+  temperature Float?
+
+  pm10Value Int?    @map("pm10_value")
+  pm10Grade String? @map("pm10_grade") @db.VarChar(50)
+  pm25Value Int?    @map("pm25_value")
+  pm25Grade String? @map("pm25_grade") @db.VarChar(50)
+
+  fetchedAt DateTime @default(now()) @map("fetched_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   recommendationRun RecommendationRun @relation(fields: [recommendationRunId], references: [id], onDelete: Cascade)
-  eventItem         EventItem         @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
+
+  @@index([sido])
+  @@index([fetchedAt])
+  @@map("weather_snapshots")
+}
+
+/**
+ * 추천 결과 항목
+ * 추천 실행당 최대 7개 저장.
+ */
+model RecommendationItem {
+  id                  String @id @default(uuid()) @db.Uuid
+  recommendationRunId String @map("recommendation_run_id") @db.Uuid
+  eventItemId         String @map("event_item_id") @db.Uuid
+
+  rank        Int
+  score       Float
+  distanceKm  Float?  @map("distance_km")
+  reason      String?
+  matchedTags Json?   @map("matched_tags")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  recommendationRun RecommendationRun @relation(fields: [recommendationRunId], references: [id], onDelete: Cascade)
+  eventItem         EventItem         @relation(fields: [eventItemId], references: [id], onDelete: Restrict)
 
   @@unique([recommendationRunId, eventItemId])
   @@unique([recommendationRunId, rank])
-  @@index([recommendationRunId])
   @@index([eventItemId])
   @@index([rank])
   @@map("recommendation_items")
 }
 
+/**
+ * 관심행사
+ * 로그인 사용자만 저장 가능.
+ */
 model Favorite {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  eventItemId String   @map("event_item_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          String @id @default(uuid()) @db.Uuid
+  userId      String @map("user_id") @db.Uuid
+  eventItemId String @map("event_item_id") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eventItem EventItem @relation(fields: [eventItemId], references: [id], onDelete: Cascade)
+  eventItem EventItem @relation(fields: [eventItemId], references: [id], onDelete: Restrict)
 
   @@unique([userId, eventItemId])
-  @@index([userId])
   @@index([eventItemId])
-  @@index([createdAt])
   @@map("favorites")
 }
 
+/**
+ * 이벤트 로그
+ * PRD 성공지표 및 이탈률 측정을 위한 핵심 이벤트를 저장한다.
+ * 질문 답변 자체는 마지막 추천 실행 시 ExplorationAnswer에 일괄 저장한다.
+ * EventLog는 질문별 이탈률 측정을 위한 step 정보를 가진다.
+ */
 model EventLog {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String?  @map("user_id") @db.Uuid
-  sessionId   String?  @map("session_id") @db.Uuid
-  eventItemId String?  @map("event_item_id") @db.Uuid
-  eventName   String   @map("event_name") @db.VarChar(100)
-  metadata    Json?    @db.JsonB
-  createdAt   DateTime @default(now()) @map("created_at")
+  id String @id @default(uuid()) @db.Uuid
 
-  user      User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  session   ExplorationSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  eventItem EventItem?          @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+  explorationSessionId String? @map("exploration_session_id") @db.Uuid
+  userId               String? @map("user_id") @db.Uuid
+  eventItemId          String? @map("event_item_id") @db.Uuid
+  recommendationRunId  String? @map("recommendation_run_id") @db.Uuid
 
+  eventName EventName @map("event_name")
+  step      String?   @db.VarChar(50)
+  pagePath  String?   @map("page_path")
+  payload   Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  explorationSession ExplorationSession? @relation(fields: [explorationSessionId], references: [id], onDelete: SetNull)
+  user               User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  eventItem          EventItem?          @relation(fields: [eventItemId], references: [id], onDelete: SetNull)
+  recommendationRun  RecommendationRun?  @relation(fields: [recommendationRunId], references: [id], onDelete: SetNull)
+
+  @@index([explorationSessionId])
   @@index([userId])
-  @@index([sessionId])
-  @@index([eventItemId])
   @@index([eventName])
+  @@index([step])
   @@index([createdAt])
   @@map("event_logs")
 }
