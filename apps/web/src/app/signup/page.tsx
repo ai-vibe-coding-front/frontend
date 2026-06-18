@@ -27,8 +27,8 @@ export default function SignupPage() {
     control,
     handleSubmit,
     watch,
-    setValue,
     setError,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     defaultValues: { nickname: '', email: '', password: '', passwordConfirm: '', agreed: false },
@@ -36,7 +36,6 @@ export default function SignupPage() {
   });
 
   const agreed = watch('agreed');
-  const password = watch('password');
 
   const onSubmit = async (data: SignupFormData) => {
     try {
@@ -52,6 +51,8 @@ export default function SignupPage() {
     } catch (error) {
       if (error instanceof ApiClientError && error.errorCode === 'EMAIL_ALREADY_EXISTS') {
         setError('email', { message: '이미 사용 중인 이메일입니다' });
+      } else {
+        setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
       }
     }
   };
@@ -81,6 +82,7 @@ export default function SignupPage() {
               rules={{
                 required: '닉네임을 입력해주세요',
                 maxLength: { value: 20, message: '닉네임은 20자 이하로 입력해주세요' },
+                validate: (v) => v.trim().length > 0 || '닉네임을 입력해주세요',
               }}
               render={({ field }) => (
                 <Input placeholder="닉네임" value={field.value} onChange={field.onChange} />
@@ -114,7 +116,15 @@ export default function SignupPage() {
                 pattern: { value: /^(?=.*[A-Za-z])(?=.*\d).+$/, message: '영문과 숫자를 조합해주세요' },
               }}
               render={({ field }) => (
-                <Input placeholder="비밀번호" type="password" value={field.value} onChange={field.onChange} />
+                <Input
+                  placeholder="비밀번호"
+                  type="password"
+                  value={field.value}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    trigger('passwordConfirm');
+                  }}
+                />
               )}
             />
             {errors.password && <p className={fieldErrorClass}>{errors.password.message}</p>}
@@ -126,7 +136,7 @@ export default function SignupPage() {
               control={control}
               rules={{
                 required: '비밀번호 확인을 입력해주세요',
-                validate: (value) => value === password || '비밀번호가 일치하지 않습니다',
+                validate: (value) => value === watch('password') || '비밀번호가 일치하지 않습니다',
               }}
               render={({ field }) => (
                 <Input placeholder="비밀번호 확인" type="password" value={field.value} onChange={field.onChange} />
@@ -137,22 +147,30 @@ export default function SignupPage() {
 
           {/* 개인정보 수집동의 */}
           <div className="flex flex-col gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setValue('agreed', !agreed)}
-              className="flex items-center gap-[10px]"
-            >
-              <div className={`size-[18px] rounded-[5px] border shrink-0 flex items-center justify-center transition-colors ${agreed ? 'bg-[#8edfd2] border-[#8edfd2]' : 'bg-white border-[#e2e2e2]'}`}>
-                {agreed && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path d="M1 4l3 3 5-6" stroke="#245b6b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-              <span className="text-[13px] text-[rgba(35,39,47,0.45)] leading-[19.5px]">
-                (필수) 개인정보 수집동의
-              </span>
-            </button>
+            <Controller
+              name="agreed"
+              control={control}
+              rules={{ validate: (v) => v || '개인정보 수집에 동의해주세요' }}
+              render={({ field }) => (
+                <button
+                  type="button"
+                  onClick={() => field.onChange(!field.value)}
+                  className="flex items-center gap-[10px]"
+                >
+                  <div className={`size-[18px] rounded-[5px] border shrink-0 flex items-center justify-center transition-colors ${field.value ? 'bg-[#8edfd2] border-[#8edfd2]' : 'bg-white border-[#e2e2e2]'}`}>
+                    {field.value && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 4l3 3 5-6" stroke="#245b6b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-[13px] text-[rgba(35,39,47,0.45)] leading-[19.5px]">
+                    (필수) 개인정보 수집동의
+                  </span>
+                </button>
+              )}
+            />
+            {errors.agreed && <p className={fieldErrorClass}>{errors.agreed.message}</p>}
 
             {/* 개인정보 테이블 */}
             <div className="bg-white border border-[#e2e2e2] rounded-[10px] overflow-hidden">
@@ -170,6 +188,8 @@ export default function SignupPage() {
               </div>
             </div>
           </div>
+
+          {errors.root && <p className={fieldErrorClass}>{errors.root.message}</p>}
 
           <div className="pt-6">
             <button
