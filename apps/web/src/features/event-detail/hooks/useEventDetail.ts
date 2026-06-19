@@ -10,6 +10,7 @@ export function useEventDetail(id: string) {
   return useQuery({
     queryKey: ['event', id],
     queryFn: () => fetchEventDetail(id),
+    enabled: !!id,
     retry: (failureCount, error) => {
       if (error instanceof ApiClientError && error.status === 404) return false;
       return failureCount < 2;
