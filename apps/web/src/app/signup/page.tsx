@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { Input } from '@/components/common/Input';
 import { CTAButton } from '@/components/common/CTAButton';
 import { apiClient, ApiClientError } from '@/lib/api-client';
@@ -28,7 +28,6 @@ export default function SignupPage() {
     register,
     control,
     handleSubmit,
-    watch,
     getValues,
     setError,
     trigger,
@@ -38,7 +37,7 @@ export default function SignupPage() {
     mode: 'onTouched',
   });
 
-  const agreed = watch('agreed');
+  const agreed = useWatch({ control, name: 'agreed' });
 
   // TODO: login_started 이벤트 로그 수집 — useEffect 마운트 시점, API 구현 후 연결
 
