@@ -22,17 +22,14 @@ export async function POST(request: Request) {
     const user = await signup(email, password, resolvedNickname);
     return created({ user });
   } catch (error) {
-    if (error instanceof Error && error.message === 'EMAIL_ALREADY_EXISTS') {
+    const isEmailConflict =
+      (error instanceof Error && error.message === 'EMAIL_ALREADY_EXISTS') ||
+      (error as { code?: string })?.code === 'P2002';
+
+    if (isEmailConflict) {
       return fail('EMAIL_ALREADY_EXISTS', '이미 사용 중인 이메일입니다', 409);
     }
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      (error as { code: string }).code === 'P2002'
-    ) {
-      return fail('EMAIL_ALREADY_EXISTS', '이미 사용 중인 이메일입니다', 409);
-    }
+    console.error('[signup]', error);
     return fail('INTERNAL_ERROR', '서버 오류가 발생했습니다', 500);
   }
 }
