@@ -16,13 +16,22 @@ export async function POST(request: Request) {
   }
 
   const { email, password, nickname } = parsed.data;
-  const resolvedNickname = nickname ?? email.split('@')[0];
+  const resolvedNickname = nickname?.trim() || email.split('@')[0];
 
   try {
     const user = await signup(email, password, resolvedNickname);
+    // TODO: signup_completed 이벤트 로그 수집 (event_logs 테이블, user_id: user.id)
     return created({ user });
   } catch (error) {
     if (error instanceof Error && error.message === 'EMAIL_ALREADY_EXISTS') {
+      return fail('EMAIL_ALREADY_EXISTS', '이미 사용 중인 이메일입니다', 409);
+    }
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code: string }).code === 'P2002'
+    ) {
       return fail('EMAIL_ALREADY_EXISTS', '이미 사용 중인 이메일입니다', 409);
     }
     return fail('INTERNAL_ERROR', '서버 오류가 발생했습니다', 500);
