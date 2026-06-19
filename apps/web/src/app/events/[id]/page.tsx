@@ -92,21 +92,15 @@ export default function EventDetailPage() {
   const handleHeartClick = () => {
     if (!isLoggedIn) {
       setShowLoginModal(true);
-      // TODO: favorite_attempt 이벤트 로그 수집 (이벤트 로그 API 구현 후 연결)
       return;
     }
     setLiked((prev) => !prev);
-    // TODO: POST/DELETE /api/favorites/:id 호출 (찜 API 이슈에서 연결)
-    // TODO: favorite_create / favorite_attempt 이벤트 로그 수집
   };
 
   const handleExternalLink = () => {
     if (!event.externalUrl) return;
-    // TODO: external_link_clicked 이벤트 로그 수집 (이벤트 로그 API 구현 후 연결)
     window.open(event.externalUrl, '_blank', 'noopener,noreferrer');
   };
-
-  // TODO: 이벤트 로그 수집 이슈 작업 시 useSearchParams()로 진입 경로 구분하여 수집
 
   return (
     <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
