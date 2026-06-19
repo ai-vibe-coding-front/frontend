@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/common/Input';
+import { CTAButton } from '@/components/common/CTAButton';
 import { apiClient, ApiClientError } from '@/lib/api-client';
 import { ROUTES } from '@/constants/routes';
 
@@ -24,6 +25,7 @@ const fieldErrorClass = 'text-[12px] text-red-500 leading-[18px] pl-1';
 export default function SignupPage() {
   const router = useRouter();
   const {
+    register,
     control,
     handleSubmit,
     watch,
@@ -37,6 +39,12 @@ export default function SignupPage() {
   });
 
   const agreed = watch('agreed');
+
+  const passwordField = register('password', {
+    required: '비밀번호를 입력해주세요',
+    minLength: { value: 8, message: '비밀번호는 8자 이상이어야 합니다' },
+    pattern: { value: /^(?=.*[A-Za-z])(?=.*\d).+$/, message: '영문과 숫자를 조합해주세요' },
+  });
 
   const onSubmit = async (data: SignupFormData) => {
     try {
@@ -77,71 +85,47 @@ export default function SignupPage() {
         {/* 폼 */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <Controller
-              name="nickname"
-              control={control}
-              rules={{
+            <Input
+              placeholder="닉네임"
+              {...register('nickname', {
                 required: '닉네임을 입력해주세요',
                 maxLength: { value: 20, message: '닉네임은 20자 이하로 입력해주세요' },
                 validate: (v) => v.trim().length > 0 || '닉네임을 입력해주세요',
-              }}
-              render={({ field }) => (
-                <Input placeholder="닉네임" value={field.value} onChange={field.onChange} />
-              )}
+              })}
             />
             {errors.nickname && <p className={fieldErrorClass}>{errors.nickname.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <Controller
-              name="email"
-              control={control}
-              rules={{
+            <Input
+              placeholder="이메일"
+              type="email"
+              {...register('email', {
                 required: '이메일을 입력해주세요',
                 pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '올바른 이메일 주소를 입력해주세요' },
-              }}
-              render={({ field }) => (
-                <Input placeholder="이메일" type="email" value={field.value} onChange={field.onChange} />
-              )}
+              })}
             />
             {errors.email && <p className={fieldErrorClass}>{errors.email.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <Controller
-              name="password"
-              control={control}
-              rules={{
-                required: '비밀번호를 입력해주세요',
-                minLength: { value: 8, message: '비밀번호는 8자 이상이어야 합니다' },
-                pattern: { value: /^(?=.*[A-Za-z])(?=.*\d).+$/, message: '영문과 숫자를 조합해주세요' },
-              }}
-              render={({ field }) => (
-                <Input
-                  placeholder="비밀번호"
-                  type="password"
-                  value={field.value}
-                  onChange={(e) => {
-                    field.onChange(e);
-                    trigger('passwordConfirm');
-                  }}
-                />
-              )}
+            <Input
+              placeholder="비밀번호"
+              type="password"
+              {...passwordField}
+              onChange={(e) => { passwordField.onChange(e); trigger('passwordConfirm'); }}
             />
             {errors.password && <p className={fieldErrorClass}>{errors.password.message}</p>}
           </div>
 
           <div className="flex flex-col gap-1">
-            <Controller
-              name="passwordConfirm"
-              control={control}
-              rules={{
+            <Input
+              placeholder="비밀번호 확인"
+              type="password"
+              {...register('passwordConfirm', {
                 required: '비밀번호 확인을 입력해주세요',
                 validate: (value) => value === getValues('password') || '비밀번호가 일치하지 않습니다',
-              }}
-              render={({ field }) => (
-                <Input placeholder="비밀번호 확인" type="password" value={field.value} onChange={field.onChange} />
-              )}
+              })}
             />
             {errors.passwordConfirm && <p className={fieldErrorClass}>{errors.passwordConfirm.message}</p>}
           </div>
@@ -191,15 +175,10 @@ export default function SignupPage() {
           {errors.root && <p className={fieldErrorClass}>{errors.root.message}</p>}
 
           <div className="pt-6">
-            <button
-              type="submit"
+            <CTAButton
+              label={isSubmitting ? '가입 중...' : '가입하기'}
               disabled={!agreed || isSubmitting}
-              className="bg-[#8edfd2] w-full flex items-center justify-center px-[88px] py-3 rounded-2xl shadow-[0px_10px_12px_rgba(59,38,20,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-            >
-              <span className="font-semibold text-sm text-[#245b6b] leading-[21px] whitespace-nowrap">
-                {isSubmitting ? '가입 중...' : '가입하기'}
-              </span>
-            </button>
+            />
           </div>
         </form>
 
