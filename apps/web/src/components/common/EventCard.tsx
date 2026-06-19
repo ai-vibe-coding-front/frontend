@@ -1,27 +1,33 @@
 'use client';
+import type { EventItem } from "@prisma/client";
 import { CategoryBadge } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
 
-type Category =
-  | "전시"
-  | "음악/콘서트"
-  | "행사/축제"
-  | "연극"
-  | "뮤지컬/오페라"
-  | "국악"
-  | "무용/발레"
-  | "아동/가족"
-  | "교육/체험";
-
-export interface EventCardData {
-  id: string;
-  category: Category;
-  title: string;
-  venue: string;
-  period: string;
-  dDay: number;
-  imageUrl?: string;
+export type EventCardData = Pick<
+  EventItem,
+  "id" | "title" | "realmName" | "place" | "startDate" | "endDate" | "imageUrl"
+> & {
   liked?: boolean;
+};
+
+function formatPeriod(startDate: Date | null, endDate: Date | null): string {
+  const fmt = (d: Date) =>
+    d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
+      .replace(/\. /g, ".")
+      .replace(/\.$/, "");
+  if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+  if (startDate) return fmt(startDate);
+  if (endDate) return fmt(endDate);
+  return "";
+}
+
+function calcDDay(endDate: Date | null): number {
+  if (!endDate) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+  return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface EventCardProps {
@@ -81,8 +87,8 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         )}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-          <CategoryBadge category={event.category} />
-          <DDayBadge days={event.dDay} />
+          <CategoryBadge category={(event.realmName ?? "") as Parameters<typeof CategoryBadge>[0]["category"]} />
+          <DDayBadge days={calcDDay(event.endDate)} />
         </div>
         <button
           type="button"
@@ -102,13 +108,13 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         <div className={metaRowClass}>
           <PinIcon />
           <span className="text-[11px] text-[#8c6e63] leading-[18px] truncate">
-            {event.venue}
+            {event.place}
           </span>
         </div>
         <div className={metaRowClass}>
           <CalendarIcon />
           <span className="text-[11px] text-[#bf8b6e] leading-[17px]">
-            {event.period}
+            {formatPeriod(event.startDate, event.endDate)}
           </span>
         </div>
       </div>
