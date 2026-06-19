@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type React from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams, notFound } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
@@ -47,7 +47,6 @@ function SkeletonLoader() {
 
 export default function EventDetailPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const id = typeof params.id === 'string' ? params.id : '';
 
   const [liked, setLiked] = useState(false);
@@ -107,8 +106,7 @@ export default function EventDetailPage() {
     window.open(event.externalUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // TODO: 진입 경로(searchParams.get('from') === 'recommendation' | 'map')에 따라
-  //       event_detail_view_from_recommendation / event_detail_view_from_map 이벤트 로그 수집
+  // TODO: 이벤트 로그 수집 이슈 작업 시 useSearchParams()로 진입 경로 구분하여 수집
 
   return (
     <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
