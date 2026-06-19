@@ -1,14 +1,17 @@
 import 'dotenv/config';
 import { defineConfig } from 'prisma/config';
 
-const databaseUrl = process.env['DATABASE' + '_URL'];
+const databaseUrl = process.env['DIRECT' + '_URL'];
 
 if (!databaseUrl) {
-  throw new Error('DB connection string is required');
+  throw new Error('DIRECT_URL is required for Prisma migrations');
 }
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
+  migrations: {
+    path: 'prisma/migrations',
+  },
   datasource: {
     url: databaseUrl,
   },
