@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { WeatherCard } from "@/features/recommendations/WeatherCard";
 import { EventCard } from "@/components/common/EventCard";
 import type { EventCardData } from "@/components/common/EventCard";
 
+// TODO: 실제 API 연동 시 제거
 const MOCK_EVENTS: EventCardData[] = [
   {
     id: "1",
@@ -34,13 +36,13 @@ export default async function RecommendationsPage({ searchParams }: Props) {
   const hasResults = empty !== "true";
 
   return (
-    <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
+    <div className="bg-[#f9f4ec] h-screen flex items-center justify-center">
       <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
 
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
           <Link href="/" className="size-4 shrink-0">
-            <img src="/icons/back-arrow.svg" alt="뒤로가기" className="size-full" />
+            <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} />
           </Link>
           <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
             오늘의 추천
@@ -49,7 +51,8 @@ export default async function RecommendationsPage({ searchParams }: Props) {
 
         {/* Content */}
         <div className="flex-1 flex flex-col px-6 pt-3 pb-4 gap-6 overflow-y-auto">
-          <WeatherCard />
+          {/* TODO: 실제 날씨 API 연동 시 props 교체 */}
+          <WeatherCard location="서울" weather="sunny" temperature={24} />
 
           <div className="flex flex-col gap-3">
             <p className="font-bold text-[20px] text-[#251e19] tracking-[-0.5px] leading-[30px]">
