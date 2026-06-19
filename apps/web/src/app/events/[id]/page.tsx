@@ -110,7 +110,7 @@ export default function EventDetailPage() {
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
           <Link href="/" className="size-4 shrink-0">
-            <img src="/icons/back-arrow.svg" alt="뒤로가기" className="size-full" />
+            <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
           </Link>
           <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
             MUUD
