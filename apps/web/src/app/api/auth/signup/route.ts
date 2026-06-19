@@ -20,7 +20,6 @@ export async function POST(request: Request) {
 
   try {
     const user = await signup(email, password, resolvedNickname);
-    // TODO: signup_completed 이벤트 로그 수집 (event_logs 테이블, user_id: user.id)
     return created({ user });
   } catch (error) {
     if (error instanceof Error && error.message === 'EMAIL_ALREADY_EXISTS') {
