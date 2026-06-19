@@ -39,7 +39,6 @@ export default function LoginPage() {
           body: JSON.stringify({ email: data.email, password: data.password }),
         },
       );
-      localStorage.setItem('accessToken', result.accessToken);
       router.push(ROUTES.home);
     } catch (error) {
       if (error instanceof ApiClientError) {
