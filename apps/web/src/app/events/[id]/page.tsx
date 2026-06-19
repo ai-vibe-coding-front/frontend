@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams, notFound } from 'next/navigation';
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
@@ -62,7 +63,7 @@ export default function EventDetailPage() {
         <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
           <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
             <Link href="/" className="size-4 shrink-0">
-              <img src="/icons/back-arrow.svg" alt="뒤로가기" className="size-full" />
+              <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
             </Link>
             <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</p>
           </div>
@@ -123,7 +124,7 @@ export default function EventDetailPage() {
           {/* 메인 이미지 */}
           <div className="rounded-[26px] shadow-[0px_4px_20px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
             {event.imageUrl ? (
-              <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+              <Image src={event.imageUrl!} alt={event.title} fill className="object-cover" />
             ) : (
               <div className="w-full h-full bg-[#d9cfc5]" />
             )}
