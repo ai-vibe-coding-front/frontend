@@ -32,7 +32,7 @@ export default function SignupPage() {
     getValues,
     setError,
     trigger,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, touchedFields },
   } = useForm<SignupFormData>({
     defaultValues: { nickname: '', email: '', password: '', passwordConfirm: '', agreed: false },
     mode: 'onTouched',
@@ -115,7 +115,7 @@ export default function SignupPage() {
               placeholder="비밀번호"
               type="password"
               {...passwordField}
-              onChange={(e) => { passwordField.onChange(e); trigger('passwordConfirm'); }}
+              onChange={(e) => { passwordField.onChange(e); if (touchedFields.passwordConfirm) trigger('passwordConfirm'); }}
             />
             {errors.password && <p className={fieldErrorClass}>{errors.password.message}</p>}
           </div>
