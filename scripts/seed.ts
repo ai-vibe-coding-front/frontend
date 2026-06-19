@@ -10,81 +10,87 @@ const prisma = new PrismaClient({
 
 const API_KEY = process.env.PUBLIC_DATA_API_KEY;
 const ROWS_PER_PAGE = 100;
-const BASE_URL = 'http://www.culture.go.kr/openapi/rest/publicperformancedisplays/period';
-const SOURCE = '서울문화포털';
+const BASE_URL = 'https://apis.data.go.kr/B553457/cultureinfo';
+const SOURCE = '공공데이터포털';
 
-interface ApiItem {
-  seq?: string;
-  title?: string;
-  realmName?: string;
-  realmCode?: string;
-  place?: string;
-  placeAddr?: string;
-  gpsX?: string;
-  gpsY?: string;
-  startDate?: string;
-  endDate?: string;
-  price?: string;
-  imgUrl?: string;
-  url?: string;
+// XML에서 단일 태그 값 추출
+function getTagValue(xml: string, tag: string): string {
+  const match = xml.match(new RegExp(`<${tag}>([^<]*)<\/${tag}>`));
+  return match ? match[1].trim() : '';
 }
 
-interface ApiResponse {
-  msgBody: {
-    perforList: ApiItem | ApiItem[];
-    totalCount: string | number;
-  };
+// XML에서 <item>...</item> 블록 전체 추출
+function getAllItems(xml: string): string[] {
+  return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
 }
 
-function parseDate(dateStr?: string): Date | null {
-  if (!dateStr) return null;
-  const clean = String(dateStr).replace(/-/g, '').trim();
-  if (clean.length !== 8) return null;
-  const year = parseInt(clean.slice(0, 4), 10);
-  const month = parseInt(clean.slice(4, 6), 10) - 1;
-  const day = parseInt(clean.slice(6, 8), 10);
+function parseDate(dateStr: string): Date | null {
+  if (!dateStr || dateStr.length !== 8) return null;
+  const year = parseInt(dateStr.slice(0, 4), 10);
+  const month = parseInt(dateStr.slice(4, 6), 10) - 1;
+  const day = parseInt(dateStr.slice(6, 8), 10);
   const d = new Date(year, month, day);
   return isNaN(d.getTime()) ? null : d;
 }
 
-async function fetchPage(page: number): Promise<{ items: ApiItem[]; totalCount: number }> {
-  const today = new Date();
-  const from = today.toISOString().slice(0, 10).replace(/-/g, '');
-  const oneYearLater = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-  const to = oneYearLater.toISOString().slice(0, 10).replace(/-/g, '');
-
-  const url = `${BASE_URL}?serviceKey=${API_KEY}&cPage=${page}&rows=${ROWS_PER_PAGE}&from=${from}&to=${to}&_type=json`;
+// period2: seq 목록 + totalCount 반환
+async function fetchSeqList(page: number): Promise<{ seqs: string[]; totalCount: number }> {
+  const url = `${BASE_URL}/period2?serviceKey=${API_KEY}&PageNo=${page}&numOfrows=${ROWS_PER_PAGE}`;
   const res = await fetch(url);
+  if (!res.ok) throw new Error(`period2 API 오류: ${res.status}`);
 
-  if (!res.ok) throw new Error(`API 호출 실패: ${res.status} ${url}`);
+  const xml = await res.text();
+  const totalCount = parseInt(getTagValue(xml, 'totalCount'), 10) || 0;
+  const items = getAllItems(xml);
+  const seqs = items.map((item) => getTagValue(item, 'seq')).filter(Boolean);
 
-  const data = (await res.json()) as ApiResponse;
-  const body = data.msgBody;
-
-  const rawList = body.perforList;
-  const items: ApiItem[] = Array.isArray(rawList) ? rawList : rawList ? [rawList] : [];
-  const totalCount = Number(body.totalCount) || 0;
-
-  return { items, totalCount };
+  return { seqs, totalCount };
 }
 
-async function upsertItem(item: ApiItem): Promise<'created' | 'updated' | 'skipped'> {
-  if (!item.title) return 'skipped';
+// detail2: seq 기준 상세 정보 반환
+async function fetchDetail(seq: string): Promise<Record<string, string> | null> {
+  const url = `${BASE_URL}/detail2?serviceKey=${API_KEY}&seq=${seq}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+
+  const xml = await res.text();
+  const items = getAllItems(xml);
+  if (items.length === 0) return null;
+
+  const item = items[0];
+  return {
+    seq: getTagValue(item, 'seq'),
+    title: getTagValue(item, 'title'),
+    realmName: getTagValue(item, 'realmName'),
+    place: getTagValue(item, 'place'),
+    placeAddr: getTagValue(item, 'placeAddr'),
+    gpsX: getTagValue(item, 'gpsX'),
+    gpsY: getTagValue(item, 'gpsY'),
+    startDate: getTagValue(item, 'startDate'),
+    endDate: getTagValue(item, 'endDate'),
+    price: getTagValue(item, 'price'),
+    imgUrl: getTagValue(item, 'imgUrl'),
+    url: getTagValue(item, 'url'),
+  };
+}
+
+async function upsertItem(detail: Record<string, string>): Promise<'created' | 'updated' | 'skipped'> {
+  if (!detail.title) return 'skipped';
 
   const data = {
-    title: item.title,
-    externalId: item.seq ?? null,
-    realmName: item.realmName ?? null,
-    realmCode: item.realmCode ?? null,
-    place: item.place ?? null,
-    address: item.placeAddr ?? null,
-    lng: item.gpsX ? parseFloat(item.gpsX) : null,
-    lat: item.gpsY ? parseFloat(item.gpsY) : null,
-    startDate: parseDate(item.startDate),
-    endDate: parseDate(item.endDate),
-    price: item.price ?? null,
-    imageUrl: item.imgUrl ?? null,
-    bookingUrl: item.url ?? null,
+    externalId: detail.seq || null,
+    title: detail.title,
+    realmName: detail.realmName || null,
+    realmCode: null, // API 미제공
+    place: detail.place || null,
+    address: detail.placeAddr || null,
+    lng: detail.gpsX ? parseFloat(detail.gpsX) : null,
+    lat: detail.gpsY ? parseFloat(detail.gpsY) : null,
+    startDate: parseDate(detail.startDate),
+    endDate: parseDate(detail.endDate),
+    price: detail.price || null,
+    imageUrl: detail.imgUrl || null,
+    bookingUrl: detail.url || null,
     source: SOURCE,
   };
 
@@ -93,12 +99,12 @@ async function upsertItem(item: ApiItem): Promise<'created' | 'updated' | 'skipp
     return 'created';
   }
 
-  // description, isIndoor는 AI 생성 필드이므로 update에서 제외
   const existing = await prisma.eventItem.findUnique({
     where: { externalId: data.externalId },
     select: { id: true },
   });
 
+  // description, isIndoor는 AI 생성 필드이므로 update에서 제외
   await prisma.eventItem.upsert({
     where: { externalId: data.externalId },
     create: data,
@@ -128,33 +134,45 @@ async function main() {
 
   console.log('seed 시작...');
 
-  const { items: firstItems, totalCount } = await fetchPage(1);
+  // STEP 1: period2로 전체 seq 수집
+  const { seqs: firstSeqs, totalCount } = await fetchSeqList(1);
   const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
-
   console.log(`전체 ${totalCount}건, ${totalPages}페이지`);
 
+  const allSeqs: string[] = [...firstSeqs];
+
+  for (let page = 2; page <= totalPages; page++) {
+    console.log(`  period2 페이지 ${page}/${totalPages} 수집 중...`);
+    const { seqs } = await fetchSeqList(page);
+    allSeqs.push(...seqs);
+  }
+
+  console.log(`seq 수집 완료: ${allSeqs.length}건 → detail2 호출 시작`);
+
+  // STEP 2: 각 seq마다 detail2 호출 후 upsert
   let created = 0;
   let updated = 0;
   let skipped = 0;
 
-  async function processItems(items: ApiItem[]) {
-    for (const item of items) {
-      const result = await upsertItem(item);
-      if (result === 'created') created++;
-      else if (result === 'updated') updated++;
-      else skipped++;
+  for (let i = 0; i < allSeqs.length; i++) {
+    const seq = allSeqs[i];
+    process.stdout.write(`  [${i + 1}/${allSeqs.length}] seq:${seq} ... `);
+
+    const detail = await fetchDetail(seq);
+    if (!detail) {
+      console.log('skip (detail2 오류)');
+      skipped++;
+      continue;
     }
+
+    const result = await upsertItem(detail);
+    console.log(result);
+    if (result === 'created') created++;
+    else if (result === 'updated') updated++;
+    else skipped++;
   }
 
-  await processItems(firstItems);
-
-  for (let page = 2; page <= totalPages; page++) {
-    console.log(`  페이지 ${page}/${totalPages} 처리 중...`);
-    const { items } = await fetchPage(page);
-    await processItems(items);
-  }
-
-  console.log(`완료 — 신규: ${created}, 수정: ${updated}, 건너뜀(title 없음): ${skipped}`);
+  console.log(`\n완료 — 신규: ${created}, 수정: ${updated}, 건너뜀: ${skipped}`);
 }
 
 main()
