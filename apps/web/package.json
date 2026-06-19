@@ -11,6 +11,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:status": "prisma migrate status",
+    "db:deploy": "prisma migrate deploy",
+    "db:resolve": "prisma migrate resolve",
     "db:studio": "prisma studio",
     "format": "prettier . --write",
     "format:check": "prettier . --check"
@@ -23,7 +26,9 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "tailwind-merge": "^3.6.0"
+    "react-hook-form": "^7.79.0",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@figma/code-connect": "^1.4.8",
