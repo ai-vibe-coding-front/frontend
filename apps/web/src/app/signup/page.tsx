@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useWatch } from 'react-hook-form';
 import { Input } from '@/components/common/Input';
 import { CTAButton } from '@/components/common/CTAButton';
 import { apiClient, ApiClientError } from '@/lib/api-client';
@@ -28,7 +28,6 @@ export default function SignupPage() {
     register,
     control,
     handleSubmit,
-    watch,
     getValues,
     setError,
     trigger,
@@ -38,9 +37,7 @@ export default function SignupPage() {
     mode: 'onTouched',
   });
 
-  const agreed = watch('agreed');
-
-  // TODO: login_started 이벤트 로그 수집 — useEffect 마운트 시점, API 구현 후 연결
+  const agreed = useWatch({ control, name: 'agreed' });
 
   const passwordField = register('password', {
     required: '비밀번호를 입력해주세요',
@@ -57,7 +54,6 @@ export default function SignupPage() {
           body: JSON.stringify({ email: data.email, password: data.password, nickname: data.nickname }),
         },
       );
-      // TODO: signup_completed 이벤트 로그 수집 (API 구현 후 연결)
       router.push(ROUTES.onboarding);
     } catch (error) {
       if (error instanceof ApiClientError && error.errorCode === 'EMAIL_ALREADY_EXISTS') {
