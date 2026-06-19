@@ -13,13 +13,11 @@ const ROWS_PER_PAGE = 100;
 const BASE_URL = 'https://apis.data.go.kr/B553457/cultureinfo';
 const SOURCE = '공공데이터포털';
 
-// XML에서 단일 태그 값 추출
 function getTagValue(xml: string, tag: string): string {
   const match = xml.match(new RegExp(`<${tag}>([^<]*)<\/${tag}>`));
   return match ? match[1].trim() : '';
 }
 
-// XML에서 <item>...</item> 블록 전체 추출
 function getAllItems(xml: string): string[] {
   return [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
 }
@@ -33,9 +31,8 @@ function parseDate(dateStr: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-// period2: seq 목록 + totalCount 반환
 async function fetchSeqList(page: number): Promise<{ seqs: string[]; totalCount: number }> {
-  const url = `${BASE_URL}/period2?serviceKey=${API_KEY}&PageNo=${page}&numOfrows=${ROWS_PER_PAGE}`;
+  const url = `${BASE_URL}/period2?serviceKey=${encodeURIComponent(API_KEY!)}&PageNo=${page}&numOfrows=${ROWS_PER_PAGE}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`period2 API 오류: ${res.status}`);
 
@@ -47,9 +44,8 @@ async function fetchSeqList(page: number): Promise<{ seqs: string[]; totalCount:
   return { seqs, totalCount };
 }
 
-// detail2: seq 기준 상세 정보 반환
 async function fetchDetail(seq: string): Promise<Record<string, string> | null> {
-  const url = `${BASE_URL}/detail2?serviceKey=${API_KEY}&seq=${seq}`;
+  const url = `${BASE_URL}/detail2?serviceKey=${encodeURIComponent(API_KEY!)}&seq=${seq}`;
   const res = await fetch(url);
   if (!res.ok) return null;
 
@@ -81,7 +77,7 @@ async function upsertItem(detail: Record<string, string>): Promise<'created' | '
     externalId: detail.seq || null,
     title: detail.title,
     realmName: detail.realmName || null,
-    realmCode: null, // API 미제공
+    realmCode: null,
     place: detail.place || null,
     address: detail.placeAddr || null,
     lng: detail.gpsX ? parseFloat(detail.gpsX) : null,
@@ -104,7 +100,6 @@ async function upsertItem(detail: Record<string, string>): Promise<'created' | '
     select: { id: true },
   });
 
-  // description, isIndoor는 AI 생성 필드이므로 update에서 제외
   await prisma.eventItem.upsert({
     where: { externalId: data.externalId },
     create: data,
@@ -134,7 +129,6 @@ async function main() {
 
   console.log('seed 시작...');
 
-  // STEP 1: period2로 전체 seq 수집
   const { seqs: firstSeqs, totalCount } = await fetchSeqList(1);
   const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
   console.log(`전체 ${totalCount}건, ${totalPages}페이지`);
@@ -149,7 +143,6 @@ async function main() {
 
   console.log(`seq 수집 완료: ${allSeqs.length}건 → detail2 호출 시작`);
 
-  // STEP 2: 각 seq마다 detail2 호출 후 upsert
   let created = 0;
   let updated = 0;
   let skipped = 0;

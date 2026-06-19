@@ -71,7 +71,7 @@ STEP 3. 장소명을 우선 참고하여 location 태그를 결정하고, descri
 
 function locationToIsIndoor(location: string): boolean {
   if (location === '실외') return false;
-  return true; // 실내 or 실내외 → true (날씨 필터 안전 방향)
+  return true;
 }
 
 async function callGemini(prompt: string): Promise<GeminiResult | null> {
@@ -83,14 +83,13 @@ async function callGemini(prompt: string): Promise<GeminiResult | null> {
     }),
   });
 
-  if (res.status === 503) return null; // 과부하 → skip
+  if (res.status === 503) return null;
 
   if (!res.ok) throw new Error(`Gemini API 오류: ${res.status}`);
 
   const data = await res.json();
   const raw: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
-  // JSON 블록 파싱 (```json ... ``` 형태 대응)
   const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
   try {

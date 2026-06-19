@@ -15,10 +15,10 @@ function judgeIsIndoor(placeName: string): boolean | null {
   const hasOutdoor = OUTDOOR_KEYWORDS.some((k) => placeName.includes(k));
   const hasIndoor = INDOOR_KEYWORDS.some((k) => placeName.includes(k));
 
-  if (hasOutdoor && hasIndoor) return null; // 충돌 → 건드리지 않음
+  if (hasOutdoor && hasIndoor) return null;
   if (hasIndoor) return true;
   if (hasOutdoor) return false;
-  return null; // 판단 불가 → 건드리지 않음
+  return null;
 }
 
 async function main() {
