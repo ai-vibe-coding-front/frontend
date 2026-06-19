@@ -137,7 +137,6 @@ export default function SignupPage() {
             <Controller
               name="agreed"
               control={control}
-              rules={{ validate: (v) => v || '개인정보 수집에 동의해주세요' }}
               render={({ field }) => (
                 <button
                   type="button"
