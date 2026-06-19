@@ -8,7 +8,7 @@ const MOCK_EVENT = {
   venue: '성북구립미술관',
   fee: '무료',
   description: '서울특별시 성북구 성북로 134 성북구립미술관 | 02-6925-5011',
-  imageUrl: 'http://www.culture.go.kr/upload/rdf/25/03/rdf_202503282154267987.jpg',
+  imageUrl: null,
   externalUrl: 'https://sma.sbculture.or.kr/sma/exhibition/current.do?mode=view&articleNo=43458&article.offset=0&articleLimit=10',
   latitude: 37.59482890788785,
   longitude: 126.99488186959195,
