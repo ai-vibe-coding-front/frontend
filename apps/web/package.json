@@ -19,6 +19,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "latest",
     "@tanstack/react-query": "latest",
+    "fast-xml-parser": "^5.9.2",
     "framer-motion": "^12.40.0",
     "next": "latest",
     "react": "latest",
