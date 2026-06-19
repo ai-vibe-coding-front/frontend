@@ -34,12 +34,14 @@ export function LoginGuardModal({ eventId, onClose }: Props) {
         </div>
         <div className="flex flex-col gap-2">
           <button
+            type="button"
             onClick={handleLogin}
             className="bg-[#8edfd2] w-full h-[48px] rounded-[16px] font-bold text-[16px] text-[#245b6b] tracking-[-0.32px]"
           >
             로그인하기
           </button>
           <button
+            type="button"
             onClick={onClose}
             className="w-full h-[48px] rounded-[16px] font-medium text-[15px] text-[#6b6763]"
           >
