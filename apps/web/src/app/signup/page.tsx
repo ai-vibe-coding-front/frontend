@@ -35,10 +35,12 @@ export default function SignupPage() {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     defaultValues: { nickname: '', email: '', password: '', passwordConfirm: '', agreed: false },
-    mode: 'onChange',
+    mode: 'onTouched',
   });
 
   const agreed = watch('agreed');
+
+  // TODO: login_started 이벤트 로그 수집 — useEffect 마운트 시점, API 구현 후 연결
 
   const passwordField = register('password', {
     required: '비밀번호를 입력해주세요',
