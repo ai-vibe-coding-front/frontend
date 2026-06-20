@@ -1,27 +1,48 @@
 'use client';
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
-
-type Category =
-  | "전시"
-  | "음악/콘서트"
-  | "행사/축제"
-  | "연극"
-  | "뮤지컬/오페라"
-  | "국악"
-  | "무용/발레"
-  | "아동/가족"
-  | "교육/체험";
 
 export interface EventCardData {
   id: string;
-  category: Category;
   title: string;
-  venue: string;
-  period: string;
-  dDay: number;
-  imageUrl?: string;
-  liked?: boolean;
+  realmName: string | null;
+  place: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  imageUrl: string | null;
+  isFavorite?: boolean;
+}
+
+function formatPeriod(startDate: Date | null, endDate: Date | null): string {
+  const fmt = (d: Date) => {
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${year}.${month}.${day}`;
+  };
+  if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+  if (startDate) return fmt(startDate);
+  if (endDate) return fmt(endDate);
+  return "";
+}
+
+const VALID_CATEGORIES = new Set<string>([
+  "전시", "음악/콘서트", "행사/축제", "연극",
+  "뮤지컬/오페라", "국악", "무용/발레", "아동/가족", "교육/체험",
+]);
+
+function normalizeCategory(realmName: string | null): Category | null {
+  if (realmName && VALID_CATEGORIES.has(realmName)) return realmName as Category;
+  return null;
+}
+
+function calcDDay(endDate: Date | null): number {
+  if (!endDate) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(0, 0, 0, 0);
+  return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 interface EventCardProps {
@@ -59,6 +80,7 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
 );
 
 export function EventCard({ event, onClick, onLike, shadow = true }: EventCardProps) {
+  const category = normalizeCategory(event.realmName);
   return (
     <div
       role="button"
@@ -81,17 +103,19 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         )}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-          <CategoryBadge category={event.category} />
-          <DDayBadge days={event.dDay} />
+          {category && (
+            <CategoryBadge category={category} />
+          )}
+          {event.endDate && <DDayBadge days={calcDDay(event.endDate)} />}
         </div>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onLike?.(); }}
-          aria-label={event.liked ? "좋아요 취소" : "좋아요"}
-          aria-pressed={event.liked}
+          aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
+          aria-pressed={event.isFavorite}
           className="absolute top-3 right-3 bg-[rgba(240,228,212,0.85)] rounded-[14px] size-8 flex items-center justify-center"
         >
-          <HeartIcon filled={event.liked} />
+          <HeartIcon filled={event.isFavorite} />
         </button>
       </div>
 
@@ -102,13 +126,13 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         <div className={metaRowClass}>
           <PinIcon />
           <span className="text-[11px] text-[#8c6e63] leading-[18px] truncate">
-            {event.venue}
+            {event.place}
           </span>
         </div>
         <div className={metaRowClass}>
           <CalendarIcon />
           <span className="text-[11px] text-[#bf8b6e] leading-[17px]">
-            {event.period}
+            {formatPeriod(event.startDate, event.endDate)}
           </span>
         </div>
       </div>
