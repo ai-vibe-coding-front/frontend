@@ -39,6 +39,15 @@ export async function POST(request: Request) {
       path: '/',
     });
 
+    // 클라이언트에서 로그인 여부 확인용 (민감 정보 미포함)
+    response.cookies.set('isLoggedIn', '1', {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60, // accessToken과 동일한 만료
+      path: '/',
+    });
+
     return response;
   } catch (error) {
     if (error instanceof Error) {

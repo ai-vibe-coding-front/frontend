@@ -108,8 +108,8 @@ export default function EventDetailPage() {
     );
   }
 
-  // 로그인 상태 확인은 로그인 API 이슈(#89) 완료 후 서버 세션 기반으로 연결
-  const isLoggedIn = false;
+  const isLoggedIn = typeof document !== 'undefined' &&
+    document.cookie.split(';').some((c) => c.trim().startsWith('isLoggedIn='));
 
   const handleHeartClick = () => {
     if (!isLoggedIn) {
