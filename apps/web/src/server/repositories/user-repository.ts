@@ -4,6 +4,35 @@ export async function findUserByEmail(email: string) {
   return prisma.user.findUnique({ where: { email } });
 }
 
+export async function findUserWithCredentialByEmail(email: string) {
+  return prisma.user.findUnique({
+    where: { email },
+    select: {
+      id: true,
+      email: true,
+      nickname: true,
+      credential: { select: { passwordHash: true } },
+    },
+  });
+}
+
+export async function saveRefreshToken(
+  userId: string,
+  tokenHash: string,
+  expiresAt: Date,
+) {
+  return prisma.refreshToken.create({
+    data: { userId, tokenHash, expiresAt },
+  });
+}
+
+export async function revokeRefreshToken(tokenHash: string) {
+  return prisma.refreshToken.updateMany({
+    where: { tokenHash, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}
+
 export async function createUserWithCredential(
   email: string,
   nickname: string,
