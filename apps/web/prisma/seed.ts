@@ -1,12 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: 'apps/web/.env' });
-
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
-});
+import { prisma } from './scriptClient';
 
 const API_KEY = process.env.CULTURE_API_KEY;
 const ROWS_PER_PAGE = 100;
@@ -126,7 +118,6 @@ async function upsertItem(detail: Record<string, string>): Promise<'created' | '
 
 async function main() {
   if (!API_KEY) throw new Error('CULTURE_API_KEY 환경변수가 없습니다.');
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 환경변수가 없습니다.');
 
   console.log('seed 시작...');
 

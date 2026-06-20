@@ -1,12 +1,5 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: 'apps/web/.env' });
-
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
-});
+import { prisma } from './scriptClient';
+import { Prisma } from '@prisma/client';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
@@ -130,7 +123,6 @@ async function saveTagsAndLinks(
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 환경변수가 없습니다.');
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY 환경변수가 없습니다.');
 
   console.log('fillContents 시작...');

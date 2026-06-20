@@ -1,12 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: 'apps/web/.env' });
-
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
-});
+import { prisma } from './scriptClient';
 
 const OUTDOOR_KEYWORDS = ['공원', '광장', '야외', '해변', '해수욕장', '잔디', '노천'];
 const INDOOR_KEYWORDS = ['미술관', '갤러리', '홀', '센터', '극장', '박물관', '아트홀', '문화원', '도서관'];
@@ -22,8 +14,6 @@ function judgeIsIndoor(placeName: string): boolean | null {
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL 환경변수가 없습니다.');
-
   console.log('fixIsIndoor 시작...');
 
   const items = await prisma.eventItem.findMany({
