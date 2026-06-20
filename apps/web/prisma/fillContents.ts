@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
 interface GeminiResult {
   description: string;
@@ -67,8 +66,8 @@ function locationToIsIndoor(location: string): boolean {
   return true;
 }
 
-async function callGemini(prompt: string): Promise<GeminiResult | null> {
-  const res = await fetch(GEMINI_URL, {
+async function callGemini(prompt: string, geminiUrl: string): Promise<GeminiResult | null> {
+  const res = await fetch(geminiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -125,6 +124,8 @@ async function saveTagsAndLinks(
 async function main() {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY 환경변수가 없습니다.');
 
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
   console.log('fillContents 시작...');
 
   const items = await prisma.eventItem.findMany({
@@ -143,7 +144,7 @@ async function main() {
 
     try {
       const prompt = buildPrompt(item.title, item.realmName, item.place, item.price);
-      const result = await callGemini(prompt);
+      const result = await callGemini(prompt, geminiUrl);
 
       if (!result) {
         console.log('skip (Gemini 503)');
