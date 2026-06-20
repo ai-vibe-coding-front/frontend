@@ -38,9 +38,30 @@ function SkeletonLoader() {
   return (
     <div className="flex-1 flex flex-col px-6 pt-3 pb-6 gap-4 overflow-y-auto animate-pulse">
       <div className="rounded-[26px] h-[298.5px] w-full bg-[#d9cfc5] shrink-0" />
-      <div className="h-[24px] w-[60px] bg-[#d9cfc5] rounded-full" />
-      <div className="h-[30px] w-3/4 bg-[#d9cfc5] rounded-[8px]" />
-      <div className="bg-[#fefefe] border border-[#ded0be] rounded-[22px] h-[200px]" />
+      <div className="inline-flex">
+        <div className="h-[26px] w-[52px] bg-[#d9cfc5] rounded-full" />
+      </div>
+      <div className="flex flex-col gap-[6px]">
+        <div className="h-[30px] w-3/4 bg-[#d9cfc5] rounded-[8px]" />
+      </div>
+      <div className="bg-[#fefefe] border border-[#ded0be] rounded-[22px] shadow-[0px_2px_8px_0px_rgba(63,42,36,0.06)]">
+        <div className="flex flex-col px-[23px]">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center py-[15px] border-b border-[#ded0be] gap-4">
+              <div className="h-[16px] w-[28px] bg-[#d9cfc5] rounded-[4px] shrink-0" />
+              <div className="h-[16px] w-2/3 bg-[#d9cfc5] rounded-[4px]" />
+            </div>
+          ))}
+          <div className="flex flex-col py-[15px] gap-[10px]">
+            <div className="h-[14px] w-[40px] bg-[#d9cfc5] rounded-[4px]" />
+            <div className="flex flex-col gap-[6px]">
+              <div className="h-[14px] w-full bg-[#d9cfc5] rounded-[4px]" />
+              <div className="h-[14px] w-5/6 bg-[#d9cfc5] rounded-[4px]" />
+              <div className="h-[14px] w-4/6 bg-[#d9cfc5] rounded-[4px]" />
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="rounded-[20px] h-[298.5px] w-full bg-[#d9cfc5] shrink-0" />
     </div>
   );

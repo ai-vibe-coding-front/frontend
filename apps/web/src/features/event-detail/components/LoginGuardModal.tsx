@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/routes';
+import { CTAButton } from '@/components/common/CTAButton';
 
 type Props = {
   eventId: string;
@@ -16,37 +17,39 @@ export function LoginGuardModal({ eventId, onClose }: Props) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50" role="presentation">
       <div
-        className="bg-[#fbf9f4] rounded-[24px] mx-6 p-6 flex flex-col gap-5 shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="login-modal-title"
+        className="bg-[#fefefe] rounded-[26px] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-[360px] flex flex-col items-center gap-3 p-4"
       >
-        <div className="flex flex-col gap-2">
-          <p className="font-bold text-[18px] text-[#3f2a24] leading-[25.2px] tracking-[-0.72px]">
+        <div className="bg-[rgba(245,243,238,0.95)] rounded-full size-12 flex items-center justify-center shrink-0">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path
+              d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
+              fill="none"
+              stroke="#8c6e63"
+              strokeWidth="1.5"
+            />
+          </svg>
+        </div>
+
+        <div className="flex flex-col items-center gap-0">
+          <p id="login-modal-title" className="font-bold text-[24px] text-[#251e19] leading-[31px] text-center">
             로그인이 필요해요
           </p>
-          <p className="font-normal text-[14px] text-[#6b6763] leading-[21px]">
+        </div>
+
+        <div className="flex flex-col items-center">
+          <p className="font-medium text-[13px] text-[#4d4540] leading-[19px] text-center">
             관심 행사를 저장하려면 로그인해주세요
           </p>
         </div>
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleLogin}
-            className="bg-[#8edfd2] w-full h-[48px] rounded-[16px] font-bold text-[16px] text-[#245b6b] tracking-[-0.32px]"
-          >
-            로그인하기
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full h-[48px] rounded-[16px] font-medium text-[15px] text-[#6b6763]"
-          >
-            닫기
-          </button>
+
+        <div className="flex flex-col gap-2 w-full">
+          <CTAButton label="로그인하기" onClick={handleLogin} />
+          <CTAButton label="닫기" onClick={onClose} className="bg-transparent border border-[#8edfd2]" />
         </div>
       </div>
     </div>
