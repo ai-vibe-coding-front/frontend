@@ -1,20 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import type React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useParams, notFound } from 'next/navigation';
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
-
-const MOCK_EVENT = {
-  id: '1',
-  category: '전시' as const,
-  title: '서울시립미술관 기획전 — 고요의 형태',
-  period: '05.20 — 07.31',
-  venue: '서울시립미술관',
-  fee: '무료',
-  description:
-    '본 전시는 일상의 소음에서 벗어나 고요 속에서 발견하는 내면의 목소리를 주제로 합니다. 국내외 작가 12인이 참여하여 다양한 형태의 미니멀리즘을 선보입니다.',
-};
+import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
+import { KakaoMap, KakaoMapFallback } from '@/features/event-detail/components/KakaoMap';
+import { LoginGuardModal } from '@/features/event-detail/components/LoginGuardModal';
+import { ApiClientError } from '@/lib/api-client';
 
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
@@ -22,6 +18,7 @@ const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
 function HeartButton({ liked, onToggle }: { liked: boolean; onToggle: () => void }) {
   return (
     <button
+      type="button"
       onClick={onToggle}
       className={`absolute right-[13px] top-[3.33px] border-[1.5px] border-[#ded0be] rounded-[16px] flex items-center justify-center size-[43px] ${liked ? 'bg-[#f0e4d4]' : 'bg-[#fefefe]'}`}
     >
@@ -37,9 +34,95 @@ function HeartButton({ liked, onToggle }: { liked: boolean; onToggle: () => void
   );
 }
 
+function SkeletonLoader() {
+  return (
+    <div className="flex-1 flex flex-col px-6 pt-3 pb-6 gap-4 overflow-y-auto animate-pulse">
+      <div className="rounded-[26px] h-[298.5px] w-full bg-[#d9cfc5] shrink-0" />
+      <div className="inline-flex">
+        <div className="h-[26px] w-[52px] bg-[#d9cfc5] rounded-full" />
+      </div>
+      <div className="flex flex-col gap-[6px]">
+        <div className="h-[30px] w-3/4 bg-[#d9cfc5] rounded-[8px]" />
+      </div>
+      <div className="bg-[#fefefe] border border-[#ded0be] rounded-[22px] shadow-[0px_2px_8px_0px_rgba(63,42,36,0.06)]">
+        <div className="flex flex-col px-[23px]">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center py-[15px] border-b border-[#ded0be] gap-4">
+              <div className="h-[16px] w-[28px] bg-[#d9cfc5] rounded-[4px] shrink-0" />
+              <div className="h-[16px] w-2/3 bg-[#d9cfc5] rounded-[4px]" />
+            </div>
+          ))}
+          <div className="flex flex-col py-[15px] gap-[10px]">
+            <div className="h-[14px] w-[40px] bg-[#d9cfc5] rounded-[4px]" />
+            <div className="flex flex-col gap-[6px]">
+              <div className="h-[14px] w-full bg-[#d9cfc5] rounded-[4px]" />
+              <div className="h-[14px] w-5/6 bg-[#d9cfc5] rounded-[4px]" />
+              <div className="h-[14px] w-4/6 bg-[#d9cfc5] rounded-[4px]" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="rounded-[20px] h-[298.5px] w-full bg-[#d9cfc5] shrink-0" />
+    </div>
+  );
+}
+
 export default function EventDetailPage() {
+  const params = useParams();
+  const id = typeof params.id === 'string' ? params.id : '';
+
   const [liked, setLiked] = useState(false);
-  const event = MOCK_EVENT;
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const { data: event, isPending, error } = useEventDetail(id);
+
+  if (!id) notFound();
+
+  if (isPending) {
+    return (
+      <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
+        <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
+          <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
+            <Link href="/" className="size-4 shrink-0">
+              <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
+            </Link>
+            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</p>
+          </div>
+          <SkeletonLoader />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    if (error instanceof ApiClientError && error.status === 404) notFound();
+    return (
+      <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
+        <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col items-center justify-center gap-3 px-6">
+          <MapPinIcon className="size-10 opacity-40" />
+          <p className="font-medium text-[15px] text-[#6b6763] text-center">
+            행사 정보를 불러올 수 없습니다
+          </p>
+          <Link href="/" className="font-bold text-[14px] text-[#245b6b]">홈으로 돌아가기</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+
+  const handleHeartClick = () => {
+    if (!isLoggedIn) {
+      setShowLoginModal(true);
+      return;
+    }
+    setLiked((prev) => !prev);
+  };
+
+  const handleExternalLink = () => {
+    if (!event.externalUrl) return;
+    window.open(event.externalUrl, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
@@ -48,25 +131,29 @@ export default function EventDetailPage() {
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
           <Link href="/" className="size-4 shrink-0">
-            <img src="/icons/back-arrow.svg" alt="뒤로가기" className="size-full" />
+            <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
           </Link>
           <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
             MUUD
           </p>
-          <HeartButton liked={liked} onToggle={() => setLiked(!liked)} />
+          <HeartButton liked={liked} onToggle={handleHeartClick} />
         </div>
 
         {/* Scrollable content */}
         <div className="flex-1 flex flex-col px-6 pt-3 pb-6 gap-4 overflow-y-auto">
 
           {/* 메인 이미지 */}
-          <div className="rounded-[26px] shadow-[0px_4px_20px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
-            <div className="w-full h-full bg-[#d9cfc5]" />
+          <div className="relative rounded-[26px] shadow-[0px_4px_20px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
+            {event.imageUrl ? (
+              <Image src={event.imageUrl} alt={event.title} fill className="object-cover" />
+            ) : (
+              <div className="w-full h-full bg-[#d9cfc5]" />
+            )}
           </div>
 
           {/* 카테고리 */}
           <div className="flex items-center">
-            <CategoryBadge category={event.category} size="large" />
+            <CategoryBadge category={event.category as React.ComponentProps<typeof CategoryBadge>['category']} size="large" />
           </div>
 
           {/* 제목 */}
@@ -99,17 +186,22 @@ export default function EventDetailPage() {
           </div>
 
           {/* 지도 섹션 */}
-          <div className="border border-[#ded0be] rounded-[20px] shadow-[0px_2px_12px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
-            <div className="w-full h-full bg-[#e8e0d5] flex items-center justify-center">
-              <MapPinIcon className="size-8" />
-            </div>
-          </div>
+          {event.latitude && event.longitude ? (
+            <KakaoMap latitude={event.latitude} longitude={event.longitude} venueName={event.venue} />
+          ) : (
+            <KakaoMapFallback />
+          )}
         </div>
 
         {/* Footer CTA */}
         <div className="bg-[rgba(251,249,244,0.95)] border-t border-[rgba(222,208,190,0.2)] shrink-0">
           <div className="px-6 pt-[25px] pb-6">
-            <button className="bg-[#8edfd2] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-full h-[48px] rounded-[16px] flex items-center justify-center gap-[10px]">
+            <button
+              type="button"
+              onClick={handleExternalLink}
+              disabled={!event.externalUrl}
+              className="bg-[#8edfd2] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-full h-[48px] rounded-[16px] flex items-center justify-center gap-[10px] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               <span className="font-bold text-[16px] text-[#245b6b] tracking-[-0.32px] leading-[24px]">
                 예매 페이지로
               </span>
@@ -120,6 +212,10 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {showLoginModal && (
+        <LoginGuardModal eventId={id} onClose={() => setShowLoginModal(false)} />
+      )}
     </div>
   );
 }
