@@ -1,14 +1,17 @@
 'use client';
-import type { EventItem } from "@prisma/client";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
 
-export type EventCardData = Pick<
-  EventItem,
-  "id" | "title" | "realmName" | "place" | "startDate" | "endDate" | "imageUrl"
-> & {
+export interface EventCardData {
+  id: string;
+  title: string;
+  realmName: string | null;
+  place: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
+  imageUrl: string | null;
   liked?: boolean;
-};
+}
 
 function formatPeriod(startDate: Date | null, endDate: Date | null): string {
   const fmt = (d: Date) =>
