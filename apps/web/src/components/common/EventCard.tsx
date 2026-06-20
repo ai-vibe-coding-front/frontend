@@ -80,6 +80,7 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
 );
 
 export function EventCard({ event, onClick, onLike, shadow = true }: EventCardProps) {
+  const category = normalizeCategory(event.realmName);
   return (
     <div
       role="button"
@@ -102,8 +103,8 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         )}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-          {normalizeCategory(event.realmName) && (
-            <CategoryBadge category={normalizeCategory(event.realmName)!} />
+          {category && (
+            <CategoryBadge category={category} />
           )}
           {event.endDate && <DDayBadge days={calcDDay(event.endDate)} />}
         </div>
