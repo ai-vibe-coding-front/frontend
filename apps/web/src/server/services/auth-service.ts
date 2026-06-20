@@ -25,7 +25,9 @@ export async function verifyPassword(input: string, stored: string): Promise<boo
 }
 
 export async function issueAccessToken(userId: string): Promise<string> {
-  const secret = new TextEncoder().encode(process.env.ACCESS_TOKEN_SECRET!);
+  const rawSecret = process.env.ACCESS_TOKEN_SECRET;
+  if (!rawSecret) throw new Error('ACCESS_TOKEN_SECRET is not set');
+  const secret = new TextEncoder().encode(rawSecret);
   return new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

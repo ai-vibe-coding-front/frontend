@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { ok, fail } from '@/lib/api-response';
 import { loginSchema } from '@/features/auth/schemas/loginSchema';
 import { login } from '@/server/services/auth-service';
@@ -21,7 +20,7 @@ export async function POST(request: Request) {
   try {
     const { user, accessToken, refreshToken } = await login(email, password);
 
-    const response = ok({ user }) as NextResponse;
+    const response = ok({ user });
 
     response.cookies.set('accessToken', accessToken, {
       httpOnly: true,
