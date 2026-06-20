@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: 'apps/web/.env' });
 
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
@@ -100,7 +100,11 @@ async function callGemini(prompt: string): Promise<GeminiResult | null> {
   }
 }
 
-async function saveTagsAndLinks(eventItemId: string, tags: GeminiResult['tags']) {
+async function saveTagsAndLinks(
+  eventItemId: string,
+  tags: GeminiResult['tags'],
+  tx: Prisma.TransactionClient,
+) {
   const tagEntries: { name: string; type: string }[] = [
     ...tags.mood.map((name) => ({ name, type: 'mood' })),
     { name: tags.energy, type: 'energy' },
@@ -111,13 +115,13 @@ async function saveTagsAndLinks(eventItemId: string, tags: GeminiResult['tags'])
   for (const entry of tagEntries) {
     if (!entry.name) continue;
 
-    const tag = await prisma.tag.upsert({
+    const tag = await tx.tag.upsert({
       where: { name: entry.name },
       create: { name: entry.name, type: entry.type },
       update: {},
     });
 
-    await prisma.eventItemTag.upsert({
+    await tx.eventItemTag.upsert({
       where: { eventItemId_tagId: { eventItemId, tagId: tag.id } },
       create: { eventItemId, tagId: tag.id },
       update: {},
@@ -132,7 +136,7 @@ async function main() {
   console.log('fillContents 시작...');
 
   const items = await prisma.eventItem.findMany({
-    where: { description: null, deletedAt: null },
+    where: { deletedAt: null, tags: { none: {} } },
     select: { id: true, title: true, realmName: true, place: true, price: true },
   });
 
@@ -155,15 +159,17 @@ async function main() {
         continue;
       }
 
-      await prisma.eventItem.update({
-        where: { id: item.id },
-        data: {
-          description: result.description,
-          isIndoor: locationToIsIndoor(result.tags.location),
-        },
-      });
+      await prisma.$transaction(async (tx) => {
+        await tx.eventItem.update({
+          where: { id: item.id },
+          data: {
+            description: result.description,
+            isIndoor: locationToIsIndoor(result.tags.location),
+          },
+        });
 
-      await saveTagsAndLinks(item.id, result.tags);
+        await saveTagsAndLinks(item.id, result.tags, tx);
+      });
 
       console.log('완료');
       success++;
