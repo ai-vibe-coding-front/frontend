@@ -1,6 +1,6 @@
 'use client';
 import type { EventItem } from "@prisma/client";
-import { CategoryBadge } from "@/components/common/CategoryBadge";
+import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
 
 export type EventCardData = Pick<
@@ -19,6 +19,16 @@ function formatPeriod(startDate: Date | null, endDate: Date | null): string {
   if (startDate) return fmt(startDate);
   if (endDate) return fmt(endDate);
   return "";
+}
+
+const VALID_CATEGORIES = new Set<string>([
+  "전시", "음악/콘서트", "행사/축제", "연극",
+  "뮤지컬/오페라", "국악", "무용/발레", "아동/가족", "교육/체험",
+]);
+
+function normalizeCategory(realmName: string | null): Category | null {
+  if (realmName && VALID_CATEGORIES.has(realmName)) return realmName as Category;
+  return null;
 }
 
 function calcDDay(endDate: Date | null): number {
@@ -87,7 +97,9 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         )}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-          <CategoryBadge category={(event.realmName ?? "") as Parameters<typeof CategoryBadge>[0]["category"]} />
+          {normalizeCategory(event.realmName) && (
+            <CategoryBadge category={normalizeCategory(event.realmName)!} />
+          )}
           <DDayBadge days={calcDDay(event.endDate)} />
         </div>
         <button
