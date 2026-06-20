@@ -17,7 +17,7 @@ const MOCK_EVENT: EventCardData = {
   startDate: new Date("2026-06-01"),
   endDate: new Date("2026-06-30"),
   imageUrl: null,
-  liked: false,
+  isFavorite: false,
 };
 
 const dotClass = "rounded-full bg-[#e4d8c9] size-[6px] shrink-0";

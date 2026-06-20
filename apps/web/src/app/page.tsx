@@ -13,7 +13,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-06-01"),
     endDate: new Date("2026-06-30"),
     imageUrl: null,
-    liked: true,
+    isFavorite: true,
   },
   {
     id: "2",
@@ -23,7 +23,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-05-23"),
     endDate: new Date("2026-05-25"),
     imageUrl: null,
-    liked: false,
+    isFavorite: false,
   },
   {
     id: "3",
@@ -33,7 +33,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-06-10"),
     endDate: new Date("2026-07-05"),
     imageUrl: null,
-    liked: false,
+    isFavorite: false,
   },
   {
     id: "4",
@@ -43,7 +43,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-06-14"),
     endDate: new Date("2026-06-15"),
     imageUrl: null,
-    liked: true,
+    isFavorite: true,
   },
   {
     id: "5",
@@ -53,7 +53,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-06-20"),
     endDate: new Date("2026-08-31"),
     imageUrl: null,
-    liked: false,
+    isFavorite: false,
   },
   {
     id: "6",
@@ -63,7 +63,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-06-25"),
     endDate: new Date("2026-06-29"),
     imageUrl: null,
-    liked: false,
+    isFavorite: false,
   },
 ];
 

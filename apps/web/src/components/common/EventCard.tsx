@@ -10,7 +10,7 @@ export interface EventCardData {
   startDate: Date | null;
   endDate: Date | null;
   imageUrl: string | null;
-  liked?: boolean;
+  isFavorite?: boolean;
 }
 
 function formatPeriod(startDate: Date | null, endDate: Date | null): string {
@@ -111,11 +111,11 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onLike?.(); }}
-          aria-label={event.liked ? "좋아요 취소" : "좋아요"}
-          aria-pressed={event.liked}
+          aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
+          aria-pressed={event.isFavorite}
           className="absolute top-3 right-3 bg-[rgba(240,228,212,0.85)] rounded-[14px] size-8 flex items-center justify-center"
         >
-          <HeartIcon filled={event.liked} />
+          <HeartIcon filled={event.isFavorite} />
         </button>
       </div>
 

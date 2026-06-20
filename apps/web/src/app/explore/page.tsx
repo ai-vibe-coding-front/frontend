@@ -12,7 +12,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date('2026-06-01'),
     endDate: new Date('2026-06-30'),
     imageUrl: null,
-    liked: true,
+    isFavorite: true,
   },
   {
     id: '2',
@@ -22,7 +22,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date('2026-06-01'),
     endDate: new Date('2026-06-30'),
     imageUrl: null,
-    liked: false,
+    isFavorite: false,
   },
 ];
 
