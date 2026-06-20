@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, type ComponentProps } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, notFound } from 'next/navigation';
-import { CategoryBadge } from '@/components/common/CategoryBadge';
+import { CategoryBadge, type Category } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
 import { KakaoMap, KakaoMapFallback } from '@/features/event-detail/components/KakaoMap';
@@ -159,7 +159,7 @@ export default function EventDetailPage() {
           {/* 카테고리 */}
           {event.realmName && (
             <div className="flex items-center">
-              <CategoryBadge category={event.realmName as ComponentProps<typeof CategoryBadge>['category']} size="large" />
+              <CategoryBadge category={event.realmName as Category} size="large" />
             </div>
           )}
 
