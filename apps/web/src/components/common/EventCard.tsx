@@ -100,7 +100,7 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
           {normalizeCategory(event.realmName) && (
             <CategoryBadge category={normalizeCategory(event.realmName)!} />
           )}
-          <DDayBadge days={calcDDay(event.endDate)} />
+          {event.endDate && <DDayBadge days={calcDDay(event.endDate)} />}
         </div>
         <button
           type="button"
