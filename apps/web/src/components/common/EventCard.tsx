@@ -14,10 +14,12 @@ export interface EventCardData {
 }
 
 function formatPeriod(startDate: Date | null, endDate: Date | null): string {
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" })
-      .replace(/\. /g, ".")
-      .replace(/\.$/, "");
+  const fmt = (d: Date) => {
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${year}.${month}.${day}`;
+  };
   if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
   if (startDate) return fmt(startDate);
   if (endDate) return fmt(endDate);
