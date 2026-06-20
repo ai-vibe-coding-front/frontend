@@ -47,7 +47,7 @@ export function KakaoMap({ latitude, longitude, venueName }: Props) {
     if (existingScript) {
       if (window.kakao?.maps) initMap();
       else existingScript.addEventListener('load', initMap);
-      return;
+      return () => existingScript.removeEventListener('load', initMap);
     }
 
     const script = document.createElement('script');
