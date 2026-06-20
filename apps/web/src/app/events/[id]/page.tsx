@@ -157,9 +157,11 @@ export default function EventDetailPage() {
           </div>
 
           {/* 카테고리 */}
-          <div className="flex items-center">
-            <CategoryBadge category={event.realmName as ComponentProps<typeof CategoryBadge>['category']} size="large" />
-          </div>
+          {event.realmName && (
+            <div className="flex items-center">
+              <CategoryBadge category={event.realmName as ComponentProps<typeof CategoryBadge>['category']} size="large" />
+            </div>
+          )}
 
           {/* 제목 */}
           <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
@@ -191,7 +193,7 @@ export default function EventDetailPage() {
           </div>
 
           {/* 지도 섹션 */}
-          {event.lat && event.lng ? (
+          {event.lat !== null && event.lng !== null ? (
             <KakaoMap latitude={event.lat} longitude={event.lng} venueName={event.place ?? ''} />
           ) : (
             <KakaoMapFallback />
