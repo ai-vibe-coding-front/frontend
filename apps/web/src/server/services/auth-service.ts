@@ -1,5 +1,5 @@
 import { promisify } from 'util';
-import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
+import { createHash, randomBytes, scrypt, timingSafeEqual } from 'crypto';
 import { SignJWT } from 'jose';
 import {
   createUserWithCredential,
@@ -37,7 +37,7 @@ export async function issueAccessToken(userId: string): Promise<string> {
 
 export async function issueRefreshToken(userId: string): Promise<{ token: string; expiresAt: Date }> {
   const token = randomBytes(40).toString('hex');
-  const tokenHash = await hashPassword(token);
+  const tokenHash = createHash('sha256').update(token).digest('hex');
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14); // 14일
   await saveRefreshToken(userId, tokenHash, expiresAt);
   return { token, expiresAt };
