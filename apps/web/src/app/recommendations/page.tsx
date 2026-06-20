@@ -9,21 +9,23 @@ import type { EventCardData } from "@/components/common/EventCard";
 const MOCK_EVENTS: EventCardData[] = [
   {
     id: "1",
-    category: "전시",
+    realmName: "전시",
     title: "빛으로 쓴 편지 — 사진전",
-    venue: "성수 갤러리아 포레",
-    period: "2026.06.01 – 2026.06.30",
-    dDay: 18,
-    liked: true,
+    place: "성수 갤러리아 포레",
+    startDate: new Date("2026-06-01"),
+    endDate: new Date("2026-06-30"),
+    imageUrl: null,
+    isFavorite: true,
   },
   {
     id: "2",
-    category: "전시",
+    realmName: "전시",
     title: "빛으로 쓴 편지 — 사진전",
-    venue: "성수 갤러리아 포레",
-    period: "2026.06.01 – 2026.06.30",
-    dDay: 18,
-    liked: false,
+    place: "성수 갤러리아 포레",
+    startDate: new Date("2026-06-01"),
+    endDate: new Date("2026-06-30"),
+    imageUrl: null,
+    isFavorite: false,
   },
 ];
 

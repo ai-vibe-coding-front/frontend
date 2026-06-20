@@ -1,6 +1,6 @@
 import { twMerge } from "tailwind-merge";
 
-type Category =
+export type Category =
   | "전시"
   | "음악/콘서트"
   | "행사/축제"
