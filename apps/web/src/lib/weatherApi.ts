@@ -1,13 +1,12 @@
 export interface WeatherResult {
-  skyLabel: string;
-  pty: number;
+  skyLabel: string | null;
+  pty: number | null;
   temperature: number | null;
 }
 
 const BASE_URL =
   "https://apihub.kma.go.kr/api/typ01/cgi-bin/url/nph-dfs_vsrt_grd";
 const GRID_COLS = 149;
-const GRID_ROWS = 253;
 const VALS_PER_LINE = 20;
 const LINES_PER_ROW = Math.ceil(GRID_COLS / VALS_PER_LINE);
 
@@ -35,7 +34,7 @@ function calcTimes(): { tmfc: string; tmef: string } {
 function extractGridValue(text: string, nx: number, ny: number): number | null {
   const lines = text.split("\n").filter((l) => l.trim() !== "");
 
-  const rowIndex = GRID_ROWS - ny;
+  const rowIndex = ny - 1;
   const lineStart = rowIndex * LINES_PER_ROW;
   const offset = nx - 1;
   const lineOff = Math.floor(offset / VALS_PER_LINE);
@@ -76,8 +75,8 @@ async function fetchVar(
   }
 }
 
-function skyCodeToLabel(code: number | null): string {
-  if (code === null) return "맑음";
+function skyCodeToLabel(code: number | null): string | null {
+  if (code === null) return null;
   if (code === 2) return "구름조금";
   if (code === 3) return "구름많음";
   if (code === 4) return "흐림";
@@ -101,7 +100,7 @@ export async function getWeather(
 
   return {
     skyLabel: skyCodeToLabel(SKY),
-    pty: PTY ?? 0,
+    pty: PTY,
     temperature: T1H,
   };
 }
