@@ -59,7 +59,7 @@ export function KakaoMap({ latitude, longitude, venueName }: Props) {
 
   return (
     <div className="border border-[#ded0be] rounded-[20px] shadow-[0px_2px_12px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
-      <div ref={containerRef} className="w-full h-full" aria-label={`${venueName} 지도`} />
+      <div ref={containerRef} className="w-full h-full" aria-label={venueName ? `${venueName} 지도` : '지도'} />
     </div>
   );
 }

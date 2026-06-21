@@ -32,7 +32,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await apiClient<{ accessToken: string; user: { id: string; email: string; nickname: string } }>(
+      await apiClient<{ user: { id: string; email: string; nickname: string } }>(
         '/api/auth/login',
         {
           method: 'POST',
