@@ -43,7 +43,10 @@ function LoginForm() {
         },
       );
       const redirect = searchParams.get('redirect');
-      const destination = redirect && redirect.startsWith('/') ? redirect : ROUTES.home;
+      const destination =
+        redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+          ? redirect
+          : ROUTES.home;
       router.push(destination);
     } catch (error) {
       if (error instanceof ApiClientError) {
