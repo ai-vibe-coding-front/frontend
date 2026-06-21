@@ -49,14 +49,8 @@ function LoginForm() {
           : ROUTES.home;
       router.push(destination);
     } catch (error) {
-      if (error instanceof ApiClientError) {
-        if (error.errorCode === 'USER_NOT_FOUND') {
-          setError('email', { message: '존재하지 않는 이메일입니다' });
-        } else if (error.errorCode === 'INVALID_PASSWORD') {
-          setError('password', { message: '비밀번호가 올바르지 않습니다' });
-        } else {
-          setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
-        }
+      if (error instanceof ApiClientError && error.errorCode === 'INVALID_CREDENTIALS') {
+        setError('root', { message: '이메일 또는 비밀번호가 올바르지 않습니다' });
       } else {
         setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
       }

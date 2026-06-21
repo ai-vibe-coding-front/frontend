@@ -54,12 +54,12 @@ export async function signup(email: string, password: string, nickname: string) 
 
 export async function login(email: string, password: string) {
   const user = await findUserWithCredentialByEmail(email);
-  if (!user) throw new Error('USER_NOT_FOUND');
+  if (!user) throw new Error('INVALID_CREDENTIALS');
 
   const isValid = user.credential
     ? await verifyPassword(password, user.credential.passwordHash)
     : false;
-  if (!isValid) throw new Error('INVALID_PASSWORD');
+  if (!isValid) throw new Error('INVALID_CREDENTIALS');
 
   const accessToken = await issueAccessToken(user.id);
   const refreshToken = await issueRefreshToken(user.id);

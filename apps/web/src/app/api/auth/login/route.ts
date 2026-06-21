@@ -49,13 +49,8 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === 'USER_NOT_FOUND') {
-        return fail('USER_NOT_FOUND', '존재하지 않는 이메일입니다', 401);
-      }
-      if (error.message === 'INVALID_PASSWORD') {
-        return fail('INVALID_PASSWORD', '비밀번호가 올바르지 않습니다', 401);
-      }
+    if (error instanceof Error && error.message === 'INVALID_CREDENTIALS') {
+      return fail('INVALID_CREDENTIALS', '이메일 또는 비밀번호가 올바르지 않습니다', 401);
     }
     console.error('[login]', error);
     return fail('INTERNAL_ERROR', '서버 오류가 발생했습니다', 500);
