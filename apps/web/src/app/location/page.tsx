@@ -79,6 +79,11 @@ export default function LocationPage() {
       });
 
       const response = await fetch(`/api/culture-events?${params.toString()}`);
+      if (!response.ok) {
+        setCultureEvents([]);
+        return;
+      }
+
       const data = await response.json();
       setCultureEvents(Array.isArray(data.events) ? data.events : []);
     } catch (err) {
@@ -95,6 +100,7 @@ export default function LocationPage() {
 
     try {
       const { lat, lng } = await getCurrentLocation();
+      setIsEventsExpanded(false);
       const position = new window.kakao.maps.LatLng(lat, lng);
       map.setCenter(position);
 
@@ -109,7 +115,7 @@ export default function LocationPage() {
       }
       gpsOverlayRef.current.setMap(map);
       setHasGpsLocation(true);
-      fetchNearbyEvents(lat, lng);
+      await fetchNearbyEvents(lat, lng);
     } catch (err) {
       console.error("현재 위치를 가져오지 못했습니다.", err);
     }
