@@ -109,7 +109,7 @@ export default function EventDetailPage() {
   }
 
   const isLoggedIn = typeof document !== 'undefined' &&
-    document.cookie.split(';').some((c) => c.trim() === 'isLoggedIn=1');
+    document.cookie.split(';').some((c) => c.trim().startsWith('isLoggedIn='));
 
   const handleHeartClick = () => {
     if (!isLoggedIn) {
