@@ -1,7 +1,8 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { CTAButton } from "@/components/common/CTAButton";
 import { Input } from "@/components/common/Input";
@@ -18,8 +19,10 @@ const subtitleClass = "font-medium text-[16px] text-[#6b6763] leading-[22.4px]";
 const dividerClass = "bg-[#e2e2e2] h-px flex-1";
 const fieldErrorClass = "text-[12px] text-red-500 leading-[18px] pl-1";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const {
     register,
     handleSubmit,
@@ -39,16 +42,15 @@ export default function LoginPage() {
           body: JSON.stringify({ email: data.email, password: data.password }),
         },
       );
-      router.push(ROUTES.home);
+      const redirect = searchParams.get('redirect');
+      const destination =
+        redirect && redirect.startsWith('/') && !redirect.startsWith('//')
+          ? redirect
+          : ROUTES.home;
+      router.push(destination);
     } catch (error) {
-      if (error instanceof ApiClientError) {
-        if (error.errorCode === 'USER_NOT_FOUND') {
-          setError('email', { message: '존재하지 않는 이메일입니다' });
-        } else if (error.errorCode === 'INVALID_PASSWORD') {
-          setError('password', { message: '비밀번호가 올바르지 않습니다' });
-        } else {
-          setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
-        }
+      if (error instanceof ApiClientError && error.errorCode === 'INVALID_CREDENTIALS') {
+        setError('root', { message: '이메일 또는 비밀번호가 올바르지 않습니다' });
       } else {
         setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
       }
@@ -134,5 +136,13 @@ export default function LoginPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }
