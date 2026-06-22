@@ -31,12 +31,12 @@ export function useKakaoLoader() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
+    const appKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
 
     const promise = appKey
       ? loadKakaoSdk(appKey)
       : Promise.reject(
-          new Error("NEXT_PUBLIC_KAKAO_MAP_KEY 설정되지 않았습니다."),
+          new Error("NEXT_PUBLIC_KAKAO_JS_KEY 설정되지 않았습니다."),
         );
 
     promise.then(() => setIsLoaded(true)).catch((err: Error) => setError(err));
