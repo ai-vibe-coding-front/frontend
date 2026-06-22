@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { QUESTIONS, type Answers } from "./questions";
 import { GuestLimitModal } from "./GuestLimitModal";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiClientError } from "@/lib/api-client";
 
 const slideVariants = {
   enter: (d: number) => ({ x: `${d * 60}%`, opacity: 0 }),
@@ -64,8 +64,13 @@ export function QuestionsContent() {
           }),
         });
         sessionStorage.setItem('explorationSessionId', session.explorationSessionId);
-      } catch {
-        // 세션 생성 실패 시에도 추천 페이지로 이동
+      } catch (err) {
+        if (err instanceof ApiClientError && err.status === 403) {
+          setIsBlocked(true);
+          setShowModal(true);
+          return;
+        }
+        // 그 외 세션 생성 실패 시에도 추천 페이지로 이동
       } finally {
         setIsSubmitting(false);
       }
