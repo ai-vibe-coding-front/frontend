@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { QUESTIONS, type Answers } from "./questions";
+import { GuestLimitModal } from "./GuestLimitModal";
+import { apiClient } from "@/lib/api-client";
 
 const slideVariants = {
   enter: (d: number) => ({ x: `${d * 60}%`, opacity: 0 }),
@@ -20,15 +22,54 @@ export function QuestionsContent() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<Answers>({ q1: null, q2: null, q3: null, q4: null });
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    apiClient<{ hasUsed: boolean }>('/api/exploration-sessions/me')
+      .then(({ hasUsed }) => {
+        if (hasUsed) setIsBlocked(true);
+      })
+      .catch(() => {});
+  }, []);
 
   const question = QUESTIONS[step];
   const isFirst = step === 0;
   const isLast = step === TOTAL_STEPS - 1;
   const currentAnswer = answers[question.key];
 
-  const goNext = () => {
-    if (!currentAnswer) return;
+  const goNext = async () => {
+    if (!currentAnswer || isBlocked || isSubmitting) return;
     if (isLast) {
+      const lat = searchParams.get("lat");
+      const lng = searchParams.get("lng");
+      const nx = searchParams.get("nx");
+      const ny = searchParams.get("ny");
+
+      setIsSubmitting(true);
+      try {
+        const session = await apiClient<{ explorationSessionId: string }>('/api/exploration-sessions', {
+          method: 'POST',
+          body: JSON.stringify({
+            location: {
+              lat: lat ? parseFloat(lat) : undefined,
+              lng: lng ? parseFloat(lng) : undefined,
+              nx: nx ? parseInt(nx, 10) : undefined,
+              ny: ny ? parseInt(ny, 10) : undefined,
+              sido: searchParams.get("sido") ?? undefined,
+              address: searchParams.get("label") ?? undefined,
+              stationName: searchParams.get("stationName") ?? undefined,
+            },
+          }),
+        });
+        sessionStorage.setItem('explorationSessionId', session.explorationSessionId);
+      } catch {
+        // 세션 생성 실패 시에도 추천 페이지로 이동
+      } finally {
+        setIsSubmitting(false);
+      }
+
       const params = new URLSearchParams({
         q1: answers.q1!,
         q2: answers.q2!,
@@ -54,11 +95,16 @@ export function QuestionsContent() {
   };
 
   const selectAnswer = (value: string) => {
+    if (isBlocked) {
+      setShowModal(true);
+      return;
+    }
     setAnswers((prev) => ({ ...prev, [question.key]: value as never }));
   };
 
   return (
     <main className="h-dvh flex flex-col overflow-hidden bg-[#fbf9f4]">
+      {showModal && <GuestLimitModal onClose={() => setShowModal(false)} />}
 
       {/* TopAppBar */}
       <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
@@ -170,9 +216,9 @@ export function QuestionsContent() {
           <button
             type="button"
             onClick={goNext}
-            disabled={!currentAnswer}
+            disabled={!currentAnswer || isSubmitting}
             className={`flex-1 bg-[#8edfd2] rounded-[16px] py-3 flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)] transition-opacity ${
-              currentAnswer ? "opacity-100" : "opacity-50 cursor-not-allowed"
+              currentAnswer && !isSubmitting ? "opacity-100" : "opacity-50 cursor-not-allowed"
             }`}
           >
             <span className="font-semibold text-[14px] text-[#245b6b] leading-[21px]">
