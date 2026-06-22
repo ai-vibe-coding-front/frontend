@@ -3,19 +3,6 @@
 import { useEffect, useRef } from 'react';
 import MapPinIcon from '@/components/common/MapPinIcon';
 
-declare global {
-  interface Window {
-    kakao: {
-      maps: {
-        load: (callback: () => void) => void;
-        LatLng: new (lat: number, lng: number) => object;
-        Map: new (container: HTMLElement, options: object) => object;
-        Marker: new (options: object) => { setMap: (map: object) => void };
-      };
-    };
-  }
-}
-
 type Props = {
   latitude: number;
   longitude: number;
