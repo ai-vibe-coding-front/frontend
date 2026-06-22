@@ -15,7 +15,7 @@ export async function GET(
 
     return ok(event);
   } catch (err) {
-    console.error('행사 상세 조회 실패', err);
-    return fail('EVENT_FETCH_FAILED', '행사 상세 조회에 실패했습니다.', 500);
+    console.error('[GET /api/events/:id]', err);
+    return fail('INTERNAL_ERROR', '행사 정보를 불러올 수 없습니다', 500);
   }
 }

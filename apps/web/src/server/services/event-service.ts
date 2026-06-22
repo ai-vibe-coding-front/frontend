@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {
   findEventDetailById,
   findFavoritedEventIds,
@@ -132,12 +133,14 @@ export type EventDetail = {
   startDate: string | null;
   endDate: string | null;
   place: string | null;
+  address: string | null;
   price: string | null;
   description: string;
   imageUrl: string | null;
   bookingUrl: string | null;
   lat: number | null;
   lng: number | null;
+  isIndoor: boolean | null;
 };
 
 export async function getEventDetail(id: string): Promise<EventDetail | null> {
@@ -156,11 +159,13 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
       : event.address
         ? decodeHtmlEntities(event.address)
         : null,
+    address: event.address ? decodeHtmlEntities(event.address) : null,
     price: event.price,
     description: event.description ? decodeHtmlEntities(event.description) : '',
     imageUrl: event.imageUrl,
     bookingUrl: event.bookingUrl,
     lat: event.lat,
     lng: event.lng,
+    isIndoor: event.isIndoor,
   };
 }
