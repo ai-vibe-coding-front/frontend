@@ -51,6 +51,8 @@ interface EventCardProps {
   onLike?: () => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
+  /** 행사 종료 상태 */
+  isEnded?: boolean;
 }
 
 const PinIcon = () => (
@@ -68,18 +70,18 @@ const CalendarIcon = () => (
 
 const metaRowClass = "flex items-center gap-1";
 
-const HeartIcon = ({ filled }: { filled?: boolean }) => (
+const HeartIcon = ({ filled, disabled }: { filled?: boolean; disabled?: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
       d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
-      fill={filled ? "#7d543c" : "none"}
-      stroke={filled ? "#7d543c" : "#8c6e63"}
+      fill={disabled ? "none" : filled ? "#7d543c" : "none"}
+      stroke={disabled ? "#aaa" : filled ? "#7d543c" : "#8c6e63"}
       strokeWidth="1.5"
     />
   </svg>
 );
 
-export function EventCard({ event, onClick, onLike, shadow = true }: EventCardProps) {
+export function EventCard({ event, onClick, onLike, shadow = true, isEnded = false }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
   return (
     <div
@@ -95,11 +97,16 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
           <img
             src={event.imageUrl}
             alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className={`absolute inset-0 w-full h-full object-cover ${isEnded ? "grayscale brightness-75" : ""}`}
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
           <div className="absolute inset-0 bg-[#d9cfc5]" aria-hidden="true" />
+        )}
+        {isEnded && (
+          <div className="absolute top-0 left-0 right-0 h-7 bg-[rgba(0,0,0,0.72)] flex items-center justify-center z-10" aria-hidden="true">
+            <span className="text-white text-[12px]">행사 종료</span>
+          </div>
         )}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
@@ -115,7 +122,7 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
           aria-pressed={event.isFavorite}
           className="absolute top-3 right-3 bg-[rgba(240,228,212,0.85)] rounded-[14px] size-8 flex items-center justify-center"
         >
-          <HeartIcon filled={event.isFavorite} />
+          <HeartIcon filled={event.isFavorite} disabled={isEnded} />
         </button>
       </div>
 

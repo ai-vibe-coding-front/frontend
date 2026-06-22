@@ -64,7 +64,7 @@ export default async function RecommendationsPage({ searchParams }: Props) {
             {hasResults ? (
               <div className="flex flex-col gap-3">
                 {MOCK_EVENTS.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard key={event.id} event={event} isEnded={true} />
                 ))}
               </div>
             ) : (
