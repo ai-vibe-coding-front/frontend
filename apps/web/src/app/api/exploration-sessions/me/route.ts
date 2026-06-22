@@ -1,12 +1,11 @@
 import { cookies } from 'next/headers';
 import { ok, fail } from '@/lib/api-response';
-import { checkGuestUsed } from '@/server/services/exploration-session-service';
+import { checkGuestUsed, verifyAccessToken } from '@/server/services/exploration-session-service';
 
 export async function GET() {
   const cookieStore = await cookies();
 
-  // httpOnly accessToken 쿠키로 로그인 여부 판단 (isLoggedIn은 위조 가능)
-  const isLoggedIn = !!cookieStore.get('accessToken')?.value;
+  const isLoggedIn = await verifyAccessToken(cookieStore.get('accessToken')?.value);
   if (isLoggedIn) {
     return ok({ hasUsed: false });
   }

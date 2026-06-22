@@ -1,8 +1,21 @@
 import { randomBytes } from 'crypto';
+import { jwtVerify } from 'jose';
 import {
   createExplorationSession,
   hasGuestUsedSession,
 } from '@/server/repositories/exploration-session-repository';
+
+export async function verifyAccessToken(token: string | undefined): Promise<boolean> {
+  if (!token) return false;
+  const rawSecret = process.env.ACCESS_TOKEN_SECRET;
+  if (!rawSecret) return false;
+  try {
+    await jwtVerify(token, new TextEncoder().encode(rawSecret));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function generateSessionKey(): string {
   return randomBytes(32).toString('hex');

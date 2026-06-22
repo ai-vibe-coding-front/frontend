@@ -4,6 +4,8 @@ import { ok, fail } from '@/lib/api-response';
 import {
   createGuestSession,
   generateSessionKey,
+  checkGuestUsed,
+  verifyAccessToken,
 } from '@/server/services/exploration-session-service';
 
 const locationSchema = z.object({
@@ -34,8 +36,16 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies();
+  const isLoggedIn = await verifyAccessToken(cookieStore.get('accessToken')?.value);
   const existingKey = cookieStore.get('guestSessionKey')?.value;
   const sessionKey = existingKey ?? generateSessionKey();
+
+  if (!isLoggedIn && existingKey) {
+    const { hasUsed } = await checkGuestUsed(existingKey);
+    if (hasUsed) {
+      return fail('GUEST_SESSION_LIMIT_EXCEEDED', '비회원 체험 1회 제한을 초과했습니다', 403);
+    }
+  }
 
   try {
     const session = await createGuestSession(sessionKey, parsed.data.location ?? {});
