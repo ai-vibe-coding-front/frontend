@@ -33,12 +33,23 @@ function formatDate(value?: number): string | null {
   return `${str.slice(0, 4)}-${str.slice(4, 6)}-${str.slice(6, 8)}`;
 }
 
+// 공공데이터포털 응답이 HTML 엔티티를 이중으로 인코딩해서 내려주는 경우가 있어
+// XML 파싱으로 한 번 풀린 뒤에도 "&lt;"같은 표기가 그대로 남는다. 한 번 더 풀어준다.
+function decodeHtmlEntities(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
 function mapCultureEvent(raw: RawCultureEventItem) {
   return {
     externalId: String(raw.seq),
-    title: raw.title,
+    title: decodeHtmlEntities(raw.title),
     realmName: raw.realmName ?? null,
-    place: raw.place ?? null,
+    place: raw.place ? decodeHtmlEntities(raw.place) : null,
     startDate: formatDate(raw.startDate),
     endDate: formatDate(raw.endDate),
     lat: raw.gpsY ?? null,

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,8 @@ type CultureEvent = {
   imageUrl: string | null;
   area: string | null;
   sigungu: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 function formatDateYYYYMMDD(date: Date): string {
@@ -33,15 +35,46 @@ function formatDateYYYYMMDD(date: Date): string {
 }
 
 const EventAddressIcon = () => (
-  <svg width="10" height="12" viewBox="0 0 10 12" fill="none" aria-hidden="true" className="shrink-0">
-    <path d="M5 1a3 3 0 0 1 3 3c0 2.25-3 6-3 6S2 6.25 2 4a3 3 0 0 1 3-3Z" stroke="#8c6e63" strokeWidth="1" />
+  <svg
+    width="10"
+    height="12"
+    viewBox="0 0 10 12"
+    fill="none"
+    aria-hidden="true"
+    className="shrink-0"
+  >
+    <path
+      d="M5 1a3 3 0 0 1 3 3c0 2.25-3 6-3 6S2 6.25 2 4a3 3 0 0 1 3-3Z"
+      stroke="#8c6e63"
+      strokeWidth="1"
+    />
   </svg>
 );
 
 const EventDateIcon = () => (
-  <svg width="10" height="11" viewBox="0 0 10 11" fill="none" aria-hidden="true" className="shrink-0">
-    <rect x="0.5" y="1.5" width="9" height="8" rx="1.5" stroke="#bf8b6e" strokeWidth="1" />
-    <path d="M3 0.5v2M7 0.5v2M0.5 4.5h9" stroke="#bf8b6e" strokeWidth="1" strokeLinecap="round" />
+  <svg
+    width="10"
+    height="11"
+    viewBox="0 0 10 11"
+    fill="none"
+    aria-hidden="true"
+    className="shrink-0"
+  >
+    <rect
+      x="0.5"
+      y="1.5"
+      width="9"
+      height="8"
+      rx="1.5"
+      stroke="#bf8b6e"
+      strokeWidth="1"
+    />
+    <path
+      d="M3 0.5v2M7 0.5v2M0.5 4.5h9"
+      stroke="#bf8b6e"
+      strokeWidth="1"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -51,15 +84,70 @@ const GPS_PIN_OVERLAY_HTML = `
   </svg>
 `;
 
+function LocationSkeleton() {
+  return (
+    <div className="absolute inset-0 z-20 bg-[#fbf9f4]">
+      <div className="absolute inset-0 bg-[#d9cfc5]" />
+
+      <div className="absolute right-5 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+        <div className="size-[48px] rounded-[12px] bg-[#c7bdb3]" />
+        <div className="size-[48px] rounded-[12px] bg-[#c7bdb3]" />
+        <div className="size-[48px] rounded-[12px] bg-[#c7bdb3]" />
+      </div>
+
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 p-4 w-full">
+        <div className="bg-[#fefefe] rounded-[32px] p-[25px] flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <div className="h-[12px] w-1/3 bg-[#d9cfc5] rounded-[4px]" />
+            <div className="h-[20px] w-2/3 bg-[#d9cfc5] rounded-[4px]" />
+          </div>
+          <div className="h-[14px] w-3/4 bg-[#d9cfc5] rounded-[4px]" />
+          <div className="h-[48px] w-full bg-[#d9cfc5] rounded-2xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LocationPage() {
   const router = useRouter();
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
+  const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const { getCurrentLocation } = useCurrentLocation();
   const [hasGpsLocation, setHasGpsLocation] = useState(false);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-  const [cultureEvents, setCultureEvents] = useState<CultureEvent[] | null>(null);
+  const [cultureEvents, setCultureEvents] = useState<CultureEvent[] | null>(
+    null,
+  );
   const [isEventsExpanded, setIsEventsExpanded] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
+
+  const renderEventMarkers = (events: CultureEvent[]) => {
+    eventMarkersRef.current.forEach((marker) => marker.setMap(null));
+    eventMarkersRef.current = [];
+
+    const map = mapRef.current;
+    if (!map) return;
+
+    eventMarkersRef.current = events
+      .filter((event) => event.lat != null && event.lng != null)
+      .map(
+        (event) =>
+          new window.kakao.maps.Marker({
+            position: new window.kakao.maps.LatLng(
+              event.lat as number,
+              event.lng as number,
+            ),
+            map,
+          }),
+      );
+  };
+
+  const updateCultureEvents = (events: CultureEvent[]) => {
+    setCultureEvents(events);
+    renderEventMarkers(events);
+  };
 
   const fetchNearbyEvents = async (lat: number, lng: number) => {
     setIsLoadingEvents(true);
@@ -75,20 +163,20 @@ export default function LocationPage() {
         gpsyto: String(lat + GPS_BOUNDING_BOX_DELTA),
         from: formatDateYYYYMMDD(today),
         to: formatDateYYYYMMDD(rangeEnd),
-        numOfRows: "10",
+        numOfRows: "100",
       });
 
       const response = await fetch(`/api/culture-events?${params.toString()}`);
       if (!response.ok) {
-        setCultureEvents([]);
+        updateCultureEvents([]);
         return;
       }
 
       const data = await response.json();
-      setCultureEvents(Array.isArray(data.events) ? data.events : []);
+      updateCultureEvents(Array.isArray(data.events) ? data.events : []);
     } catch (err) {
       console.error("주변 이벤트를 가져오지 못했습니다.", err);
-      setCultureEvents([]);
+      updateCultureEvents([]);
     } finally {
       setIsLoadingEvents(false);
     }
@@ -117,32 +205,45 @@ export default function LocationPage() {
       setHasGpsLocation(true);
       await fetchNearbyEvents(lat, lng);
     } catch (err) {
-      console.error("현재 위치를 가져오지 못했습니다.", err);
+      console.error(
+        "현재 위치를 가져오지 못했습니다. GPS 안 켜져 있습니다",
+        err,
+      );
     }
   };
 
   const handleZoomIn = () => {
     const map = mapRef.current;
     if (!map) return;
-    map.setLevel(Math.max(MIN_ZOOM_LEVEL, map.getLevel() - 1), { animate: true });
+    map.setLevel(Math.max(MIN_ZOOM_LEVEL, map.getLevel() - 1), {
+      animate: true,
+    });
   };
 
   const handleZoomOut = () => {
     const map = mapRef.current;
     if (!map) return;
-    map.setLevel(Math.min(MAX_ZOOM_LEVEL, map.getLevel() + 1), { animate: true });
+    map.setLevel(Math.min(MAX_ZOOM_LEVEL, map.getLevel() + 1), {
+      animate: true,
+    });
   };
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
       <div className="bg-[#fbf9f4] w-[390px] min-h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col relative overflow-hidden">
-
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0 z-10">
-          <button onClick={() => router.back()} className="size-[16px] shrink-0">
-            <img src="/icons/back-arrow.svg" alt="뒤로가기" className="size-full" />
+          <button
+            onClick={() => router.back()}
+            className="size-[16px] shrink-0"
+          >
+            <img
+              src="/icons/back-arrow.svg"
+              alt="뒤로가기"
+              className="size-full"
+            />
           </button>
-          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
             위치 검색
           </p>
         </div>
@@ -155,11 +256,16 @@ export default function LocationPage() {
             className="absolute inset-0"
             onMapReady={(map) => {
               mapRef.current = map;
+              setIsMapReady(true);
             }}
           />
+          {!isMapReady && <LocationSkeleton />}
           <div
             className="absolute inset-0 z-10 pointer-events-none"
-            style={{ background: "linear-gradient(180deg, rgba(251,249,244,0.4) 0%, rgba(251,249,244,0) 20%, rgba(251,249,244,0) 80%, rgba(251,249,244,0.4) 100%)" }}
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(251,249,244,0.4) 0%, rgba(251,249,244,0) 20%, rgba(251,249,244,0) 80%, rgba(251,249,244,0.4) 100%)",
+            }}
           />
 
           {/* 지도 컨트롤 (우측) */}
@@ -169,15 +275,36 @@ export default function LocationPage() {
             }`}
           >
             <div className="bg-white border border-[rgba(207,196,189,0.2)] rounded-[12px] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] overflow-hidden">
-              <button onClick={handleZoomIn} className="size-[48px] flex items-center justify-center border-b border-[rgba(207,196,189,0.1)] transition-all active:scale-95 active:bg-[#f0ebe3]">
-                <img src="/icons/zoom-in.svg" alt="확대" className="size-[14px]" />
+              <button
+                onClick={handleZoomIn}
+                className="size-[48px] flex items-center justify-center border-b border-[rgba(207,196,189,0.1)] transition-all active:scale-95 active:bg-[#f0ebe3]"
+              >
+                <img
+                  src="/icons/zoom-in.svg"
+                  alt="확대"
+                  className="size-[14px]"
+                />
               </button>
-              <button onClick={handleZoomOut} className="size-[48px] flex items-center justify-center transition-all active:scale-95 active:bg-[#f0ebe3]">
-                <img src="/icons/zoom-out.svg" alt="축소" className="w-[14px] h-[2px]" />
+              <button
+                onClick={handleZoomOut}
+                className="size-[48px] flex items-center justify-center transition-all active:scale-95 active:bg-[#f0ebe3]"
+              >
+                <img
+                  src="/icons/zoom-out.svg"
+                  alt="축소"
+                  className="w-[14px] h-[2px]"
+                />
               </button>
             </div>
-            <button onClick={handleGpsClick} className="bg-white border border-[rgba(207,196,189,0.2)] rounded-[12px] size-[48px] flex items-center justify-center shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all active:scale-95 active:bg-[#f0ebe3]">
-              <img src="/icons/gps.svg" alt="현재 위치" className="size-[22px]" />
+            <button
+              onClick={handleGpsClick}
+              className="bg-white border border-[rgba(207,196,189,0.2)] rounded-[12px] size-[48px] flex items-center justify-center shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all active:scale-95 active:bg-[#f0ebe3]"
+            >
+              <img
+                src="/icons/gps.svg"
+                alt="현재 위치"
+                className="size-[22px]"
+              />
             </button>
           </div>
 
@@ -199,7 +326,7 @@ export default function LocationPage() {
                     이벤트를 불러오는 중...
                   </span>
                 ) : cultureEvents && cultureEvents.length > 0 ? (
-                  cultureEvents.map((event) => {
+                  cultureEvents.slice(0, 10).map((event) => {
                     const address = [event.area, event.sigungu, event.place]
                       .filter(Boolean)
                       .join(" ");
@@ -208,9 +335,11 @@ export default function LocationPage() {
                       : null;
 
                     return (
-                      <div
+                      <button
                         key={event.externalId}
-                        className="flex gap-3 pb-3 border-b border-[rgba(207,196,189,0.2)] last:border-b-0 last:pb-0"
+                        type="button"
+                        onClick={() => router.push(`/events/${event.externalId}`)}
+                        className="flex gap-3 pb-3 border-b border-[rgba(207,196,189,0.2)] last:border-b-0 last:pb-0 text-left"
                       >
                         <div className="size-16 rounded-[12px] overflow-hidden bg-[#f0ebe3] shrink-0">
                           {event.imageUrl && (
@@ -219,7 +348,9 @@ export default function LocationPage() {
                               alt={event.title}
                               className="size-full object-cover"
                               onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).style.display = "none";
                               }}
                             />
                           )}
@@ -245,7 +376,7 @@ export default function LocationPage() {
                             </div>
                           )}
                         </div>
-                      </div>
+                      </button>
                     );
                   })
                 ) : (
@@ -287,7 +418,14 @@ export default function LocationPage() {
 
         {/* BottomNav */}
         <div className="shrink-0">
-          <BottomNav activeTab="home" />
+          <BottomNav
+            activeTab="recommend"
+            onTabChange={(tab) => {
+              if (tab === "home") router.push("/");
+              if (tab === "curation") router.push("/recommendations");
+              if (tab === "my") router.push("/mypage");
+            }}
+          />
         </div>
       </div>
     </div>

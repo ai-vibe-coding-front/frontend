@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -17,7 +17,8 @@ function loadKakaoSdk(appKey: string): Promise<void> {
       script.src = `${KAKAO_SDK_SRC}?appkey=${appKey}&autoload=false`;
       script.async = true;
       script.onload = () => window.kakao.maps.load(() => resolve());
-      script.onerror = () => reject(new Error("Kakao Maps SDK 로드에 실패했습니다."));
+      script.onerror = () =>
+        reject(new Error("Kakao Maps SDK 로드에 실패했습니다."));
       document.head.appendChild(script);
     });
   }
@@ -30,11 +31,13 @@ export function useKakaoLoader() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const appKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+    const appKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 
     const promise = appKey
       ? loadKakaoSdk(appKey)
-      : Promise.reject(new Error("NEXT_PUBLIC_KAKAO_JS_KEY가 설정되지 않았습니다."));
+      : Promise.reject(
+          new Error("NEXT_PUBLIC_KAKAO_MAP_KEY 설정되지 않았습니다."),
+        );
 
     promise.then(() => setIsLoaded(true)).catch((err: Error) => setError(err));
   }, []);
