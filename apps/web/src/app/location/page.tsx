@@ -11,28 +11,22 @@ import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 const DEFAULT_CENTER = { lat: 37.544581, lng: 127.055961 };
 const MIN_ZOOM_LEVEL = 1;
 const MAX_ZOOM_LEVEL = 14;
-const GPS_BOUNDING_BOX_DELTA = 0.02;
-const NEARBY_EVENTS_RANGE_DAYS = 30;
+const NEARBY_EVENTS_RADIUS_KM = 30;
+const NEARBY_EVENTS_LIMIT = 100;
 
 type CultureEvent = {
-  externalId: string;
+  eventItemId: string;
   title: string;
   place: string | null;
+  address: string | null;
   startDate: string | null;
   endDate: string | null;
   imageUrl: string | null;
-  area: string | null;
-  sigungu: string | null;
-  lat: number | null;
-  lng: number | null;
+  lat: number;
+  lng: number;
+  distanceKm: number;
+  isFavorited: boolean;
 };
-
-function formatDateYYYYMMDD(date: Date): string {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}${mm}${dd}`;
-}
 
 const EventAddressIcon = () => (
   <svg
@@ -130,18 +124,13 @@ export default function LocationPage() {
     const map = mapRef.current;
     if (!map) return;
 
-    eventMarkersRef.current = events
-      .filter((event) => event.lat != null && event.lng != null)
-      .map(
-        (event) =>
-          new window.kakao.maps.Marker({
-            position: new window.kakao.maps.LatLng(
-              event.lat as number,
-              event.lng as number,
-            ),
-            map,
-          }),
-      );
+    eventMarkersRef.current = events.map(
+      (event) =>
+        new window.kakao.maps.Marker({
+          position: new window.kakao.maps.LatLng(event.lat, event.lng),
+          map,
+        }),
+    );
   };
 
   const updateCultureEvents = (events: CultureEvent[]) => {
@@ -152,28 +141,21 @@ export default function LocationPage() {
   const fetchNearbyEvents = async (lat: number, lng: number) => {
     setIsLoadingEvents(true);
     try {
-      const today = new Date();
-      const rangeEnd = new Date();
-      rangeEnd.setDate(rangeEnd.getDate() + NEARBY_EVENTS_RANGE_DAYS);
-
       const params = new URLSearchParams({
-        gpsxfrom: String(lng - GPS_BOUNDING_BOX_DELTA),
-        gpsyfrom: String(lat - GPS_BOUNDING_BOX_DELTA),
-        gpsxto: String(lng + GPS_BOUNDING_BOX_DELTA),
-        gpsyto: String(lat + GPS_BOUNDING_BOX_DELTA),
-        from: formatDateYYYYMMDD(today),
-        to: formatDateYYYYMMDD(rangeEnd),
-        numOfRows: "100",
+        lat: String(lat),
+        lng: String(lng),
+        radiusKm: String(NEARBY_EVENTS_RADIUS_KM),
+        limit: String(NEARBY_EVENTS_LIMIT),
       });
 
-      const response = await fetch(`/api/culture-events?${params.toString()}`);
+      const response = await fetch(`/api/events/nearby?${params.toString()}`);
       if (!response.ok) {
         updateCultureEvents([]);
         return;
       }
 
       const data = await response.json();
-      updateCultureEvents(Array.isArray(data.events) ? data.events : []);
+      updateCultureEvents(Array.isArray(data.data?.items) ? data.data.items : []);
     } catch (err) {
       console.error("주변 이벤트를 가져오지 못했습니다.", err);
       updateCultureEvents([]);
@@ -327,18 +309,16 @@ export default function LocationPage() {
                   </span>
                 ) : cultureEvents && cultureEvents.length > 0 ? (
                   cultureEvents.slice(0, 10).map((event) => {
-                    const address = [event.area, event.sigungu, event.place]
-                      .filter(Boolean)
-                      .join(" ");
+                    const address = event.address ?? event.place;
                     const dateRange = event.startDate
                       ? `${event.startDate} ~ ${event.endDate ?? ""}`
                       : null;
 
                     return (
                       <button
-                        key={event.externalId}
+                        key={event.eventItemId}
                         type="button"
-                        onClick={() => router.push(`/events/${event.externalId}`)}
+                        onClick={() => router.push(`/events/${event.eventItemId}`)}
                         className="flex gap-3 pb-3 border-b border-[rgba(207,196,189,0.2)] last:border-b-0 last:pb-0 text-left"
                       >
                         <div className="size-16 rounded-[12px] overflow-hidden bg-[#f0ebe3] shrink-0">
