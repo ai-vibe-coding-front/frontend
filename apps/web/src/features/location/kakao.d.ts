@@ -12,12 +12,31 @@ declare namespace kakao.maps {
     level?: number;
   }
 
+  class LatLngBounds {
+    getSouthWest(): LatLng;
+    getNorthEast(): LatLng;
+  }
+
   class Map {
     constructor(container: HTMLElement, options: MapOptions);
     setCenter(latlng: LatLng): void;
     getCenter(): LatLng;
     setLevel(level: number, options?: { animate?: boolean }): void;
     getLevel(): number;
+    getBounds(): LatLngBounds;
+  }
+
+  namespace event {
+    function addListener(
+      target: object,
+      type: string,
+      handler: () => void,
+    ): void;
+    function removeListener(
+      target: object,
+      type: string,
+      handler: () => void,
+    ): void;
   }
 
   interface CustomOverlayOptions {
@@ -43,6 +62,29 @@ declare namespace kakao.maps {
     constructor(options: MarkerOptions);
     setMap(map: Map | null): void;
     setPosition(position: LatLng): void;
+  }
+
+  namespace services {
+    interface RegionCodeResult {
+      region_type: string;
+      region_1depth_name: string;
+      region_2depth_name: string;
+      region_3depth_name: string;
+    }
+
+    const Status: {
+      OK: string;
+      ZERO_RESULT: string;
+      ERROR: string;
+    };
+
+    class Geocoder {
+      coord2RegionCode(
+        lng: number,
+        lat: number,
+        callback: (result: RegionCodeResult[], status: string) => void,
+      ): void;
+    }
   }
 }
 

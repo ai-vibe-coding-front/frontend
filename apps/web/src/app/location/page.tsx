@@ -1,32 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CTAButton } from "@/components/common/CTAButton";
 import { BottomNav } from "@/components/layout/BottomNav";
 import MapPinIcon from "@/components/common/MapPinIcon";
 import { KakaoMap } from "@/features/location/KakaoMap";
-import { useCurrentLocation } from "@/features/location/useCurrentLocation";
+import { useNearbyEventsMap } from "@/features/events/hooks/useNearbyEventsMap";
 
 const DEFAULT_CENTER = { lat: 37.544581, lng: 127.055961 };
-const MIN_ZOOM_LEVEL = 1;
-const MAX_ZOOM_LEVEL = 14;
-const NEARBY_EVENTS_RADIUS_KM = 30;
-const NEARBY_EVENTS_LIMIT = 100;
-
-type CultureEvent = {
-  eventItemId: string;
-  title: string;
-  place: string | null;
-  address: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  imageUrl: string | null;
-  lat: number;
-  lng: number;
-  distanceKm: number;
-  isFavorited: boolean;
-};
 
 const EventAddressIcon = () => (
   <svg
@@ -72,12 +53,6 @@ const EventDateIcon = () => (
   </svg>
 );
 
-const GPS_PIN_OVERLAY_HTML = `
-  <svg viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-[40px] h-[48px] drop-shadow-[0px_4px_1.5px_rgba(0,0,0,0.1)]">
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.373 0 0 5.373 0 12C0 19.2 12 30 12 30C12 30 24 19.2 24 12C24 5.373 18.627 0 12 0ZM12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16Z" fill="#2D2926"/>
-  </svg>
-`;
-
 function LocationSkeleton() {
   return (
     <div className="absolute inset-0 z-20 bg-[#fbf9f4]">
@@ -105,111 +80,20 @@ function LocationSkeleton() {
 
 export default function LocationPage() {
   const router = useRouter();
-  const mapRef = useRef<kakao.maps.Map | null>(null);
-  const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
-  const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
-  const { getCurrentLocation } = useCurrentLocation();
-  const [hasGpsLocation, setHasGpsLocation] = useState(false);
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-  const [cultureEvents, setCultureEvents] = useState<CultureEvent[] | null>(
-    null,
-  );
-  const [isEventsExpanded, setIsEventsExpanded] = useState(false);
-  const [isMapReady, setIsMapReady] = useState(false);
-  const [isMapError, setIsMapError] = useState(false);
-
-  const renderEventMarkers = (events: CultureEvent[]) => {
-    eventMarkersRef.current.forEach((marker) => marker.setMap(null));
-    eventMarkersRef.current = [];
-
-    const map = mapRef.current;
-    if (!map) return;
-
-    eventMarkersRef.current = events.map(
-      (event) =>
-        new window.kakao.maps.Marker({
-          position: new window.kakao.maps.LatLng(event.lat, event.lng),
-          map,
-        }),
-    );
-  };
-
-  const updateCultureEvents = (events: CultureEvent[]) => {
-    setCultureEvents(events);
-    renderEventMarkers(events);
-  };
-
-  const fetchNearbyEvents = async (lat: number, lng: number) => {
-    setIsLoadingEvents(true);
-    try {
-      const params = new URLSearchParams({
-        lat: String(lat),
-        lng: String(lng),
-        radiusKm: String(NEARBY_EVENTS_RADIUS_KM),
-        limit: String(NEARBY_EVENTS_LIMIT),
-      });
-
-      const response = await fetch(`/api/events/nearby?${params.toString()}`);
-      if (!response.ok) {
-        updateCultureEvents([]);
-        return;
-      }
-
-      const data = await response.json();
-      updateCultureEvents(Array.isArray(data.data?.items) ? data.data.items : []);
-    } catch (err) {
-      console.error("주변 이벤트를 가져오지 못했습니다.", err);
-      updateCultureEvents([]);
-    } finally {
-      setIsLoadingEvents(false);
-    }
-  };
-
-  const handleGpsClick = async () => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    try {
-      const { lat, lng } = await getCurrentLocation();
-      setIsEventsExpanded(false);
-      const position = new window.kakao.maps.LatLng(lat, lng);
-      map.setCenter(position);
-
-      if (gpsOverlayRef.current) {
-        gpsOverlayRef.current.setPosition(position);
-      } else {
-        gpsOverlayRef.current = new window.kakao.maps.CustomOverlay({
-          position,
-          content: GPS_PIN_OVERLAY_HTML,
-          yAnchor: 1,
-        });
-      }
-      gpsOverlayRef.current.setMap(map);
-      setHasGpsLocation(true);
-      await fetchNearbyEvents(lat, lng);
-    } catch (err) {
-      console.error(
-        "현재 위치를 가져오지 못했습니다. GPS 안 켜져 있습니다",
-        err,
-      );
-    }
-  };
-
-  const handleZoomIn = () => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.setLevel(Math.max(MIN_ZOOM_LEVEL, map.getLevel() - 1), {
-      animate: true,
-    });
-  };
-
-  const handleZoomOut = () => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.setLevel(Math.min(MAX_ZOOM_LEVEL, map.getLevel() + 1), {
-      animate: true,
-    });
-  };
+  const {
+    hasGpsLocation,
+    isLoadingEvents,
+    cultureEvents,
+    isEventsExpanded,
+    setIsEventsExpanded,
+    isMapReady,
+    isMapError,
+    onMapReady,
+    onMapError,
+    handleGpsClick,
+    handleZoomIn,
+    handleZoomOut,
+  } = useNearbyEventsMap();
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -237,11 +121,8 @@ export default function LocationPage() {
           <KakaoMap
             center={DEFAULT_CENTER}
             className="absolute inset-0"
-            onMapReady={(map) => {
-              mapRef.current = map;
-              setIsMapReady(true);
-            }}
-            onError={() => setIsMapError(true)}
+            onMapReady={onMapReady}
+            onError={onMapError}
           />
           {!isMapReady && !isMapError && <LocationSkeleton />}
           <div

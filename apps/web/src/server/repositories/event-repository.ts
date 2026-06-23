@@ -40,3 +40,17 @@ export async function findFavoritedEventIds(
 
   return new Set(favorites.map((favorite) => favorite.eventItemId));
 }
+
+export async function createFavorite(userId: string, eventItemId: string) {
+  return prisma.favorite.upsert({
+    where: { userId_eventItemId: { userId, eventItemId } },
+    create: { userId, eventItemId },
+    update: {},
+  });
+}
+
+export async function deleteFavorite(userId: string, eventItemId: string) {
+  await prisma.favorite.deleteMany({
+    where: { userId, eventItemId },
+  });
+}

@@ -1,4 +1,6 @@
 import {
+  createFavorite,
+  deleteFavorite,
   findEventDetailById,
   findFavoritedEventIds,
   findNearbyEventCandidates,
@@ -163,4 +165,20 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
     lat: event.lat,
     lng: event.lng,
   };
+}
+
+export async function addFavorite(
+  userId: string,
+  eventItemId: string,
+): Promise<{ ok: true } | { ok: false; reason: 'NOT_FOUND' }> {
+  const event = await findEventDetailById(eventItemId);
+  if (!event) return { ok: false, reason: 'NOT_FOUND' };
+
+  await createFavorite(userId, event.id);
+  return { ok: true };
+}
+
+export async function removeFavorite(userId: string, eventItemId: string): Promise<void> {
+  const event = await findEventDetailById(eventItemId);
+  await deleteFavorite(userId, event?.id ?? eventItemId);
 }
