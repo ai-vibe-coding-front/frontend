@@ -11,12 +11,13 @@ import { LocationPermissionModal } from "@/components/common/LocationPermissionM
 
 const MOCK_EVENT: EventCardData = {
   id: "1",
-  category: "전시",
+  realmName: "전시",
   title: "빛으로 쓴 편지 — 사진전",
-  venue: "성수 갤러리아 포레",
-  period: "2026.06.01 – 2026.06.30",
-  dDay: 18,
-  liked: false,
+  place: "성수 갤러리아 포레",
+  startDate: new Date("2026-06-01"),
+  endDate: new Date("2026-06-30"),
+  imageUrl: null,
+  isFavorite: false,
 };
 
 const dotClass = "rounded-full bg-[#e4d8c9] size-[6px] shrink-0";

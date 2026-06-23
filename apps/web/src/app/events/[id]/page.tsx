@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, notFound } from 'next/navigation';
-import { CategoryBadge } from '@/components/common/CategoryBadge';
+import { CategoryBadge, type Category } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
 import { KakaoMap, KakaoMapFallback } from '@/features/event-detail/components/KakaoMap';
@@ -109,7 +108,8 @@ export default function EventDetailPage() {
     );
   }
 
-  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+  const isLoggedIn = typeof document !== 'undefined' &&
+    document.cookie.split(';').some((c) => c.trim().startsWith('isLoggedIn='));
 
   const handleHeartClick = () => {
     if (!isLoggedIn) {
@@ -120,9 +120,14 @@ export default function EventDetailPage() {
   };
 
   const handleExternalLink = () => {
-    if (!event.externalUrl) return;
-    window.open(event.externalUrl, '_blank', 'noopener,noreferrer');
+    if (!event.bookingUrl) return;
+    window.open(event.bookingUrl, '_blank', 'noopener,noreferrer');
   };
+
+  const period =
+    event.startDate && event.endDate
+      ? `${event.startDate} — ${event.endDate}`
+      : event.startDate ?? event.endDate ?? '-';
 
   return (
     <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
@@ -152,9 +157,11 @@ export default function EventDetailPage() {
           </div>
 
           {/* 카테고리 */}
-          <div className="flex items-center">
-            <CategoryBadge category={event.category as React.ComponentProps<typeof CategoryBadge>['category']} size="large" />
-          </div>
+          {event.realmName && (
+            <div className="flex items-center">
+              <CategoryBadge category={event.realmName as Category} size="large" />
+            </div>
+          )}
 
           {/* 제목 */}
           <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
@@ -166,15 +173,15 @@ export default function EventDetailPage() {
             <div className="flex flex-col px-[23px]">
               <div className="flex items-center py-[15px] border-b border-[#ded0be]">
                 <span className={infoLabelClass}>기간</span>
-                <span className={infoValueClass}>{event.period}</span>
+                <span className={infoValueClass}>{period}</span>
               </div>
               <div className="flex items-center py-[15px] border-b border-[#ded0be]">
                 <span className={infoLabelClass}>장소</span>
-                <span className={infoValueClass}>{event.venue}</span>
+                <span className={infoValueClass}>{event.place ?? '-'}</span>
               </div>
               <div className="flex items-center py-[15px] border-b border-[#ded0be]">
                 <span className={infoLabelClass}>관람료</span>
-                <span className={infoValueClass}>{event.fee}</span>
+                <span className={infoValueClass}>{event.price ?? '-'}</span>
               </div>
               <div className="flex flex-col py-[15px] gap-[10px]">
                 <p className="font-bold text-[13px] text-[#8c6e63] leading-[19.5px]">행사정보</p>
@@ -186,8 +193,8 @@ export default function EventDetailPage() {
           </div>
 
           {/* 지도 섹션 */}
-          {event.latitude && event.longitude ? (
-            <KakaoMap latitude={event.latitude} longitude={event.longitude} venueName={event.venue} />
+          {event.lat !== null && event.lng !== null ? (
+            <KakaoMap latitude={event.lat} longitude={event.lng} venueName={event.place ?? ''} />
           ) : (
             <KakaoMapFallback />
           )}
@@ -199,7 +206,7 @@ export default function EventDetailPage() {
             <button
               type="button"
               onClick={handleExternalLink}
-              disabled={!event.externalUrl}
+              disabled={!event.bookingUrl}
               className="bg-[#8edfd2] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-full h-[48px] rounded-[16px] flex items-center justify-center gap-[10px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="font-bold text-[16px] text-[#245b6b] tracking-[-0.32px] leading-[24px]">
