@@ -11,8 +11,8 @@ Figma URL이 주어지면 해당 화면만 코드화한다.
 
 | 순서 | 화면 | Figma Node ID | 상태 |
 |------|------|---------------|------|
-| 1 | onboarding 로그인 | 390:6027 | ⏳ 미작업 |
-| 2 | onboarding 비로그인 | 390:6331 | ⏳ 미작업 |
+| 1 | 홈 로그인 | 390:6027 | ⏳ 미작업 |
+| 2 | 홈 비로그인 | 390:6331 | ⏳ 미작업 |
 | 3 | 위치동의 모달 | 390:6389 | ⏳ 미작업 |
 | 4 | 동의 후 핀형 | 390:6446 | ⏳ 미작업 |
 | 5 | 로그인 | 390:6525 | ⏳ 미작업 |
@@ -53,7 +53,7 @@ Figma URL이 주어지면 해당 화면만 코드화한다.
 **폴더 규칙:**
 - 공통 UI (버튼, 배지 등) → `apps/web/src/components/common/`
 - 레이아웃 (헤더, 네비) → `apps/web/src/components/layout/`
-- 온보딩/인증 화면 → `apps/web/src/app/onboarding/`, `apps/web/src/app/login/`, `apps/web/src/app/signup/`
+- 진입/인증 화면 → `apps/web/src/app/`, `apps/web/src/app/login/`, `apps/web/src/app/signup/`
 - 기능별 컴포넌트 → `apps/web/src/features/<기능명>/`
 - 모달 → `apps/web/src/components/common/<Name>Modal.tsx`
 

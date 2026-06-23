@@ -54,7 +54,7 @@ export default function SignupPage() {
           body: JSON.stringify({ email: data.email, password: data.password, nickname: data.nickname }),
         },
       );
-      router.push(ROUTES.onboarding);
+      router.push(ROUTES.home);
     } catch (error) {
       if (error instanceof ApiClientError && error.errorCode === 'EMAIL_ALREADY_EXISTS') {
         setError('email', { message: '이미 사용 중인 이메일입니다' });
