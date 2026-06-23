@@ -47,11 +47,17 @@ export default function SignupPage() {
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      await apiClient<{ user: { id: string; email: string; nickname: string } }>(
+      await apiClient<{ userId: string; email: string; nickname: string }>(
         '/api/auth/signup',
         {
           method: 'POST',
-          body: JSON.stringify({ email: data.email, password: data.password, nickname: data.nickname }),
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+            passwordConfirm: data.passwordConfirm,
+            nickname: data.nickname,
+            privacyAgreed: data.agreed,
+          }),
         },
       );
       router.push(ROUTES.home);
