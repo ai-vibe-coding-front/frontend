@@ -37,7 +37,7 @@ export async function DELETE(
     }
 
     await deleteFavorite(userId, eventItemId);
-    const favoriteCount = await countFavorites(eventItemId);
+    const favoriteCount = await countFavorites(userId);
 
     return ok({ eventItemId, isFavorited: false, favoriteCount });
   } catch (err) {
