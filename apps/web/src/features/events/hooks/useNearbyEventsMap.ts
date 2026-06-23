@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 
@@ -43,13 +43,44 @@ function calculateDistanceMeters(
   return EARTH_RADIUS_M * c;
 }
 
+const LOCATION_STORAGE_KEY = "explore:lastGpsLocation";
+
 const GPS_PIN_OVERLAY_HTML = `
   <svg viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-[40px] h-[48px] drop-shadow-[0px_4px_1.5px_rgba(0,0,0,0.1)]">
     <path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.373 0 0 5.373 0 12C0 19.2 12 30 12 30C12 30 24 19.2 24 12C24 5.373 18.627 0 12 0ZM12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16Z" fill="#2D2926"/>
   </svg>
 `;
 
-export function useNearbyEventsMap() {
+type UseNearbyEventsMapOptions = {
+  persistLocation?: boolean;
+};
+
+function readStoredLocation(): { lat: number; lng: number } | null {
+  try {
+    const raw = sessionStorage.getItem(LOCATION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.lat !== "number" || typeof parsed.lng !== "number") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function subscribeToStoredLocation() {
+  return () => {};
+}
+
+function getHasStoredLocationSnapshot(): boolean {
+  return readStoredLocation() !== null;
+}
+
+function getHasStoredLocationServerSnapshot(): boolean {
+  return false;
+}
+
+export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
+  const { persistLocation = false } = options;
   const router = useRouter();
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
@@ -57,7 +88,13 @@ export function useNearbyEventsMap() {
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   const { getCurrentLocation } = useCurrentLocation();
 
-  const [hasGpsLocation, setHasGpsLocation] = useState(false);
+  const [rawHasGpsLocation, setHasGpsLocation] = useState(false);
+  const hasStoredLocation = useSyncExternalStore(
+    subscribeToStoredLocation,
+    getHasStoredLocationSnapshot,
+    getHasStoredLocationServerSnapshot,
+  );
+  const hasGpsLocation = rawHasGpsLocation || (persistLocation && hasStoredLocation);
   const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const [cultureEvents, setCultureEvents] = useState<CultureEvent[] | null>(
     null,
@@ -153,6 +190,28 @@ export function useNearbyEventsMap() {
     setMapScaleMeters(calculateDistanceMeters(sw.getLat(), sw.getLng(), sw.getLat(), ne.getLng()));
   };
 
+  const applyLocation = (lat: number, lng: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const position = new window.kakao.maps.LatLng(lat, lng);
+    map.setCenter(position);
+
+    if (gpsOverlayRef.current) {
+      gpsOverlayRef.current.setPosition(position);
+    } else {
+      gpsOverlayRef.current = new window.kakao.maps.CustomOverlay({
+        position,
+        content: GPS_PIN_OVERLAY_HTML,
+        yAnchor: 1,
+      });
+    }
+    gpsOverlayRef.current.setMap(map);
+    setHasGpsLocation(true);
+    lastPositionRef.current = { lat, lng };
+    resolveDistrictName(lat, lng);
+  };
+
   const handleGpsClick = async () => {
     const map = mapRef.current;
     if (!map) return;
@@ -160,22 +219,12 @@ export function useNearbyEventsMap() {
     try {
       const { lat, lng } = await getCurrentLocation();
       setIsEventsExpanded(false);
-      const position = new window.kakao.maps.LatLng(lat, lng);
-      map.setCenter(position);
+      applyLocation(lat, lng);
 
-      if (gpsOverlayRef.current) {
-        gpsOverlayRef.current.setPosition(position);
-      } else {
-        gpsOverlayRef.current = new window.kakao.maps.CustomOverlay({
-          position,
-          content: GPS_PIN_OVERLAY_HTML,
-          yAnchor: 1,
-        });
+      if (persistLocation) {
+        sessionStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify({ lat, lng }));
       }
-      gpsOverlayRef.current.setMap(map);
-      setHasGpsLocation(true);
-      lastPositionRef.current = { lat, lng };
-      resolveDistrictName(lat, lng);
+
       await fetchNearbyEvents(lat, lng, selectedCategory);
     } catch (err) {
       console.error(
@@ -183,6 +232,15 @@ export function useNearbyEventsMap() {
         err,
       );
     }
+  };
+
+  const restoreSavedLocation = async () => {
+    if (!persistLocation) return;
+    const saved = readStoredLocation();
+    if (!saved) return;
+
+    applyLocation(saved.lat, saved.lng);
+    await fetchNearbyEvents(saved.lat, saved.lng, selectedCategory);
   };
 
   const handleCategorySelect = async (category: string | null) => {
@@ -258,6 +316,7 @@ export function useNearbyEventsMap() {
     setIsMapReady(true);
     window.kakao.maps.event.addListener(map, "zoom_changed", updateMapScale);
     updateMapScale();
+    restoreSavedLocation();
   };
 
   const onMapError = () => setIsMapError(true);

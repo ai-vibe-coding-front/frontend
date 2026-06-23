@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { EventCard, type EventCardData } from "@/components/common/EventCard";
 import { LocationPermissionModal } from "@/components/common/LocationPermissionModal";
@@ -86,7 +87,7 @@ export default function ExplorePage() {
     handleZoomIn,
     handleZoomOut,
     handleToggleFavorite,
-  } = useNearbyEventsMap();
+  } = useNearbyEventsMap({ persistLocation: true });
   const [isLocationPromptDismissed, setIsLocationPromptDismissed] = useState(false);
 
   return (
@@ -98,9 +99,11 @@ export default function ExplorePage() {
             onClick={() => router.back()}
             className="size-[16px] shrink-0"
           >
-            <img
+            <Image
               src="/icons/back-arrow.svg"
               alt="뒤로가기"
+              width={16}
+              height={16}
               className="size-full"
             />
           </button>
@@ -136,7 +139,7 @@ export default function ExplorePage() {
 
           {/* 카테고리 필터 */}
           {hasGpsLocation && (
-            <div className="absolute top-3 left-0 right-0 z-10 px-4 overflow-x-auto">
+            <div className="absolute top-3 left-0 right-0 z-10 px-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <div className="flex gap-2 w-max">
                 {CATEGORY_FILTERS.map((filter) => {
                   const isSelected = selectedCategory === filter.value;
@@ -171,9 +174,11 @@ export default function ExplorePage() {
                 onClick={handleZoomIn}
                 className="size-[48px] flex items-center justify-center border-b border-[rgba(207,196,189,0.1)] transition-all active:scale-95 active:bg-[#f0ebe3]"
               >
-                <img
+                <Image
                   src="/icons/zoom-in.svg"
                   alt="확대"
+                  width={14}
+                  height={14}
                   className="size-[14px]"
                 />
               </button>
@@ -181,9 +186,11 @@ export default function ExplorePage() {
                 onClick={handleZoomOut}
                 className="size-[48px] flex items-center justify-center transition-all active:scale-95 active:bg-[#f0ebe3]"
               >
-                <img
+                <Image
                   src="/icons/zoom-out.svg"
                   alt="축소"
+                  width={14}
+                  height={2}
                   className="w-[14px] h-[2px]"
                 />
               </button>
@@ -192,9 +199,11 @@ export default function ExplorePage() {
               onClick={handleGpsClick}
               className="bg-white border border-[rgba(207,196,189,0.2)] rounded-[12px] size-[48px] flex items-center justify-center shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1)] transition-all active:scale-95 active:bg-[#f0ebe3]"
             >
-              <img
+              <Image
                 src="/icons/gps.svg"
                 alt="현재 위치"
+                width={22}
+                height={22}
                 className="size-[22px]"
               />
             </button>

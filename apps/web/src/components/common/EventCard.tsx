@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
 
@@ -92,10 +93,12 @@ export function EventCard({ event, onClick, onLike, shadow = true }: EventCardPr
     >
       <div className="relative h-[192px] w-full">
         {event.imageUrl ? (
-          <img
+          <Image
             src={event.imageUrl}
             alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            fill
+            sizes="100vw"
+            className="object-cover"
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
