@@ -19,10 +19,10 @@ export async function POST(request: Request) {
     const privacyRequired = issues.find((i) => i.path.includes('privacyAgreed'));
 
     if (passwordMismatch) {
-      return fail('PASSWORD_MISMATCH', '비밀번호가 일치하지 않습니다', 400);
+      return fail('PASSWORD_MISMATCH', SIGNUP_ERRORS.PASSWORD_MISMATCH, 400);
     }
     if (privacyRequired) {
-      return fail('PRIVACY_AGREEMENT_REQUIRED', '개인정보 수집에 동의해주세요', 400);
+      return fail('PRIVACY_AGREEMENT_REQUIRED', SIGNUP_ERRORS.PRIVACY_AGREEMENT_REQUIRED, 400);
     }
     return fail('INVALID_INPUT', issues[0]?.message ?? '입력값을 확인해주세요', 400);
   }
