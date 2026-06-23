@@ -1,10 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CTAButton } from "@/components/common/CTAButton";
 import { BottomNav } from "@/components/layout/BottomNav";
-import MapPinIcon from "@/components/common/MapPinIcon";
 import { EventCard, type EventCardData } from "@/components/common/EventCard";
+import { LocationPermissionModal } from "@/components/common/LocationPermissionModal";
 import { KakaoMap } from "@/features/location/KakaoMap";
 import {
   useNearbyEventsMap,
@@ -87,6 +87,7 @@ export default function ExplorePage() {
     handleZoomOut,
     handleToggleFavorite,
   } = useNearbyEventsMap();
+  const [isLocationPromptDismissed, setIsLocationPromptDismissed] = useState(false);
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -118,6 +119,13 @@ export default function ExplorePage() {
             onError={onMapError}
           />
           {!isMapReady && !isMapError && <ExploreSkeleton />}
+          {!hasGpsLocation && !isLocationPromptDismissed && (
+            <LocationPermissionModal
+              onAllow={handleGpsClick}
+              onSkip={() => setIsLocationPromptDismissed(true)}
+              blurBackground
+            />
+          )}
           <div
             className="absolute inset-0 z-10 pointer-events-none"
             style={{
@@ -247,34 +255,7 @@ export default function ExplorePage() {
                   </span>
                 )}
               </div>
-            ) : (
-              <div className="pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] p-[25px] flex flex-col gap-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium text-[12px] text-[#6b6763] leading-[18px] tracking-[-0.3px]">
-                      현재 설정된 위치
-                    </span>
-                    <span className="font-bold text-[20px] text-[#251e19] leading-[25px]">
-                      서울시 성동구 성수동
-                    </span>
-                  </div>
-                  <div className="bg-[#f0fdf4] rounded-full px-3 py-1 shrink-0">
-                    <span className="font-bold text-[11px] text-[#15803d] leading-[16.5px]">
-                      정확도 높음
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pb-2 border-b border-[rgba(207,196,189,0.2)]">
-                  <MapPinIcon className="w-[12px] h-[15px] shrink-0" />
-                  <span className="font-normal text-[14px] text-[#4d4540] leading-[21px]">
-                    서울특별시 성동구 아차산로 17길 48
-                  </span>
-                </div>
-
-                <CTAButton label="이 위치로 설정" onClick={handleGpsClick} />
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
 
