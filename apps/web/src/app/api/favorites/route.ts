@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { created, fail } from "@/lib/api-response";
 import { verifyAccessToken } from "@/server/services/auth-service";
 import {
@@ -63,6 +64,9 @@ export async function POST(request: Request) {
 
     return created({ eventItemId, isFavorited: true, favoriteCount });
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return fail("FAVORITE_ALREADY_EXISTS", "이미 저장된 행사입니다.", 409);
+    }
     console.error("[POST /api/favorites]", err);
     return fail("FAVORITE_CREATE_FAILED", "찜 추가에 실패했습니다.", 500);
   }
