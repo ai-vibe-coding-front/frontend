@@ -26,3 +26,21 @@ export async function hasGuestUsedSession(sessionKey: string): Promise<boolean> 
   });
   return session !== null;
 }
+
+export async function findExplorationSessionById(id: string) {
+  return prisma.explorationSession.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      sessionKey: true,
+      userId: true,
+      sido: true,
+      nx: true,
+      ny: true,
+      lat: true,
+      lng: true,
+      stationName: true,
+      expiresAt: true,
+    },
+  });
+}
