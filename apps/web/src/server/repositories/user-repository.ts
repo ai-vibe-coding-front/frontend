@@ -16,6 +16,25 @@ export async function findUserWithCredentialByEmail(email: string) {
   });
 }
 
+export async function findUserWithFavoriteCount(id: string) {
+  return prisma.user.findFirst({
+    where: {
+      id,
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      email: true,
+      nickname: true,
+      _count: {
+        select: {
+          favorites: true,
+        },
+      },
+    },
+  });
+}
+
 export async function saveRefreshToken(
   userId: string,
   tokenHash: string,
