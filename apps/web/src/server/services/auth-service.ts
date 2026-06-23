@@ -1,6 +1,6 @@
 import { promisify } from 'util';
 import { createHash, randomBytes, scrypt, timingSafeEqual } from 'crypto';
-import { SignJWT } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 import {
   createUserWithCredential,
   findUserByEmail,
@@ -33,6 +33,22 @@ export async function issueAccessToken(userId: string): Promise<string> {
     .setIssuedAt()
     .setExpirationTime('1h')
     .sign(secret);
+}
+
+/**
+ * 인증이 선택적인 API에서 사용한다.
+ * 토큰이 없거나 만료/위조된 경우 예외를 던지지 않고 null을 반환한다.
+ */
+export async function verifyAccessToken(token: string): Promise<string | null> {
+  const rawSecret = process.env.ACCESS_TOKEN_SECRET;
+  if (!rawSecret) return null;
+  const secret = new TextEncoder().encode(rawSecret);
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    return typeof payload.sub === 'string' ? payload.sub : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function issueRefreshToken(userId: string): Promise<{ token: string; expiresAt: Date }> {
