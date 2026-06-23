@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CTAButton } from "@/components/common/CTAButton";
 import { BottomNav } from "@/components/layout/BottomNav";
 import MapPinIcon from "@/components/common/MapPinIcon";
 import { KakaoMap } from "@/features/location/KakaoMap";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
+import { ROUTES } from "@/constants/routes";
 
 const DEFAULT_CENTER = { lat: 37.544581, lng: 127.055961 };
 const MIN_ZOOM_LEVEL = 1;
@@ -103,8 +104,9 @@ function LocationSkeleton() {
   );
 }
 
-export default function LocationPage() {
+function LocationContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
@@ -117,6 +119,11 @@ export default function LocationPage() {
   const [isEventsExpanded, setIsEventsExpanded] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [isMapError, setIsMapError] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const isPermissionFlow = searchParams.get("from") === "permission";
 
   const renderEventMarkers = (events: CultureEvent[]) => {
     eventMarkersRef.current.forEach((marker) => marker.setMap(null));
@@ -165,34 +172,54 @@ export default function LocationPage() {
     }
   };
 
+  const applyLocation = async (
+    map: kakao.maps.Map,
+    coordinates: { lat: number; lng: number },
+  ) => {
+    const { lat, lng } = coordinates;
+    setIsEventsExpanded(false);
+    setSelectedLocation(coordinates);
+
+    const position = new window.kakao.maps.LatLng(lat, lng);
+    map.setCenter(position);
+
+    if (gpsOverlayRef.current) {
+      gpsOverlayRef.current.setPosition(position);
+    } else {
+      gpsOverlayRef.current = new window.kakao.maps.CustomOverlay({
+        position,
+        content: GPS_PIN_OVERLAY_HTML,
+        yAnchor: 1,
+      });
+    }
+    gpsOverlayRef.current.setMap(map);
+    setHasGpsLocation(true);
+    await fetchNearbyEvents(lat, lng);
+  };
+
   const handleGpsClick = async () => {
     const map = mapRef.current;
     if (!map) return;
 
     try {
-      const { lat, lng } = await getCurrentLocation();
-      setIsEventsExpanded(false);
-      const position = new window.kakao.maps.LatLng(lat, lng);
-      map.setCenter(position);
-
-      if (gpsOverlayRef.current) {
-        gpsOverlayRef.current.setPosition(position);
-      } else {
-        gpsOverlayRef.current = new window.kakao.maps.CustomOverlay({
-          position,
-          content: GPS_PIN_OVERLAY_HTML,
-          yAnchor: 1,
-        });
-      }
-      gpsOverlayRef.current.setMap(map);
-      setHasGpsLocation(true);
-      await fetchNearbyEvents(lat, lng);
+      await applyLocation(map, await getCurrentLocation());
     } catch (err) {
       console.error(
         "현재 위치를 가져오지 못했습니다. GPS 안 켜져 있습니다",
         err,
       );
     }
+  };
+
+  const handleLocationConfirm = () => {
+    const params = new URLSearchParams();
+    if (selectedLocation) {
+      params.set("lat", String(selectedLocation.lat));
+      params.set("lng", String(selectedLocation.lng));
+    }
+
+    const query = params.toString();
+    router.push(query ? `${ROUTES.questions}?${query}` : ROUTES.questions);
   };
 
   const handleZoomIn = () => {
@@ -240,6 +267,21 @@ export default function LocationPage() {
             onMapReady={(map) => {
               mapRef.current = map;
               setIsMapReady(true);
+
+              if (!isPermissionFlow) return;
+
+              const latParam = searchParams.get("lat");
+              const lngParam = searchParams.get("lng");
+              const lat = Number(latParam);
+              const lng = Number(lngParam);
+              if (
+                latParam !== null &&
+                lngParam !== null &&
+                Number.isFinite(lat) &&
+                Number.isFinite(lng)
+              ) {
+                void applyLocation(map, { lat, lng });
+              }
             }}
             onError={() => setIsMapError(true)}
           />
@@ -305,6 +347,12 @@ export default function LocationPage() {
                   className="w-10 h-1 rounded-full bg-[rgba(207,196,189,0.6)] mx-auto -mt-1 mb-1 shrink-0"
                   aria-label={isEventsExpanded ? "목록 접기" : "목록 펼치기"}
                 />
+                {isPermissionFlow && (
+                  <CTAButton
+                    label="이 위치로 설정"
+                    onClick={handleLocationConfirm}
+                  />
+                )}
                 {isLoadingEvents ? (
                   <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                     이벤트를 불러오는 중...
@@ -392,7 +440,12 @@ export default function LocationPage() {
                   </span>
                 </div>
 
-                <CTAButton label="이 위치로 설정" onClick={handleGpsClick} />
+                <CTAButton
+                  label="이 위치로 설정"
+                  onClick={
+                    isPermissionFlow ? handleLocationConfirm : handleGpsClick
+                  }
+                />
               </div>
             )}
           </div>
@@ -411,5 +464,13 @@ export default function LocationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LocationPage() {
+  return (
+    <Suspense fallback={null}>
+      <LocationContent />
+    </Suspense>
   );
 }
