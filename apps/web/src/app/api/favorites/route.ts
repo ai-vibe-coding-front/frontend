@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     await createFavorite(userId, eventItemId);
-    const favoriteCount = await countFavorites(eventItemId);
+    const favoriteCount = await countFavorites(userId);
 
     return created({ eventItemId, isFavorited: true, favoriteCount });
   } catch (err) {
