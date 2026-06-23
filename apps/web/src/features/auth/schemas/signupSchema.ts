@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+export const SIGNUP_ERRORS = {
+  PASSWORD_MISMATCH: '비밀번호가 일치하지 않습니다',
+  PRIVACY_AGREEMENT_REQUIRED: '개인정보 수집에 동의해주세요',
+} as const;
+
 export const signupSchema = z
   .object({
     email: z.string().email('올바른 이메일 주소를 입력해주세요'),
@@ -20,14 +25,14 @@ export const signupSchema = z
     if (data.password !== data.passwordConfirm) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: '비밀번호가 일치하지 않습니다',
+        message: SIGNUP_ERRORS.PASSWORD_MISMATCH,
         path: ['passwordConfirm'],
       });
     }
     if (!data.privacyAgreed) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: '개인정보 수집에 동의해주세요',
+        message: SIGNUP_ERRORS.PRIVACY_AGREEMENT_REQUIRED,
         path: ['privacyAgreed'],
       });
     }

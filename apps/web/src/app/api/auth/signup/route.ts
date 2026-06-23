@@ -1,5 +1,5 @@
 import { created, fail } from '@/lib/api-response';
-import { signupSchema } from '@/features/auth/schemas/signupSchema';
+import { signupSchema, SIGNUP_ERRORS } from '@/features/auth/schemas/signupSchema';
 import { signup } from '@/server/services/auth-service';
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     const issues = parsed.error.issues;
     const passwordMismatch = issues.find(
-      (i) => i.path.includes('passwordConfirm') && i.message === '비밀번호가 일치하지 않습니다',
+      (i) => i.path.includes('passwordConfirm') && i.message === SIGNUP_ERRORS.PASSWORD_MISMATCH,
     );
     const privacyRequired = issues.find((i) => i.path.includes('privacyAgreed'));
 
