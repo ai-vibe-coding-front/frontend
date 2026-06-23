@@ -17,7 +17,7 @@ export async function POST() {
   const refreshToken = cookieStore.get('refreshToken')?.value;
 
   if (!accessToken && !refreshToken) {
-    return fail('UNAUTHORIZED', '이미 로그아웃된 상태입니다.', 401);
+    return ok(null);
   }
 
   try {
