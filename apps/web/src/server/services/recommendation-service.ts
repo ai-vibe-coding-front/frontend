@@ -87,18 +87,15 @@ export function scoreAndRankEvents(
     let score = 0;
     const matchedTags: string[] = [];
 
-    if (energyTag && eventTagNames.includes(energyTag)) {
-      score += 3;
-      matchedTags.push(energyTag);
-    }
-
+    // 기분/감정(Q2): 서비스 핵심 축 — 3점
     for (const mood of moodTags) {
       if (eventTagNames.includes(mood)) {
-        score += 2;
+        score += 3;
         matchedTags.push(mood);
       }
     }
 
+    // 장르(Q3): 감정을 구체적 행사로 연결하는 번역 축 — 3점
     let realmMatched = false;
     for (const keyword of realmKeywords) {
       if (!realmMatched && event.realmName?.includes(keyword)) {
@@ -108,9 +105,16 @@ export function scoreAndRankEvents(
       }
     }
 
+    // 에너지(Q1): 감정의 강도를 보정하는 보조 축 — 2점
+    if (energyTag && eventTagNames.includes(energyTag)) {
+      score += 2;
+      matchedTags.push(energyTag);
+    }
+
+    // 동반자(Q4): 상황 컨텍스트 — 1점
     for (const companion of companionTags) {
       if (eventTagNames.includes(companion)) {
-        score += 2;
+        score += 1;
         matchedTags.push(companion);
       }
     }
@@ -155,11 +159,16 @@ export function filterAndSort(scored: ScoredEvent[]): {
   items: ScoredEvent[];
   nearbyExpanded: boolean;
 } {
-  const nearby = sortScored(scored.filter((e) => (e.distanceKm ?? 0) <= NEARBY_KM));
+  const withDistance = scored.filter((e) => e.distanceKm !== null);
+  const noDistance = scored.filter((e) => e.distanceKm === null);
+
+  const nearby = sortScored(withDistance.filter((e) => e.distanceKm! <= NEARBY_KM));
   if (nearby.length >= MAX_RESULTS) {
     return { items: nearby.slice(0, MAX_RESULTS), nearbyExpanded: false };
   }
-  return { items: sortScored(scored).slice(0, MAX_RESULTS), nearbyExpanded: true };
+
+  const expanded = sortScored([...withDistance, ...noDistance]);
+  return { items: expanded.slice(0, MAX_RESULTS), nearbyExpanded: true };
 }
 
 const SKY_LABEL_MAP: Record<string, [string, string]> = {
