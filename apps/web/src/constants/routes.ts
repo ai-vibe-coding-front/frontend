@@ -3,6 +3,7 @@ export const ROUTES = {
   login: '/login',
   signup: '/signup',
   onboarding: '/onboarding',
+  mypage: '/mypage',
   questions: '/questions',
   recommendations: '/recommendations',
   eventDetail: (id: string) => `/events/${id}`,
