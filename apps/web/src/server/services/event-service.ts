@@ -125,9 +125,8 @@ export async function findNearbyEvents(params: NearbyEventsParams): Promise<{
 }
 
 export type EventDetail = {
-  id: string;
+  eventItemId: string;
   title: string;
-  realmCode: string | null;
   realmName: string | null;
   startDate: string | null;
   endDate: string | null;
@@ -147,9 +146,8 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
   if (!event) return null;
 
   return {
-    id: event.id,
+    eventItemId: event.id,
     title: decodeHtmlEntities(event.title),
-    realmCode: event.realmCode,
     realmName: event.realmName,
     startDate: formatDate(event.startDate),
     endDate: formatDate(event.endDate),

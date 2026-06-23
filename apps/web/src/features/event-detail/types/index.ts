@@ -1,7 +1,6 @@
 export type EventDetail = {
-  id: string;
+  eventItemId: string;
   title: string;
-  realmCode: string | null;
   realmName: string | null;
   startDate: string | null;
   endDate: string | null;

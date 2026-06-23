@@ -11,7 +11,7 @@ export async function GET(
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {
-    return fail('EVENT_NOT_FOUND', '존재하지 않는 행사입니다', 404);
+    return fail('INVALID_EVENT_ID', '행사 ID가 올바르지 않습니다.', 400);
   }
 
   try {
@@ -23,6 +23,6 @@ export async function GET(
     return ok(event);
   } catch (err) {
     console.error('[GET /api/events/:id]', err);
-    return fail('INTERNAL_ERROR', '행사 정보를 불러올 수 없습니다', 500);
+    return fail('EVENT_FETCH_FAILED', '행사 상세 조회에 실패했습니다.', 500);
   }
 }
