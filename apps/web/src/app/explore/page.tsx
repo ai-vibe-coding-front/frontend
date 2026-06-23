@@ -126,7 +126,6 @@ export default function ExplorePage() {
             <LocationPermissionModal
               onAllow={handleGpsClick}
               onSkip={() => setIsLocationPromptDismissed(true)}
-              blurBackground
             />
           )}
           <div

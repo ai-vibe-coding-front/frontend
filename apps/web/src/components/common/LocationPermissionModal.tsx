@@ -6,15 +6,11 @@ import MapPinIcon from "@/components/common/MapPinIcon";
 interface LocationPermissionModalProps {
   onAllow: () => void;
   onSkip: () => void;
-  blurBackground?: boolean;
 }
 
-export function LocationPermissionModal({ onAllow, onSkip, blurBackground = false }: LocationPermissionModalProps) {
+export function LocationPermissionModal({ onAllow, onSkip }: LocationPermissionModalProps) {
   return (
-    <div
-      className={`fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50 ${blurBackground ? "backdrop-blur-sm" : ""}`}
-      role="presentation"
-    >
+    <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50" role="presentation">
       <div
         role="dialog"
         aria-modal="true"

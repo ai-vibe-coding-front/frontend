@@ -86,6 +86,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+  const requestIdRef = useRef(0);
   const { getCurrentLocation } = useCurrentLocation();
 
   const [rawHasGpsLocation, setHasGpsLocation] = useState(false);
@@ -134,6 +135,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     lng: number,
     category: string | null,
   ) => {
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+
     setIsLoadingEvents(true);
     try {
       const params = new URLSearchParams({
@@ -145,20 +149,27 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
       });
 
       const response = await fetch(`/api/events/nearby?${params.toString()}`);
+      if (requestId !== requestIdRef.current) return;
+
       if (!response.ok) {
         updateCultureEvents([]);
         return;
       }
 
       const data = await response.json();
+      if (requestId !== requestIdRef.current) return;
+
       updateCultureEvents(
         Array.isArray(data.data?.items) ? data.data.items : [],
       );
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       console.error("주변 이벤트를 가져오지 못했습니다.", err);
       updateCultureEvents([]);
     } finally {
-      setIsLoadingEvents(false);
+      if (requestId === requestIdRef.current) {
+        setIsLoadingEvents(false);
+      }
     }
   };
 
