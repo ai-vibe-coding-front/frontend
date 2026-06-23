@@ -27,7 +27,7 @@ function calcTimes(): { tmfc: string; tmef: string } {
 
   return {
     tmfc: `${p.y}${p.mo}${p.dd}${p.hh}00`,
-    tmef: `${c.y}${c.mo}${c.dd}${c.hh}`,
+    tmef: `${c.y}${c.mo}${c.dd}${c.hh}00`,
   };
 }
 

@@ -3,10 +3,10 @@ import { z } from 'zod';
 import { ok, fail } from '@/lib/api-response';
 import { getWeather } from '@/lib/weatherApi';
 import { getDust } from '@/lib/dustApi';
+import { verifyAccessToken } from '@/server/services/auth-service';
 import { findExplorationSessionById } from '@/server/repositories/exploration-session-repository';
 import {
   findRecommendationCandidates,
-  updateSessionToRequested,
   saveRecommendation,
 } from '@/server/repositories/recommendation-repository';
 import {
@@ -71,15 +71,29 @@ export async function POST(request: Request) {
 
   const cookieStore = await cookies();
   const guestSessionKey = cookieStore.get('guestSessionKey')?.value;
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const loggedInUserId = accessToken ? await verifyAccessToken(accessToken) : null;
 
   const session = await findExplorationSessionById(sessionId);
-  if (!session || session.sessionKey !== guestSessionKey) {
+  if (!session) {
     return fail('SESSION_NOT_FOUND', '탐색 세션을 찾을 수 없습니다.', 404);
   }
 
-  try {
-    await updateSessionToRequested(sessionId);
+  const isGuestOwner = session.sessionKey === guestSessionKey;
+  const isLoggedInOwner = loggedInUserId != null && session.userId === loggedInUserId;
+  if (!isGuestOwner && !isLoggedInOwner) {
+    return fail('SESSION_NOT_FOUND', '탐색 세션을 찾을 수 없습니다.', 404);
+  }
 
+  if (session.expiresAt != null && session.expiresAt < new Date()) {
+    return fail('SESSION_EXPIRED', '탐색 세션이 만료되었습니다.', 410);
+  }
+
+  if (session.status === 'RECOMMENDATION_COMPLETED') {
+    return fail('ALREADY_COMPLETED', '이미 추천이 완료된 세션입니다.', 409);
+  }
+
+  try {
     const nx = session.nx ?? FALLBACK_LOCATION.nx;
     const ny = session.ny ?? FALLBACK_LOCATION.ny;
     const lat = session.lat ?? FALLBACK_LOCATION.lat;

@@ -27,8 +27,16 @@ function parseValue(raw: string): number | null {
   return isNaN(n) ? null : n;
 }
 
+const GRADE_LABEL_MAP: Record<string, string> = {
+  좋음: '1',
+  보통: '2',
+  나쁨: '3',
+  매우나쁨: '4',
+};
+
 function parseGrade(raw: string): string | null {
-  return raw && raw !== '-' ? raw : null;
+  if (!raw || raw === '-') return null;
+  return GRADE_LABEL_MAP[raw] ?? raw;
 }
 
 export async function getDust(stationName: string): Promise<DustResult> {

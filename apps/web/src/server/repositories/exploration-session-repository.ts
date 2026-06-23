@@ -41,6 +41,7 @@ export async function findExplorationSessionById(id: string) {
       lng: true,
       stationName: true,
       expiresAt: true,
+      status: true,
     },
   });
 }

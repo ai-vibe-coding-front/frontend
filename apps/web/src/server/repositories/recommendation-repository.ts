@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import type { WeatherResult } from '@/lib/weatherApi';
-import type { DustResult } from '@/lib/dustApi';
-import type { QuestionKey } from '@prisma/client';
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import type { WeatherResult } from "@/lib/weatherApi";
+import type { DustResult } from "@/lib/dustApi";
+import type { QuestionKey } from "@prisma/client";
 
 export type EventCandidate = {
   id: string;
@@ -21,20 +21,22 @@ export type EventCandidate = {
   tags: { tag: { name: string } }[];
 };
 
-export type ScoredEvent = Omit<EventCandidate, 'tags'> & {
+export type ScoredEvent = Omit<EventCandidate, "tags"> & {
   score: number;
   distanceKm: number | null;
   matchedTags: string[];
 };
 
 const QUESTION_KEY_MAP: Record<string, QuestionKey> = {
-  q1: 'Q1',
-  q2: 'Q2',
-  q3: 'Q3',
-  q4: 'Q4',
+  q1: "Q1",
+  q2: "Q2",
+  q3: "Q3",
+  q4: "Q4",
 };
 
-export async function findRecommendationCandidates(indoorOnly: boolean): Promise<EventCandidate[]> {
+export async function findRecommendationCandidates(
+  indoorOnly: boolean,
+): Promise<EventCandidate[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -44,6 +46,8 @@ export async function findRecommendationCandidates(indoorOnly: boolean): Promise
       endDate: { gte: today },
       ...(indoorOnly ? { isIndoor: true } : {}),
     },
+    orderBy: { endDate: 'asc' },
+    take: 500,
     select: {
       id: true,
       title: true,
@@ -67,13 +71,6 @@ export async function findRecommendationCandidates(indoorOnly: boolean): Promise
   });
 }
 
-export async function updateSessionToRequested(sessionId: string): Promise<void> {
-  await prisma.explorationSession.update({
-    where: { id: sessionId },
-    data: { status: 'RECOMMENDATION_REQUESTED' },
-  });
-}
-
 export async function saveRecommendation(params: {
   sessionId: string;
   userId: string | null;
@@ -89,6 +86,11 @@ export async function saveRecommendation(params: {
   items: ScoredEvent[];
 }): Promise<string> {
   return prisma.$transaction(async (tx) => {
+    await tx.explorationSession.update({
+      where: { id: params.sessionId },
+      data: { status: "RECOMMENDATION_REQUESTED" },
+    });
+
     for (const answer of params.answers) {
       const qk = QUESTION_KEY_MAP[answer.questionKey];
       await tx.explorationAnswer.upsert({
@@ -109,7 +111,7 @@ export async function saveRecommendation(params: {
 
     await tx.explorationSession.update({
       where: { id: params.sessionId },
-      data: { status: 'RECOMMENDATION_COMPLETED', completedAt: new Date() },
+      data: { status: "RECOMMENDATION_COMPLETED", completedAt: new Date() },
     });
 
     const run = await tx.recommendationRun.create({
@@ -149,7 +151,8 @@ export async function saveRecommendation(params: {
           score: item.score,
           distanceKm: item.distanceKm ?? null,
           reason: null,
-          matchedTags: item.matchedTags.length > 0 ? item.matchedTags : Prisma.DbNull,
+          matchedTags:
+            item.matchedTags.length > 0 ? item.matchedTags : Prisma.DbNull,
         })),
       });
     }
