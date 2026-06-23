@@ -131,6 +131,7 @@ function LoginForm() {
 
           <CTAButton
             label="로그인 없이 시작하기"
+            onClick={() => router.push(ROUTES.locationPermission)}
             className="bg-transparent border border-[#8edfd2]"
           />
         </div>

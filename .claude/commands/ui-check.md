@@ -8,9 +8,9 @@ Figma 디자인과 실제 구현 코드를 스크린샷으로 비교해 차이�
 
 | 화면 | 로컬 URL | Figma Node ID | 코드 경로 |
 |------|----------|---------------|-----------|
-| onboarding (로그인) | /onboarding | 390:6027 | src/app/onboarding/page.tsx |
-| onboarding (비로그인) | /onboarding | 390:6331 | src/app/onboarding/page.tsx |
-| 위치동의 모달 | /onboarding | 390:6389 | src/components/common/LocationPermissionModal.tsx |
+| 홈 (로그인) | / | 390:6027 | src/app/HomeContent.tsx |
+| 홈 (비로그인) | / | 390:6331 | src/app/HomeContent.tsx |
+| 위치동의 모달 | /location-permission | 390:6389 | src/app/location-permission/page.tsx |
 | 동의 후 핀형 | /location | 390:6446 | src/app/location/page.tsx |
 | 로그인 | /login | 390:6525 | src/app/login/page.tsx |
 | 회원가입 | /signup | 390:6560 | src/app/signup/page.tsx |
