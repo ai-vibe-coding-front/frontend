@@ -1,4 +1,5 @@
 import {
+  findEventDetailById,
   findFavoritedEventIds,
   findNearbyEventCandidates,
 } from '@/server/repositories/event-repository';
@@ -120,5 +121,46 @@ export async function findNearbyEvents(params: NearbyEventsParams): Promise<{
     items,
     total: items.length,
     radiusKm: params.radiusKm,
+  };
+}
+
+export type EventDetail = {
+  id: string;
+  title: string;
+  realmCode: string | null;
+  realmName: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  place: string | null;
+  price: string | null;
+  description: string;
+  imageUrl: string | null;
+  bookingUrl: string | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+export async function getEventDetail(id: string): Promise<EventDetail | null> {
+  const event = await findEventDetailById(id);
+  if (!event) return null;
+
+  return {
+    id: event.id,
+    title: decodeHtmlEntities(event.title),
+    realmCode: event.realmCode,
+    realmName: event.realmName,
+    startDate: formatDate(event.startDate),
+    endDate: formatDate(event.endDate),
+    place: event.place
+      ? decodeHtmlEntities(event.place)
+      : event.address
+        ? decodeHtmlEntities(event.address)
+        : null,
+    price: event.price,
+    description: event.description ? decodeHtmlEntities(event.description) : '',
+    imageUrl: event.imageUrl,
+    bookingUrl: event.bookingUrl,
+    lat: event.lat,
+    lng: event.lng,
   };
 }

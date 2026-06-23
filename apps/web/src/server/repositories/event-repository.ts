@@ -18,6 +18,15 @@ export async function findNearbyEventCandidates(bbox: BoundingBox, category?: st
   });
 }
 
+export async function findEventDetailById(id: string) {
+  return prisma.eventItem.findFirst({
+    where: {
+      deletedAt: null,
+      OR: [{ id }, { externalId: id }],
+    },
+  });
+}
+
 export async function findFavoritedEventIds(
   userId: string,
   eventItemIds: string[],

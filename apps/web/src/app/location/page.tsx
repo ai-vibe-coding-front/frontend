@@ -116,6 +116,7 @@ export default function LocationPage() {
   );
   const [isEventsExpanded, setIsEventsExpanded] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [isMapError, setIsMapError] = useState(false);
 
   const renderEventMarkers = (events: CultureEvent[]) => {
     eventMarkersRef.current.forEach((marker) => marker.setMap(null));
@@ -240,8 +241,9 @@ export default function LocationPage() {
               mapRef.current = map;
               setIsMapReady(true);
             }}
+            onError={() => setIsMapError(true)}
           />
-          {!isMapReady && <LocationSkeleton />}
+          {!isMapReady && !isMapError && <LocationSkeleton />}
           <div
             className="absolute inset-0 z-10 pointer-events-none"
             style={{
