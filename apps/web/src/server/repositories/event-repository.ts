@@ -40,3 +40,25 @@ export async function findFavoritedEventIds(
 
   return new Set(favorites.map((favorite) => favorite.eventItemId));
 }
+
+export async function findFavoriteByUserAndEvent(userId: string, eventItemId: string) {
+  return prisma.favorite.findFirst({
+    where: { userId, eventItemId },
+  });
+}
+
+export async function countFavorites(eventItemId: string): Promise<number> {
+  return prisma.favorite.count({ where: { eventItemId } });
+}
+
+export async function createFavorite(userId: string, eventItemId: string) {
+  return prisma.favorite.create({
+    data: { userId, eventItemId },
+  });
+}
+
+export async function deleteFavorite(userId: string, eventItemId: string) {
+  return prisma.favorite.deleteMany({
+    where: { userId, eventItemId },
+  });
+}
