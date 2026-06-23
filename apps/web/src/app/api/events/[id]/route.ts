@@ -1,5 +1,5 @@
-import { ok, fail } from '@/lib/api-response';
-import { getEventDetail } from '@/server/services/event-service';
+import { ok, fail } from "@/lib/api-response";
+import { getEventDetail } from "@/server/services/event-service";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -11,18 +11,18 @@ export async function GET(
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {
-    return fail('INVALID_EVENT_ID', '행사 ID가 올바르지 않습니다.', 400);
+    return fail("INVALID_EVENT_ID", "행사 ID가 올바르지 않습니다.", 400);
   }
 
   try {
     const event = await getEventDetail(id);
     if (!event) {
-      return fail('EVENT_NOT_FOUND', '존재하지 않는 행사입니다', 404);
+      return fail("EVENT_NOT_FOUND", "존재하지 않는 행사입니다.", 404);
     }
 
     return ok(event);
   } catch (err) {
-    console.error('[GET /api/events/:id]', err);
-    return fail('EVENT_FETCH_FAILED', '행사 상세 조회에 실패했습니다.', 500);
+    console.error("[GET /api/events/:id]", err);
+    return fail("EVENT_FETCH_FAILED", "행사 상세 조회에 실패했습니다.", 500);
   }
 }
