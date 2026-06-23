@@ -6,6 +6,7 @@ import { useForm, Controller, useWatch } from 'react-hook-form';
 import { Input } from '@/components/common/Input';
 import { CTAButton } from '@/components/common/CTAButton';
 import { apiClient, ApiClientError } from '@/lib/api-client';
+import { SIGNUP_ERRORS } from '@/features/auth/schemas/signupSchema';
 import { ROUTES } from '@/constants/routes';
 
 type SignupFormData = {
@@ -62,8 +63,16 @@ export default function SignupPage() {
       );
       router.push(ROUTES.home);
     } catch (error) {
-      if (error instanceof ApiClientError && error.errorCode === 'EMAIL_ALREADY_EXISTS') {
-        setError('email', { message: '이미 사용 중인 이메일입니다' });
+      if (error instanceof ApiClientError) {
+        if (error.errorCode === 'EMAIL_ALREADY_EXISTS') {
+          setError('email', { message: '이미 사용 중인 이메일입니다' });
+        } else if (error.errorCode === 'PASSWORD_MISMATCH') {
+          setError('passwordConfirm', { message: SIGNUP_ERRORS.PASSWORD_MISMATCH });
+        } else if (error.errorCode === 'PRIVACY_AGREEMENT_REQUIRED') {
+          setError('root', { message: SIGNUP_ERRORS.PRIVACY_AGREEMENT_REQUIRED });
+        } else {
+          setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
+        }
       } else {
         setError('root', { message: '오류가 발생했습니다. 다시 시도해주세요' });
       }

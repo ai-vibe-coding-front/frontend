@@ -19,7 +19,7 @@ export const signupSchema = z
       .min(1, '닉네임을 입력해주세요')
       .max(20, '닉네임은 20자 이하로 입력해주세요')
       .optional(),
-    privacyAgreed: z.boolean(),
+    privacyAgreed: z.literal(true, { message: SIGNUP_ERRORS.PRIVACY_AGREEMENT_REQUIRED }),
   })
   .superRefine((data, ctx) => {
     if (data.password !== data.passwordConfirm) {
@@ -27,13 +27,6 @@ export const signupSchema = z
         code: z.ZodIssueCode.custom,
         message: SIGNUP_ERRORS.PASSWORD_MISMATCH,
         path: ['passwordConfirm'],
-      });
-    }
-    if (!data.privacyAgreed) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: SIGNUP_ERRORS.PRIVACY_AGREEMENT_REQUIRED,
-        path: ['privacyAgreed'],
       });
     }
   });
