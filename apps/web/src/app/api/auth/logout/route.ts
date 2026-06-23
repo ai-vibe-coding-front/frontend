@@ -23,7 +23,11 @@ export async function POST() {
   try {
     if (refreshToken) {
       const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
-      await revokeRefreshToken(tokenHash);
+      try {
+        await revokeRefreshToken(tokenHash);
+      } catch (error) {
+        console.error('[logout] refresh token 폐기 실패', error);
+      }
     }
 
     const response = ok(null);
