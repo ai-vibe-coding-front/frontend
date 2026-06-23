@@ -53,6 +53,6 @@ export async function POST(request: Request) {
       return fail('INVALID_CREDENTIALS', '이메일 또는 비밀번호가 올바르지 않습니다', 401);
     }
     console.error('[login]', error);
-    return fail('INTERNAL_ERROR', '서버 오류가 발생했습니다', 500);
+    return fail('LOGIN_FAILED', '서버 오류가 발생했습니다', 500);
   }
 }
