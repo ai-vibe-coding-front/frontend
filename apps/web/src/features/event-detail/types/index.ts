@@ -13,4 +13,5 @@ export type EventDetail = {
   lat: number | null;
   lng: number | null;
   isIndoor: boolean | null;
+  isFavorited: boolean;
 };

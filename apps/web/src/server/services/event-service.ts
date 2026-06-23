@@ -139,6 +139,7 @@ export type EventDetail = {
   lat: number | null;
   lng: number | null;
   isIndoor: boolean | null;
+  isFavorited: boolean;
 };
 
 export async function getEventDetail(id: string): Promise<EventDetail | null> {
@@ -164,5 +165,6 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
     lat: event.lat,
     lng: event.lng,
     isIndoor: event.isIndoor,
+    isFavorited: false, // TODO: 찜하기 이슈에서 연결 예정
   };
 }
