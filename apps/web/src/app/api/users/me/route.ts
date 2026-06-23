@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { fail, ok } from '@/lib/api-response';
-import { prisma } from '@/lib/prisma';
 import { verifyAccessToken } from '@/server/services/auth-service';
+import { findUserWithFavoriteCount } from '@/server/repositories/user-repository';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -13,22 +13,7 @@ export async function GET() {
   }
 
   try {
-    const user = await prisma.user.findFirst({
-      where: {
-        id: userId,
-        deletedAt: null,
-      },
-      select: {
-        id: true,
-        email: true,
-        nickname: true,
-        _count: {
-          select: {
-            favorites: true,
-          },
-        },
-      },
-    });
+    const user = await findUserWithFavoriteCount(userId);
 
     if (!user) {
       return fail('USER_NOT_FOUND', '사용자 정보를 찾을 수 없습니다.', 404);
