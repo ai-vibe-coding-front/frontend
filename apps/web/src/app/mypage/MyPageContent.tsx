@@ -139,21 +139,19 @@ export function MyPageContent() {
             )}
           </div>
 
-          <div className="bg-[#fefefe] shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)] rounded-[32px] w-[350px]">
-            <button type="button" className="w-full flex items-center gap-4 p-6">
-              <div className="bg-[#f0e4d4] rounded-full size-12 flex items-center justify-center shrink-0">
-                <SavedHeartIcon />
-              </div>
-              <div className="flex flex-col gap-1 flex-1 items-start">
-                <p className="font-medium text-[14px] text-[#716456] leading-[20px] tracking-[0.28px]">
-                  저장한 관심 행사
-                </p>
-                <p className="font-bold text-[20px] text-[#251e19] leading-[28px] tracking-[-0.2px]">
-                  {user ? `${user.favoriteCount}개` : isLoading ? '불러오는 중' : '-개'}
-                </p>
-              </div>
-              <ChevronRightIcon />
-            </button>
+          <div className="w-full flex items-center gap-4 p-6">
+            <div className="bg-[#f0e4d4] rounded-full size-12 flex items-center justify-center shrink-0">
+              <SavedHeartIcon />
+            </div>
+
+            <div className="flex flex-col gap-1 flex-1 items-start">
+              <p className="font-medium text-[14px] text-[#716456] leading-[20px] tracking-[0.28px]">
+                저장한 관심 행사
+              </p>
+              <p className="font-bold text-[20px] text-[#251e19] leading-[28px] tracking-[-0.2px]">
+                {user ? `${user.favoriteCount}개` : isLoading ? '불러오는 중' : '-개'}
+              </p>
+            </div>
           </div>
 
           {errorMessage && (
