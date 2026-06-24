@@ -4,6 +4,7 @@ import { verifyAccessToken } from "@/server/services/auth-service";
 import {
   countUserFavorites,
   deleteFavorite,
+  findEventDetailById,
   findFavoriteByUserAndEvent,
 } from "@/server/repositories/event-repository";
 
@@ -31,6 +32,11 @@ export async function DELETE(
   }
 
   try {
+    const event = await findEventDetailById(eventItemId);
+    if (!event) {
+      return fail("EVENT_NOT_FOUND", "행사를 찾을 수 없습니다.", 404);
+    }
+
     const existing = await findFavoriteByUserAndEvent(userId, eventItemId);
     if (!existing) {
       return fail("FAVORITE_NOT_FOUND", "저장된 관심행사가 아닙니다.", 404);

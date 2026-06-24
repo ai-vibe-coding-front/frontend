@@ -172,7 +172,11 @@ export async function getEventDetail(
     realmName: event.realmName,
     startDate: formatDate(event.startDate),
     endDate: formatDate(event.endDate),
-    place: event.place ? decodeHtmlEntities(event.place) : null,
+    place: event.place
+      ? decodeHtmlEntities(event.place)
+      : event.address
+        ? decodeHtmlEntities(event.address)
+        : null,
     address: event.address ? decodeHtmlEntities(event.address) : null,
     price: event.price,
     description: event.description ? decodeHtmlEntities(event.description) : "",
