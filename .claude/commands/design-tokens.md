@@ -15,6 +15,8 @@
 | 앱 배경 | `app-bg` | `#f9f4ec` |
 | EmojiBox 배경 | `emoji-box-bg` | `#f5ede0` |
 | BottomNav 배경 | `bottom-nav-bg` | `rgba(245,243,238,0.95)` |
+| 하트 버튼 배경 (활성/liked, 종료 카드 공통) | `heart-button-bg-active` | `rgba(240,228,212,0.85)` |
+| 하트 버튼 배경 (비활성/unliked) | `heart-button-bg-inactive` | `rgba(255,255,255,0.85)` |
 
 ## 카테고리 배지 색상
 
