@@ -48,6 +48,7 @@ export function QuestionsContent() {
       const ny = searchParams.get("ny");
 
       setIsSubmitting(true);
+      let explorationSessionId: string | undefined;
       try {
         const session = await apiClient<{ explorationSessionId: string }>('/api/exploration-sessions', {
           method: 'POST',
@@ -63,7 +64,7 @@ export function QuestionsContent() {
             },
           }),
         });
-        sessionStorage.setItem('explorationSessionId', session.explorationSessionId);
+        explorationSessionId = session.explorationSessionId;
       } catch (err) {
         if (err instanceof ApiClientError && err.status === 403) {
           setIsBlocked(true);
@@ -86,6 +87,7 @@ export function QuestionsContent() {
         label: searchParams.get("label") ?? "",
         lat: searchParams.get("lat") ?? "",
         lng: searchParams.get("lng") ?? "",
+        ...(explorationSessionId ? { explorationSessionId } : {}),
       });
       router.push(`/recommendations?${params}`);
     } else {
