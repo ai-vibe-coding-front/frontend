@@ -23,17 +23,26 @@ export function useCurrentUser(enabled = true): UseCurrentUserResult {
   const [error, setError] = useState<Error | ApiClientError | null>(null);
 
   useEffect(() => {
-    if (!enabled) {
-      setUser(null);
-      setError(null);
-      setIsLoading(false);
-      return;
-    }
-
     let ignore = false;
 
-    setIsLoading(true);
-    setError(null);
+    if (!enabled) {
+      queueMicrotask(() => {
+        if (ignore) return;
+        setUser(null);
+        setError(null);
+        setIsLoading(false);
+      });
+
+      return () => {
+        ignore = true;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (ignore) return;
+      setIsLoading(true);
+      setError(null);
+    });
 
     apiClient<CurrentUser>("/api/users/me")
       .then((currentUser) => {
