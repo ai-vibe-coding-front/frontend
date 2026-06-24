@@ -43,16 +43,16 @@ export async function POST() {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === REFRESH_ERRORS.INVALID) {
-        return fail('REFRESH_TOKEN_INVALID', '다시 로그인이 필요합니다.', 401);
+        return fail(REFRESH_ERRORS.INVALID, '다시 로그인이 필요합니다.', 401);
       }
       if (error.message === REFRESH_ERRORS.REVOKED) {
-        return fail('REFRESH_TOKEN_REVOKED', '다시 로그인이 필요합니다.', 401);
+        return fail(REFRESH_ERRORS.REVOKED, '다시 로그인이 필요합니다.', 401);
       }
       if (error.message === REFRESH_ERRORS.EXPIRED) {
-        return fail('REFRESH_TOKEN_EXPIRED', '로그인 시간이 만료되었습니다.', 401);
+        return fail(REFRESH_ERRORS.EXPIRED, '로그인 시간이 만료되었습니다.', 401);
       }
       if (error.message === REFRESH_ERRORS.USER_NOT_FOUND) {
-        return fail('USER_NOT_FOUND', '사용자를 찾을 수 없습니다.', 404);
+        return fail(REFRESH_ERRORS.USER_NOT_FOUND, '사용자를 찾을 수 없습니다.', 404);
       }
     }
     console.error('[refresh]', error);
