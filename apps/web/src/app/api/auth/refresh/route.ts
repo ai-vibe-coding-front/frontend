@@ -7,7 +7,7 @@ export async function POST() {
   const cookieToken = cookieStore.get('refreshToken')?.value;
 
   if (!cookieToken) {
-    return fail('REFRESH_TOKEN_MISSING', '재발급에 필요한 토큰이 없습니다', 401);
+    return fail('REFRESH_TOKEN_MISSING', '다시 로그인이 필요합니다.', 401);
   }
 
   try {
@@ -43,19 +43,19 @@ export async function POST() {
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === 'REFRESH_TOKEN_INVALID') {
-        return fail('REFRESH_TOKEN_INVALID', '유효하지 않은 토큰입니다', 401);
+        return fail('REFRESH_TOKEN_INVALID', '다시 로그인이 필요합니다.', 401);
       }
       if (error.message === 'REFRESH_TOKEN_REVOKED') {
-        return fail('REFRESH_TOKEN_REVOKED', '이미 사용된 토큰입니다', 401);
+        return fail('REFRESH_TOKEN_REVOKED', '다시 로그인이 필요합니다.', 401);
       }
       if (error.message === 'REFRESH_TOKEN_EXPIRED') {
-        return fail('REFRESH_TOKEN_EXPIRED', '만료된 토큰입니다. 다시 로그인해주세요', 401);
+        return fail('REFRESH_TOKEN_EXPIRED', '로그인 시간이 만료되었습니다.', 401);
       }
       if (error.message === 'USER_NOT_FOUND') {
         return fail('USER_NOT_FOUND', '사용자를 찾을 수 없습니다', 404);
       }
     }
     console.error('[refresh]', error);
-    return fail('TOKEN_REFRESH_FAILED', '서버 오류가 발생했습니다', 500);
+    return fail('TOKEN_REFRESH_FAILED', '인증 세션 갱신에 실패했습니다.', 500);
   }
 }
