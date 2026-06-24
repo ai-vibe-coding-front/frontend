@@ -1,0 +1,66 @@
+'use client';
+
+import { useState } from 'react';
+import { apiClient } from '@/lib/api-client';
+
+type Props = {
+  eventItemId: string;
+  initialFavorited: boolean;
+  onAuthRequired: () => void;
+};
+
+export function FavoriteButton({ eventItemId, initialFavorited, onAuthRequired }: Props) {
+  const [isFavorited, setIsFavorited] = useState(initialFavorited);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleToggle = async () => {
+    const isLoggedIn =
+      typeof document !== 'undefined' &&
+      document.cookie.split(';').some((c) => c.trim().startsWith('isLoggedIn='));
+
+    if (!isLoggedIn) {
+      onAuthRequired();
+      return;
+    }
+
+    if (isPending) return;
+
+    const prev = isFavorited;
+    setIsFavorited(!prev);
+    setIsPending(true);
+
+    try {
+      if (prev) {
+        await apiClient(`/api/favorites/${eventItemId}`, { method: 'DELETE' });
+      } else {
+        await apiClient('/api/favorites', {
+          method: 'POST',
+          body: JSON.stringify({ eventItemId }),
+        });
+      }
+    } catch {
+      setIsFavorited(prev);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleToggle}
+      disabled={isPending}
+      aria-label={isFavorited ? '관심 행사 해제' : '관심 행사 저장'}
+      className={`absolute right-[13px] top-[3.33px] border-[1.5px] border-[#ded0be] rounded-[16px] flex items-center justify-center size-[43px] ${isFavorited ? 'bg-[#f0e4d4]' : 'bg-[#fefefe]'}`}
+    >
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path
+          d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
+          fill={isFavorited ? '#7d543c' : 'none'}
+          stroke={isFavorited ? '#7d543c' : '#8c6e63'}
+          strokeWidth="1.5"
+        />
+      </svg>
+    </button>
+  );
+}

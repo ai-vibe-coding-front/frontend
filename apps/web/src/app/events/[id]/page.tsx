@@ -9,29 +9,12 @@ import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
 import { KakaoMap, KakaoMapFallback } from '@/features/event-detail/components/KakaoMap';
 import { LoginGuardModal } from '@/features/event-detail/components/LoginGuardModal';
+import { FavoriteButton } from '@/features/event-detail/components/FavoriteButton';
 import { ApiClientError } from '@/lib/api-client';
 
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
 
-function HeartButton({ liked, onToggle }: { liked: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`absolute right-[13px] top-[3.33px] border-[1.5px] border-[#ded0be] rounded-[16px] flex items-center justify-center size-[43px] ${liked ? 'bg-[#f0e4d4]' : 'bg-[#fefefe]'}`}
-    >
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path
-          d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
-          fill={liked ? '#7d543c' : 'none'}
-          stroke={liked ? '#7d543c' : '#8c6e63'}
-          strokeWidth="1.5"
-        />
-      </svg>
-    </button>
-  );
-}
 
 function SkeletonLoader() {
   return (
@@ -70,7 +53,6 @@ export default function EventDetailPage() {
   const params = useParams();
   const id = typeof params.id === 'string' ? params.id : '';
 
-  const [liked, setLiked] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { data: event, isPending, error } = useEventDetail(id);
@@ -108,17 +90,6 @@ export default function EventDetailPage() {
     );
   }
 
-  const isLoggedIn = typeof document !== 'undefined' &&
-    document.cookie.split(';').some((c) => c.trim().startsWith('isLoggedIn='));
-
-  const handleHeartClick = () => {
-    if (!isLoggedIn) {
-      setShowLoginModal(true);
-      return;
-    }
-    setLiked((prev) => !prev);
-  };
-
   const handleExternalLink = () => {
     if (!event.bookingUrl) return;
     window.open(event.bookingUrl, '_blank', 'noopener,noreferrer');
@@ -141,7 +112,11 @@ export default function EventDetailPage() {
           <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
             MUUD
           </Link>
-          <HeartButton liked={liked} onToggle={handleHeartClick} />
+          <FavoriteButton
+            eventItemId={event.eventItemId}
+            initialFavorited={event.isFavorited}
+            onAuthRequired={() => setShowLoginModal(true)}
+          />
         </div>
 
         {/* Scrollable content */}
