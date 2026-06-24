@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { ok, fail } from '@/lib/api-response';
-import { refreshTokens } from '@/server/services/auth-service';
+import { refreshTokens, REFRESH_ERRORS } from '@/server/services/auth-service';
 
 export async function POST() {
   const cookieStore = await cookies();
@@ -42,16 +42,16 @@ export async function POST() {
     return response;
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'REFRESH_TOKEN_INVALID') {
+      if (error.message === REFRESH_ERRORS.INVALID) {
         return fail('REFRESH_TOKEN_INVALID', '다시 로그인이 필요합니다.', 401);
       }
-      if (error.message === 'REFRESH_TOKEN_REVOKED') {
+      if (error.message === REFRESH_ERRORS.REVOKED) {
         return fail('REFRESH_TOKEN_REVOKED', '다시 로그인이 필요합니다.', 401);
       }
-      if (error.message === 'REFRESH_TOKEN_EXPIRED') {
+      if (error.message === REFRESH_ERRORS.EXPIRED) {
         return fail('REFRESH_TOKEN_EXPIRED', '로그인 시간이 만료되었습니다.', 401);
       }
-      if (error.message === 'USER_NOT_FOUND') {
+      if (error.message === REFRESH_ERRORS.USER_NOT_FOUND) {
         return fail('USER_NOT_FOUND', '사용자를 찾을 수 없습니다.', 404);
       }
     }

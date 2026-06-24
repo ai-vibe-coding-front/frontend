@@ -13,6 +13,13 @@ import {
 
 const scryptAsync = promisify<string, string, number, Buffer>(scrypt);
 
+export const REFRESH_ERRORS = {
+  INVALID: 'REFRESH_TOKEN_INVALID',
+  REVOKED: 'REFRESH_TOKEN_REVOKED',
+  EXPIRED: 'REFRESH_TOKEN_EXPIRED',
+  USER_NOT_FOUND: 'USER_NOT_FOUND',
+} as const;
+
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
   const hash = await scryptAsync(password, salt, 64);
@@ -66,12 +73,12 @@ export async function refreshTokens(cookieToken: string) {
   const tokenHash = createHash('sha256').update(cookieToken).digest('hex');
   const record = await findRefreshToken(tokenHash);
 
-  if (!record) throw new Error('REFRESH_TOKEN_INVALID');
-  if (record.revokedAt) throw new Error('REFRESH_TOKEN_REVOKED');
-  if (record.expiresAt < new Date()) throw new Error('REFRESH_TOKEN_EXPIRED');
+  if (!record) throw new Error(REFRESH_ERRORS.INVALID);
+  if (record.revokedAt) throw new Error(REFRESH_ERRORS.REVOKED);
+  if (record.expiresAt < new Date()) throw new Error(REFRESH_ERRORS.EXPIRED);
 
   const user = await findUserById(record.userId);
-  if (!user) throw new Error('USER_NOT_FOUND');
+  if (!user) throw new Error(REFRESH_ERRORS.USER_NOT_FOUND);
 
   await revokeRefreshToken(tokenHash);
 
