@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { ok, fail } from '@/lib/api-response';
 import {
-  createGuestSession,
+  createExplorationSessionForUserOrGuest,
   generateSessionKey,
   checkGuestUsed,
 } from '@/server/services/exploration-session-service';
@@ -50,7 +50,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const session = await createGuestSession(sessionKey, parsed.data.location ?? {}, userId);
+    const session = await createExplorationSessionForUserOrGuest(
+      sessionKey,
+      parsed.data.location ?? {},
+      userId,
+    );
 
     const response = ok({
       explorationSessionId: session.id,

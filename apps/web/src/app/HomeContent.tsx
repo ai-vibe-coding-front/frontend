@@ -25,7 +25,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
   };
 
   const goToLogin = () => {
-    router.push(ROUTES.login + "?red" + "irect=" + ROUTES.locationPermission);
+    router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`);
   };
 
   return (

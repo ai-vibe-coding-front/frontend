@@ -21,7 +21,7 @@ export function generateSessionKey(): string {
   return randomBytes(32).toString('hex');
 }
 
-export async function createGuestSession(
+export async function createExplorationSessionForUserOrGuest(
   sessionKey: string,
   location: {
     lat?: number;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { EventCardData } from "@/components/common/EventCard";
 import { apiClient } from "@/lib/api-client";
 
@@ -56,20 +56,29 @@ export function useRecentRecommendations(enabled: boolean): UseRecentRecommendat
   const [events, setEvents] = useState<RecentRecommendationCard[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [pendingFavoriteIds, setPendingFavoriteIds] = useState<Set<string>>(() => new Set());
+  const pendingFavoriteIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!enabled) {
-      setEvents([]);
-      setErrorMessage(null);
-      setIsLoading(false);
-      return;
-    }
-
     let ignore = false;
 
-    setIsLoading(true);
-    setErrorMessage(null);
+    if (!enabled) {
+      queueMicrotask(() => {
+        if (ignore) return;
+        setEvents([]);
+        setErrorMessage(null);
+        setIsLoading(false);
+      });
+
+      return () => {
+        ignore = true;
+      };
+    }
+
+    queueMicrotask(() => {
+      if (ignore) return;
+      setIsLoading(true);
+      setErrorMessage(null);
+    });
 
     apiClient<RecentRecommendationsResponse>("/api/recommendations/recent")
       .then((data) => {
@@ -92,14 +101,14 @@ export function useRecentRecommendations(enabled: boolean): UseRecentRecommendat
   }, [enabled]);
 
   const toggleFavorite = async (event: EventCardData) => {
-    if (pendingFavoriteIds.has(event.id)) return;
+    if (pendingFavoriteIdsRef.current.has(event.id)) return;
 
     const currentEvent = events.find((item) => item.id === event.id);
     if (!currentEvent) return;
 
     const nextIsFavorite = !currentEvent.isFavorite;
 
-    setPendingFavoriteIds((prev) => new Set(prev).add(event.id));
+    pendingFavoriteIdsRef.current.add(event.id);
     setEvents((prev) =>
       prev.map((item) =>
         item.id === event.id ? { ...item, isFavorite: nextIsFavorite } : item,
@@ -129,11 +138,7 @@ export function useRecentRecommendations(enabled: boolean): UseRecentRecommendat
       );
       setErrorMessage("관심행사 상태를 변경하지 못했습니다.");
     } finally {
-      setPendingFavoriteIds((prev) => {
-        const next = new Set(prev);
-        next.delete(event.id);
-        return next;
-      });
+      pendingFavoriteIdsRef.current.delete(event.id);
     }
   };
 
