@@ -1,5 +1,9 @@
 import type { WeatherResult } from '@/lib/weatherApi';
 import type { DustResult } from '@/lib/dustApi';
+import {
+  findFavoritedEventIds,
+  findLatestRecommendationRunWithItems,
+} from '@/server/repositories/recommendation-repository';
 import type { EventCandidate, ScoredEvent } from '@/server/repositories/recommendation-repository';
 
 export const FALLBACK_LOCATION = {
@@ -217,4 +221,39 @@ export function buildCurationMessage(
 
   const [skyAdj, skyEmoji] = skyEntry;
   return `${skyAdj} 오늘, ${companionWord} ${moodWord} 행사를 추천해요 ${skyEmoji}`.trim();
+}
+
+export async function getRecentRecommendations(params: {
+  userId: string;
+  limit: number;
+}) {
+  const run = await findLatestRecommendationRunWithItems(params.userId, params.limit);
+
+  if (!run) {
+    return {
+      runId: null,
+      curation: null,
+      items: [],
+    };
+  }
+
+  const eventItemIds = run.items.map((item) => item.eventItem.id);
+  const favoritedIds = await findFavoritedEventIds(params.userId, eventItemIds);
+
+  return {
+    runId: run.id,
+    curation: run.curation,
+    items: run.items.map((item) => ({
+      recommendationRunId: run.id,
+      rank: item.rank,
+      eventItemId: item.eventItem.id,
+      title: item.eventItem.title,
+      realmName: item.eventItem.realmName,
+      place: item.eventItem.place,
+      startDate: item.eventItem.startDate?.toISOString().slice(0, 10) ?? null,
+      endDate: item.eventItem.endDate?.toISOString().slice(0, 10) ?? null,
+      imageUrl: item.eventItem.imageUrl,
+      isFavorited: favoritedIds.has(item.eventItem.id),
+    })),
+  };
 }
