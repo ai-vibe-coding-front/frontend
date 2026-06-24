@@ -82,6 +82,44 @@ export async function findFavoritedEventIds(
   return new Set(rows.map((r) => r.eventItemId));
 }
 
+export async function findLatestRecommendationRunWithItems(
+  userId: string,
+  limit: number,
+) {
+  return prisma.recommendationRun.findFirst({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      curation: true,
+      createdAt: true,
+      items: {
+        where: {
+          eventItem: {
+            deletedAt: null,
+          },
+        },
+        orderBy: { rank: 'asc' },
+        take: limit,
+        select: {
+          rank: true,
+          eventItem: {
+            select: {
+              id: true,
+              title: true,
+              realmName: true,
+              place: true,
+              startDate: true,
+              endDate: true,
+              imageUrl: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 export async function findRecommendationRunById(runId: string) {
   return prisma.recommendationRun.findUnique({
     where: { id: runId },
