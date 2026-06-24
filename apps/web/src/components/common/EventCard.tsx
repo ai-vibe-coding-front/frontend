@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
+import { useState } from "react";
 
 export interface EventCardData {
   id: string;
