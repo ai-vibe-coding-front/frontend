@@ -1,4 +1,5 @@
 'use client';
+import { useState } from "react";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
 
@@ -48,7 +49,7 @@ function calcDDay(endDate: Date | null): number {
 interface EventCardProps {
   event: EventCardData;
   onClick?: () => void;
-  onLike?: () => void;
+  onFavorite?: () => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
   /** 행사 종료 상태 */
@@ -74,16 +75,21 @@ const HeartIcon = ({ filled, disabled }: { filled?: boolean; disabled?: boolean 
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
       d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
-      fill={disabled ? "none" : filled ? "#7d543c" : "none"}
-      stroke={disabled ? "#aaa" : filled ? "#7d543c" : "#8c6e63"}
+      fill={disabled ? "#6a6a6a" : filled ? "#7d543c" : "none"}
+      stroke={disabled ? "#6a6a6a" : filled ? "#7d543c" : "#8c6e63"}
       strokeWidth="1.5"
     />
   </svg>
 );
 
-export function EventCard({ event, onClick, onLike, shadow = true, isEnded = false }: EventCardProps) {
+export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded = false }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
+  // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백한다.
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(event.imageUrl) && !imageFailed;
+
   return (
+    // 카드 전체를 클릭 가능하게 만들기 위해 div에 role="button"을 부여한 구조.
     <div
       role="button"
       tabIndex={0}
@@ -92,15 +98,17 @@ export function EventCard({ event, onClick, onLike, shadow = true, isEnded = fal
       aria-label={event.title}
       className={`bg-white rounded-[20px] w-full overflow-hidden cursor-pointer shrink-0 text-left ${shadow ? "shadow-[0px_4px_20px_0px_rgba(63,42,36,0.1)]" : ""}`}
     >
+      {/* 썸네일 영역: 높이 고정(192px) + absolute 레이어로 이미지/배지/그라디언트를 쌓는 구조 */}
       <div className="relative h-[192px] w-full">
-        {event.imageUrl ? (
+        {showImage ? (
           <img
-            src={event.imageUrl}
+            src={event.imageUrl!}
             alt={event.title}
-            className={`absolute inset-0 w-full h-full object-cover ${isEnded ? "grayscale brightness-75" : ""}`}
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            className={`absolute inset-0 w-full h-full object-cover ${isEnded ? "grayscale" : ""}`}
+            onError={() => setImageFailed(true)}
           />
         ) : (
+          // imageUrl이 없거나 로드 실패한 경우 공통 placeholder 배경
           <div className="absolute inset-0 bg-[#d9cfc5]" aria-hidden="true" />
         )}
         {isEnded && (
@@ -109,23 +117,25 @@ export function EventCard({ event, onClick, onLike, shadow = true, isEnded = fal
           </div>
         )}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
+        {/* 카테고리/D-Day 배지. z-index 미지정 → 그라디언트(아래)보다는 위지만 좋아요 버튼(z-20)보다는 아래. 새 오버레이 추가 시 z 순서 주의 */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
           {category && (
             <CategoryBadge category={category} />
           )}
-          {event.endDate && <DDayBadge days={calcDDay(event.endDate)} />}
+          {!isEnded && event.endDate && <DDayBadge days={calcDDay(event.endDate)} />}
         </div>
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onLike?.(); }}
+          onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
-          className="absolute top-3 right-3 bg-[rgba(240,228,212,0.85)] rounded-[14px] size-8 flex items-center justify-center"
+          className={`absolute top-3 right-3 z-20 ${event.isFavorite || isEnded ? "bg-[rgba(240,228,212,0.85)]" : "bg-[rgba(255,255,255,0.85)]"} rounded-[14px] size-8 flex items-center justify-center`}
         >
           <HeartIcon filled={event.isFavorite} disabled={isEnded} />
         </button>
       </div>
 
+      {/* 텍스트 정보 영역: 제목 + 장소/기간 meta row */}
       <div className="flex flex-col gap-1.5 px-4 pt-3 pb-4">
         <p className="font-bold text-[15px] text-[#251e19] leading-[22px] truncate">
           {event.title}
@@ -133,7 +143,7 @@ export function EventCard({ event, onClick, onLike, shadow = true, isEnded = fal
         <div className={metaRowClass}>
           <PinIcon />
           <span className="text-[11px] text-[#8c6e63] leading-[18px] truncate">
-            {event.place}
+            {event.place ?? "-"}
           </span>
         </div>
         <div className={metaRowClass}>

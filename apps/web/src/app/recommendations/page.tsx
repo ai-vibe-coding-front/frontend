@@ -7,6 +7,7 @@ import type { EventCardData } from "@/components/common/EventCard";
 
 // TODO: 실제 API 연동 시 제거
 const MOCK_EVENTS: EventCardData[] = [
+  // 찜하기 버튼이 활성화(눌린) 상태 UI 확인용
   {
     id: "1",
     realmName: "전시",
@@ -17,8 +18,20 @@ const MOCK_EVENTS: EventCardData[] = [
     imageUrl: null,
     isFavorite: true,
   },
+  // 찜하기 버튼이 비활성화(안 눌린) 상태 UI 확인용
   {
     id: "2",
+    realmName: "전시",
+    title: "빛으로 쓴 편지 — 사진전",
+    place: "성수 갤러리아 포레",
+    startDate: new Date("2026-06-01"),
+    endDate: new Date("2026-06-30"),
+    imageUrl: null,
+    isFavorite: false,
+  },
+  // 종료된 행사 UI 확인용 (추후 isEnded prop 연동 시 사용 — 현재는 미전달)
+  {
+    id: "3",
     realmName: "전시",
     title: "빛으로 쓴 편지 — 사진전",
     place: "성수 갤러리아 포레",
@@ -64,7 +77,7 @@ export default async function RecommendationsPage({ searchParams }: Props) {
             {hasResults ? (
               <div className="flex flex-col gap-3">
                 {MOCK_EVENTS.map((event) => (
-                  <EventCard key={event.id} event={event} isEnded={true} />
+                  <EventCard key={event.id} event={event} />
                 ))}
               </div>
             ) : (
