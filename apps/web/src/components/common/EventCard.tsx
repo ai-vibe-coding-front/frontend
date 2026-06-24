@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import Image from "next/image";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
 
@@ -100,12 +100,14 @@ export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded =
     >
       {/* 썸네일 영역: 높이 고정(192px) + absolute 레이어로 이미지/배지/그라디언트를 쌓는 구조 */}
       <div className="relative h-[192px] w-full">
-        {showImage ? (
-          <img
-            src={event.imageUrl!}
+        {event.imageUrl ? (
+          <Image
+            src={event.imageUrl}
             alt={event.title}
-            className={`absolute inset-0 w-full h-full object-cover ${isEnded ? "grayscale" : ""}`}
-            onError={() => setImageFailed(true)}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
           // imageUrl이 없거나 로드 실패한 경우 공통 placeholder 배경

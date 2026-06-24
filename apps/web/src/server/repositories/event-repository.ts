@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 
 type BoundingBox = {
   minLat: number;
@@ -7,7 +7,10 @@ type BoundingBox = {
   maxLng: number;
 };
 
-export async function findNearbyEventCandidates(bbox: BoundingBox, category?: string) {
+export async function findNearbyEventCandidates(
+  bbox: BoundingBox,
+  category?: string,
+) {
   return prisma.eventItem.findMany({
     where: {
       deletedAt: null,

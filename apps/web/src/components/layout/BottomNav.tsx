@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 type TabId = "home" | "curation" | "recommend" | "my";
 
 const ICONS: Record<TabId, { active: string; inactive: string }> = {
@@ -36,9 +38,11 @@ export function BottomNav({ activeTab = "home", onTabChange }: BottomNavProps) {
             aria-current={isActive ? "page" : undefined}
             className="flex flex-1 flex-col gap-1 h-[59px] items-center justify-center"
           >
-            <img
+            <Image
               src={isActive ? ICONS[tab.id].active : ICONS[tab.id].inactive}
               alt={tab.label}
+              width={20}
+              height={20}
               className="size-5 object-contain"
             />
             <span className={`${labelClass} ${isActive ? "text-[#2d2926]" : "text-[rgba(45,41,38,0.4)]"}`}>
