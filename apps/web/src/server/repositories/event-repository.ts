@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 
 type BoundingBox = {
   minLat: number;
@@ -7,7 +7,10 @@ type BoundingBox = {
   maxLng: number;
 };
 
-export async function findNearbyEventCandidates(bbox: BoundingBox, category?: string) {
+export async function findNearbyEventCandidates(
+  bbox: BoundingBox,
+  category?: string,
+) {
   return prisma.eventItem.findMany({
     where: {
       deletedAt: null,
@@ -39,18 +42,4 @@ export async function findFavoritedEventIds(
   });
 
   return new Set(favorites.map((favorite) => favorite.eventItemId));
-}
-
-export async function createFavorite(userId: string, eventItemId: string) {
-  return prisma.favorite.upsert({
-    where: { userId_eventItemId: { userId, eventItemId } },
-    create: { userId, eventItemId },
-    update: {},
-  });
-}
-
-export async function deleteFavorite(userId: string, eventItemId: string) {
-  await prisma.favorite.deleteMany({
-    where: { userId, eventItemId },
-  });
 }
