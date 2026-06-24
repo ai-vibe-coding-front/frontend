@@ -71,12 +71,12 @@ const CalendarIcon = () => (
 
 const metaRowClass = "flex items-center gap-1";
 
-const HeartIcon = ({ filled, disabled }: { filled?: boolean; disabled?: boolean }) => (
+const HeartIcon = ({ filled }: { filled?: boolean }) => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
     <path
       d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
-      fill={disabled ? "#6a6a6a" : filled ? "#7d543c" : "none"}
-      stroke={disabled ? "#6a6a6a" : filled ? "#7d543c" : "#8c6e63"}
+      fill={filled ? "#7d543c" : "none"}
+      stroke={filled ? "#7d543c" : "#8c6e63"}
       strokeWidth="1.5"
     />
   </svg>
@@ -129,9 +129,9 @@ export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded =
           onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
-          className={`absolute top-3 right-3 z-20 ${event.isFavorite || isEnded ? "bg-[rgba(240,228,212,0.85)]" : "bg-[rgba(255,255,255,0.85)]"} rounded-[14px] size-8 flex items-center justify-center`}
+          className={`absolute top-3 right-3 z-20 ${event.isFavorite ? "bg-[rgba(240,228,212,0.85)]" : "bg-[rgba(255,255,255,0.85)]"} rounded-[14px] size-8 flex items-center justify-center`}
         >
-          <HeartIcon filled={event.isFavorite} disabled={isEnded} />
+          <HeartIcon filled={event.isFavorite} />
         </button>
       </div>
 

@@ -29,7 +29,7 @@ const MOCK_EVENTS: EventCardData[] = [
     imageUrl: null,
     isFavorite: false,
   },
-  // 종료된 행사 UI 확인용 (추후 isEnded prop 연동 시 사용 — 현재는 미전달)
+  // 종료된 행사 UI 확인용 (종료된 행사는 항상 isFavorite: true로 내려옴)
   {
     id: "3",
     realmName: "전시",
@@ -38,7 +38,7 @@ const MOCK_EVENTS: EventCardData[] = [
     startDate: new Date("2026-06-01"),
     endDate: new Date("2026-06-30"),
     imageUrl: null,
-    isFavorite: false,
+    isFavorite: true,
   },
 ];
 
