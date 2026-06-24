@@ -95,6 +95,27 @@ function appendIfPresent(params: URLSearchParams, key: string, value?: string | 
   params.set(key, String(value));
 }
 
+function isCompleteLocationInfo(
+  locationInfo: LocationInfo | null,
+): locationInfo is LocationInfo & {
+  nx: number;
+  ny: number;
+  sido: string;
+  label: string;
+  stationName: string;
+} {
+  return Boolean(
+    locationInfo &&
+      Number.isFinite(locationInfo.lat) &&
+      Number.isFinite(locationInfo.lng) &&
+      Number.isFinite(locationInfo.nx) &&
+      Number.isFinite(locationInfo.ny) &&
+      locationInfo.sido &&
+      locationInfo.label &&
+      locationInfo.stationName,
+  );
+}
+
 function getInitialCenter(searchParams: URLSearchParams) {
   const latParam = searchParams.get("lat");
   const lngParam = searchParams.get("lng");
@@ -154,13 +175,12 @@ function LocationContent() {
     const grid = toWeatherGrid(lat, lng);
 
     setIsResolvingLocation(true);
-    setLocationInfo((prev) => ({
-      ...prev,
+    setLocationInfo({
       lat,
       lng,
       nx: grid.nx,
       ny: grid.ny,
-    }));
+    });
 
     if (!window.kakao.maps.services) {
       setIsResolvingLocation(false);
@@ -245,7 +265,7 @@ function LocationContent() {
   };
 
   const handleLocationConfirm = () => {
-    if (!locationInfo) return;
+    if (isResolvingLocation || !isCompleteLocationInfo(locationInfo)) return;
 
     const params = new URLSearchParams();
     appendIfPresent(params, "lat", locationInfo.lat);
@@ -279,7 +299,7 @@ function LocationContent() {
 
   const districtName = locationInfo?.districtName ?? "위치 확인 중";
   const detailAddress = locationInfo?.label ?? "현재 위치의 주소를 확인하고 있습니다.";
-  const canConfirm = Boolean(locationInfo);
+  const canConfirm = !isResolvingLocation && isCompleteLocationInfo(locationInfo);
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -393,7 +413,7 @@ function LocationContent() {
               </div>
 
               <CTAButton
-                label="이 위치로 설정"
+                label={isResolvingLocation ? "위치 확인 중..." : "이 위치로 설정"}
                 onClick={handleLocationConfirm}
                 disabled={!canConfirm}
               />
