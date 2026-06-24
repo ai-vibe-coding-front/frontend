@@ -35,6 +35,20 @@ export async function findUserWithFavoriteCount(id: string) {
   });
 }
 
+export async function findUserById(id: string) {
+  return prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true, email: true, nickname: true },
+  });
+}
+
+export async function findRefreshToken(tokenHash: string) {
+  return prisma.refreshToken.findFirst({
+    where: { tokenHash },
+    select: { userId: true, expiresAt: true, revokedAt: true },
+  });
+}
+
 export async function saveRefreshToken(
   userId: string,
   tokenHash: string,
