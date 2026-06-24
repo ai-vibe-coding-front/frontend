@@ -153,8 +153,10 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
   return (
     <div className="flex flex-col gap-3">
       {events.length === 0 ? (
-        <div className="rounded-[18px] bg-white px-4 py-8 text-center text-[13px] font-medium leading-5 text-[#8c6e63]">
-          최근 추천 결과가 없어요
+        <div className="flex flex-col items-center justify-center gap-3 rounded-[18px] bg-white py-8">
+          <p className="font-bold text-[17px] text-[#251e19]">
+            최근 추천 결과가 없어요
+          </p>
         </div>
       ) : (
         <div
@@ -201,11 +203,10 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
               onClick={() => {
                 moveToSlide(i + 1);
               }}
-              className={`rounded-full transition-all duration-200 ${
-                i === activeIndex
+              className={`rounded-full transition-all duration-200 ${i === activeIndex
                   ? "w-[18px] h-1.5 bg-[#8edfd2]"
                   : "w-1.5 h-1.5 bg-[#e4d8c9]"
-              }`}
+                }`}
             />
           ))}
         </div>
