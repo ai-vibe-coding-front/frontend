@@ -8,6 +8,8 @@ import { EventCard, type EventCardData } from "@/components/common/EventCard";
 import { ApiClientError, apiClient } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
 
+const FAVORITES_PAGE_LIMIT = 20;
+
 type FavoriteItem = {
   eventItemId: string;
   title: string;
@@ -64,13 +66,18 @@ export function FavoritesContent() {
   const router = useRouter();
   const [items, setItems] = useState<FavoriteItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    apiClient<FavoritesResponse>("/api/favorites?page=1&limit=20")
+    apiClient<FavoritesResponse>(`/api/favorites?page=1&limit=${FAVORITES_PAGE_LIMIT}`)
       .then((data) => {
         setItems(data.items);
+        setCurrentPage(data.pagination.page);
+        setHasNext(data.pagination.hasNext);
         setErrorMessage(null);
       })
       .catch((error: unknown) => {
@@ -85,6 +92,32 @@ export function FavoritesContent() {
   }, [router]);
 
   const events = useMemo(() => items.map(toEventCardData), [items]);
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasNext) return;
+
+    const nextPage = currentPage + 1;
+    setIsLoadingMore(true);
+    setErrorMessage(null);
+
+    try {
+      const data = await apiClient<FavoritesResponse>(
+        `/api/favorites?page=${nextPage}&limit=${FAVORITES_PAGE_LIMIT}`,
+      );
+      setItems((current) => [...current, ...data.items]);
+      setCurrentPage(data.pagination.page);
+      setHasNext(data.pagination.hasNext);
+    } catch (error) {
+      if (error instanceof ApiClientError && error.status === 401) {
+        router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
+        return;
+      }
+
+      setErrorMessage("관심행사 목록을 더 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const removePendingId = (eventItemId: string) => {
     setPendingIds((current) => {
@@ -192,6 +225,16 @@ export function FavoritesContent() {
                   onFavorite={() => handleFavoriteRemove(event.id)}
                 />
               ))}
+              {hasNext && (
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="mt-1 h-12 rounded-[16px] bg-[#3f2a24] px-4 text-[14px] font-bold leading-5 text-white disabled:opacity-50"
+                >
+                  {isLoadingMore ? "불러오는 중" : "더보기"}
+                </button>
+              )}
             </div>
           )}
         </main>
