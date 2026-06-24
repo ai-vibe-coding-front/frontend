@@ -18,6 +18,7 @@ export type EventCandidate = {
   description: string | null;
   imageUrl: string | null;
   bookingUrl: string | null;
+  isIndoor: boolean | null;
   tags: { tag: { name: string } }[];
 };
 
@@ -34,9 +35,7 @@ const QUESTION_KEY_MAP: Record<string, QuestionKey> = {
   q4: "Q4",
 };
 
-export async function findRecommendationCandidates(
-  indoorOnly: boolean,
-): Promise<EventCandidate[]> {
+export async function findRecommendationCandidates(): Promise<EventCandidate[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -44,7 +43,6 @@ export async function findRecommendationCandidates(
     where: {
       deletedAt: null,
       endDate: { gte: today },
-      ...(indoorOnly ? { isIndoor: true } : {}),
     },
     orderBy: { endDate: 'asc' },
     take: 500,
@@ -62,6 +60,7 @@ export async function findRecommendationCandidates(
       description: true,
       imageUrl: true,
       bookingUrl: true,
+      isIndoor: true,
       tags: {
         select: {
           tag: { select: { name: true } },

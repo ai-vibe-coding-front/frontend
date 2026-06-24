@@ -110,10 +110,10 @@ export async function POST(request: Request) {
 
     const indoorForced = checkIndoorForced(weather, dust);
 
-    const candidates = await findRecommendationCandidates(indoorForced);
+    const candidates = await findRecommendationCandidates();
 
     const answersMap = Object.fromEntries(answers.map((a) => [a.questionKey, a.answerValue]));
-    const scored = scoreAndRankEvents(candidates, answersMap, lat, lng);
+    const scored = scoreAndRankEvents(candidates, answersMap, lat, lng, indoorForced);
     const { items, nearbyExpanded } = filterAndSort(scored);
 
     const curation = buildCurationMessage(weather, answersMap['q2'], answersMap['q4']);

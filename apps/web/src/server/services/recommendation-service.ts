@@ -71,11 +71,14 @@ export function checkIndoorForced(
   );
 }
 
+const INDOOR_BONUS = 3;
+
 export function scoreAndRankEvents(
   candidates: EventCandidate[],
   answers: Record<string, string>,
   userLat: number,
   userLng: number,
+  indoorForced: boolean = false,
 ): ScoredEvent[] {
   const energyTag = Q1_ENERGY[answers['q1']] ?? null;
   const moodTags = Q2_MOOD[answers['q2']] ?? [];
@@ -119,6 +122,11 @@ export function scoreAndRankEvents(
       }
     }
 
+    // 실내 보너스: 악천후/미세먼지 조건 시 실내 행사 우선
+    if (indoorForced && event.isIndoor === true) {
+      score += INDOOR_BONUS;
+    }
+
     const distanceKm =
       event.lat != null && event.lng != null
         ? calcDistanceKm(userLat, userLng, event.lat, event.lng)
@@ -138,6 +146,7 @@ export function scoreAndRankEvents(
       description: event.description,
       imageUrl: event.imageUrl,
       bookingUrl: event.bookingUrl,
+      isIndoor: event.isIndoor,
       score,
       distanceKm,
       matchedTags,
