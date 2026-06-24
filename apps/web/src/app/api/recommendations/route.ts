@@ -8,6 +8,7 @@ import { findExplorationSessionById } from '@/server/repositories/exploration-se
 import {
   findRecommendationCandidates,
   saveRecommendation,
+  findFavoritedEventIds,
 } from '@/server/repositories/recommendation-repository';
 import {
   FALLBACK_LOCATION,
@@ -118,9 +119,11 @@ export async function POST(request: Request) {
 
     const curation = buildCurationMessage(weather, answersMap['q2'], answersMap['q4']);
 
+    const userId = session.userId ?? null;
+
     const runId = await saveRecommendation({
       sessionId,
-      userId: session.userId ?? null,
+      userId,
       sido: session.sido ?? FALLBACK_LOCATION.sido,
       nx,
       ny,
@@ -132,6 +135,8 @@ export async function POST(request: Request) {
       nearbyExpanded,
       items,
     });
+
+    const favoritedIds = await findFavoritedEventIds(userId, items.map((i) => i.id));
 
     return ok({
       runId,
@@ -153,6 +158,7 @@ export async function POST(request: Request) {
         rank: i + 1,
         score: item.score,
         distanceKm: item.distanceKm != null ? Math.round(item.distanceKm * 100) / 100 : null,
+        isFavorited: favoritedIds.has(item.id),
         eventItem: {
           id: item.id,
           title: item.title,

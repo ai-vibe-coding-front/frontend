@@ -70,6 +70,67 @@ export async function findRecommendationCandidates(): Promise<EventCandidate[]> 
   });
 }
 
+export async function findFavoritedEventIds(
+  userId: string | null,
+  eventItemIds: string[],
+): Promise<Set<string>> {
+  if (!userId || eventItemIds.length === 0) return new Set();
+  const rows = await prisma.favorite.findMany({
+    where: { userId, eventItemId: { in: eventItemIds } },
+    select: { eventItemId: true },
+  });
+  return new Set(rows.map((r) => r.eventItemId));
+}
+
+export async function findRecommendationRunById(runId: string) {
+  return prisma.recommendationRun.findUnique({
+    where: { id: runId },
+    select: {
+      id: true,
+      curation: true,
+      indoorForced: true,
+      nearbyExpanded: true,
+      userId: true,
+      weatherSnapshot: {
+        select: {
+          skyLabel: true,
+          pty: true,
+          temperature: true,
+          pm10Value: true,
+          pm10Grade: true,
+          pm25Value: true,
+          pm25Grade: true,
+        },
+      },
+      items: {
+        orderBy: { rank: 'asc' },
+        select: {
+          rank: true,
+          score: true,
+          distanceKm: true,
+          eventItem: {
+            select: {
+              id: true,
+              title: true,
+              realmName: true,
+              place: true,
+              address: true,
+              lat: true,
+              lng: true,
+              startDate: true,
+              endDate: true,
+              price: true,
+              description: true,
+              imageUrl: true,
+              bookingUrl: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
 export async function saveRecommendation(params: {
   sessionId: string;
   userId: string | null;
