@@ -58,6 +58,7 @@ export async function findUserFavoriteEvents(
   const skip = (page - 1) * limit;
   const where = {
     userId,
+    eventItem: { deletedAt: null },
   };
 
   const [items, total] = await Promise.all([
