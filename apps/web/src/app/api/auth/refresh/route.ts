@@ -2,6 +2,13 @@ import { cookies } from 'next/headers';
 import { ok, fail } from '@/lib/api-response';
 import { refreshTokens, REFRESH_ERRORS } from '@/server/services/auth-service';
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
 export async function POST() {
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get('refreshToken')?.value;
@@ -15,29 +22,9 @@ export async function POST() {
 
     const response = ok({ user });
 
-    response.cookies.set('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60,
-      path: '/',
-    });
-
-    response.cookies.set('refreshToken', refreshToken.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 14,
-      path: '/',
-    });
-
-    response.cookies.set('isLoggedIn', '1', {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60,
-      path: '/',
-    });
+    response.cookies.set('accessToken', accessToken, { ...COOKIE_OPTIONS, maxAge: 60 * 60 });
+    response.cookies.set('refreshToken', refreshToken.token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 24 * 14 });
+    response.cookies.set('isLoggedIn', '1', { ...COOKIE_OPTIONS, httpOnly: false, maxAge: 60 * 60 });
 
     return response;
   } catch (error) {
@@ -52,7 +39,7 @@ export async function POST() {
         return fail(REFRESH_ERRORS.EXPIRED, '로그인 시간이 만료되었습니다.', 401);
       }
       if (error.message === REFRESH_ERRORS.USER_NOT_FOUND) {
-        return fail(REFRESH_ERRORS.USER_NOT_FOUND, '사용자를 찾을 수 없습니다.', 404);
+        return fail(REFRESH_ERRORS.USER_NOT_FOUND, '다시 로그인이 필요합니다.', 401);
       }
     }
     console.error('[refresh]', error);
