@@ -3,7 +3,7 @@ import {
   findFavoriteByUserAndEvent,
   findFavoritedEventIds,
   findNearbyEventCandidates,
-} from '@/server/repositories/event-repository';
+} from "@/server/repositories/event-repository";
 
 const EARTH_RADIUS_KM = 6371;
 const KM_PER_DEGREE_LAT = 111;
@@ -23,7 +23,9 @@ export function calculateDistanceKm(
 
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) ** 2;
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
   return EARTH_RADIUS_KM * c;
@@ -50,9 +52,9 @@ function formatDate(value: Date | null): string | null {
 // "&lt;"같은 표기가 그대로 남는다. 한 번 더 풀어준다.
 function decodeHtmlEntities(value: string): string {
   return value
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'");
 }
@@ -93,30 +95,40 @@ export async function findNearbyEvents(params: NearbyEventsParams): Promise<{
     .filter((event) => event.lat != null && event.lng != null)
     .map((event) => ({
       event,
-      distanceKm: calculateDistanceKm(params.lat, params.lng, event.lat as number, event.lng as number),
+      distanceKm: calculateDistanceKm(
+        params.lat,
+        params.lng,
+        event.lat as number,
+        event.lng as number,
+      ),
     }))
     .filter(({ distanceKm }) => distanceKm <= params.radiusKm)
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, params.limit);
 
   const favoritedIds = params.userId
-    ? await findFavoritedEventIds(params.userId, withDistance.map(({ event }) => event.id))
+    ? await findFavoritedEventIds(
+        params.userId,
+        withDistance.map(({ event }) => event.id),
+      )
     : new Set<string>();
 
-  const items: NearbyEventItem[] = withDistance.map(({ event, distanceKm }) => ({
-    eventItemId: event.id,
-    title: decodeHtmlEntities(event.title),
-    realmName: event.realmName,
-    place: event.place ? decodeHtmlEntities(event.place) : null,
-    address: event.address ? decodeHtmlEntities(event.address) : null,
-    startDate: formatDate(event.startDate),
-    endDate: formatDate(event.endDate),
-    imageUrl: event.imageUrl,
-    lat: event.lat as number,
-    lng: event.lng as number,
-    distanceKm: Math.round(distanceKm * 100) / 100,
-    isFavorited: favoritedIds.has(event.id),
-  }));
+  const items: NearbyEventItem[] = withDistance.map(
+    ({ event, distanceKm }) => ({
+      eventItemId: event.id,
+      title: decodeHtmlEntities(event.title),
+      realmName: event.realmName,
+      place: event.place ? decodeHtmlEntities(event.place) : null,
+      address: event.address ? decodeHtmlEntities(event.address) : null,
+      startDate: formatDate(event.startDate),
+      endDate: formatDate(event.endDate),
+      imageUrl: event.imageUrl,
+      lat: event.lat as number,
+      lng: event.lng as number,
+      distanceKm: Math.round(distanceKm * 100) / 100,
+      isFavorited: favoritedIds.has(event.id),
+    }),
+  );
 
   return {
     items,
@@ -163,7 +175,7 @@ export async function getEventDetail(
     place: event.place ? decodeHtmlEntities(event.place) : null,
     address: event.address ? decodeHtmlEntities(event.address) : null,
     price: event.price,
-    description: event.description ? decodeHtmlEntities(event.description) : '',
+    description: event.description ? decodeHtmlEntities(event.description) : "",
     imageUrl: event.imageUrl,
     bookingUrl: event.bookingUrl,
     lat: event.lat,

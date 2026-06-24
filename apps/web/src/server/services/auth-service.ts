@@ -4,11 +4,21 @@ import { SignJWT, jwtVerify } from 'jose';
 import {
   createUserWithCredential,
   findUserByEmail,
+  findUserById,
   findUserWithCredentialByEmail,
+  findRefreshToken,
   saveRefreshToken,
+  revokeRefreshToken,
 } from '@/server/repositories/user-repository';
 
 const scryptAsync = promisify<string, string, number, Buffer>(scrypt);
+
+export const REFRESH_ERRORS = {
+  INVALID: 'REFRESH_TOKEN_INVALID',
+  REVOKED: 'REFRESH_TOKEN_REVOKED',
+  EXPIRED: 'REFRESH_TOKEN_EXPIRED',
+  USER_NOT_FOUND: 'USER_NOT_FOUND',
+} as const;
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
@@ -57,6 +67,26 @@ export async function issueRefreshToken(userId: string): Promise<{ token: string
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14); // 14일
   await saveRefreshToken(userId, tokenHash, expiresAt);
   return { token, expiresAt };
+}
+
+export async function refreshTokens(cookieToken: string) {
+  const tokenHash = createHash('sha256').update(cookieToken).digest('hex');
+  const record = await findRefreshToken(tokenHash);
+
+  if (!record) throw new Error(REFRESH_ERRORS.INVALID);
+  if (record.revokedAt) throw new Error(REFRESH_ERRORS.REVOKED);
+  if (record.expiresAt < new Date()) throw new Error(REFRESH_ERRORS.EXPIRED);
+
+  const user = await findUserById(record.userId);
+  if (!user) throw new Error(REFRESH_ERRORS.USER_NOT_FOUND);
+
+  const revoked = await revokeRefreshToken(tokenHash);
+  if (revoked.count === 0) throw new Error(REFRESH_ERRORS.REVOKED);
+
+  const accessToken = await issueAccessToken(user.id);
+  const refreshToken = await issueRefreshToken(user.id);
+
+  return { user, accessToken, refreshToken };
 }
 
 export async function signup(email: string, password: string, nickname: string) {
