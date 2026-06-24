@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EventCard } from "@/components/common/EventCard";
 import type { EventCardData } from "@/components/common/EventCard";
 
@@ -19,6 +19,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
   const [slideIndex, setSlideIndex] = useState(hasLoop ? 1 : 0);
   const [dragOffset, setDragOffset] = useState(0);
   const [transitionEnabled, setTransitionEnabled] = useState(true);
+  const [carouselEventLength, setCarouselEventLength] = useState(events.length);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef({
     pointerId: 0,
@@ -28,9 +29,12 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
     hasMoved: false,
   });
   const suppressClickRef = useRef(false);
+  const hasEventLengthChanged = carouselEventLength !== events.length;
+  const resetSlideIndex = hasLoop ? 1 : 0;
+  const currentSlideIndex = hasEventLengthChanged ? resetSlideIndex : slideIndex;
   const safeSlideIndex =
-    hasLoop && slideIndex >= 0 && slideIndex <= events.length + 1
-      ? slideIndex
+    hasLoop && currentSlideIndex >= 0 && currentSlideIndex <= events.length + 1
+      ? currentSlideIndex
       : hasLoop
         ? 1
         : 0;
@@ -44,6 +48,29 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
           ? 0
           : safeSlideIndex - (hasLoop ? 1 : 0);
   const visualSlideIndex = hasLoop ? safeSlideIndex : 0;
+  const visualDragOffset = hasEventLengthChanged ? 0 : dragOffset;
+
+  useEffect(() => {
+    const nextSlideIndex = events.length > 1 ? 1 : 0;
+    let restoreFrameId = 0;
+    dragStateRef.current.isDragging = false;
+
+    const frameId = requestAnimationFrame(() => {
+      setCarouselEventLength(events.length);
+      setTransitionEnabled(false);
+      setDragOffset(0);
+      setSlideIndex(nextSlideIndex);
+
+      restoreFrameId = requestAnimationFrame(() => {
+        setTransitionEnabled(true);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      cancelAnimationFrame(restoreFrameId);
+    };
+  }, [events.length]);
 
   const moveToSlide = (nextIndex: number) => {
     setTransitionEnabled(true);
@@ -141,9 +168,9 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
           style={{ touchAction: "pan-y" }}
         >
           <div
-            className={`flex ${transitionEnabled ? "transition-transform duration-300 ease-out" : ""}`}
+            className={`flex ${transitionEnabled && !hasEventLengthChanged ? "transition-transform duration-300 ease-out" : ""}`}
             style={{
-              transform: `translateX(calc(${-visualSlideIndex * 100}% + ${dragOffset}px))`,
+              transform: `translateX(calc(${-visualSlideIndex * 100}% + ${visualDragOffset}px))`,
             }}
             onTransitionEnd={handleTransitionEnd}
           >
