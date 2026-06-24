@@ -6,13 +6,7 @@ import { useRouter } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ApiClientError, apiClient } from '@/lib/api-client';
 import { ROUTES } from '@/constants/routes';
-
-type UserProfile = {
-  id: string;
-  email: string;
-  nickname: string;
-  favoriteCount: number;
-};
+import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 
 const ChevronRightIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -39,32 +33,28 @@ const SavedHeartIcon = () => (
 
 export function MyPageContent() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const { user, isLoading, error, isUnauthorized } = useCurrentUser();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    apiClient<UserProfile>('/api/users/me')
-      .then(setUser)
-      .catch((error: unknown) => {
-        if (error instanceof ApiClientError && error.status === 401) {
-          router.replace(`${ROUTES.login}?redirect=${ROUTES.mypage}`);
-          return;
-        }
+    if (!error) {
+      setErrorMessage(null);
+      return;
+    }
 
-        if (
-          error instanceof ApiClientError &&
-          error.errorCode === 'USER_NOT_FOUND'
-        ) {
-          setErrorMessage('사용자 정보를 찾을 수 없습니다.');
-          return;
-        }
+    if (isUnauthorized) {
+      router.replace(`${ROUTES.login}?redirect=${ROUTES.mypage}`);
+      return;
+    }
 
-        setErrorMessage('사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
-      })
-      .finally(() => setIsLoading(false));
-  }, [router]);
+    if (error instanceof ApiClientError && error.errorCode === 'USER_NOT_FOUND') {
+      setErrorMessage('사용자 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    setErrorMessage('사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+  }, [error, isUnauthorized, router]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
