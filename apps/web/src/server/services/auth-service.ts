@@ -4,8 +4,11 @@ import { SignJWT, jwtVerify } from 'jose';
 import {
   createUserWithCredential,
   findUserByEmail,
+  findUserById,
   findUserWithCredentialByEmail,
+  findRefreshToken,
   saveRefreshToken,
+  revokeRefreshToken,
 } from '@/server/repositories/user-repository';
 
 const scryptAsync = promisify<string, string, number, Buffer>(scrypt);
@@ -57,6 +60,25 @@ export async function issueRefreshToken(userId: string): Promise<{ token: string
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14); // 14일
   await saveRefreshToken(userId, tokenHash, expiresAt);
   return { token, expiresAt };
+}
+
+export async function refreshTokens(cookieToken: string) {
+  const tokenHash = createHash('sha256').update(cookieToken).digest('hex');
+  const record = await findRefreshToken(tokenHash);
+
+  if (!record) throw new Error('REFRESH_TOKEN_INVALID');
+  if (record.revokedAt) throw new Error('REFRESH_TOKEN_REVOKED');
+  if (record.expiresAt < new Date()) throw new Error('REFRESH_TOKEN_EXPIRED');
+
+  const user = await findUserById(record.userId);
+  if (!user) throw new Error('USER_NOT_FOUND');
+
+  await revokeRefreshToken(tokenHash);
+
+  const accessToken = await issueAccessToken(user.id);
+  const refreshToken = await issueRefreshToken(user.id);
+
+  return { user, accessToken, refreshToken };
 }
 
 export async function signup(email: string, password: string, nickname: string) {
