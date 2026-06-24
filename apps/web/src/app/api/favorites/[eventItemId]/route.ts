@@ -33,7 +33,7 @@ export async function DELETE(
   try {
     const existing = await findFavoriteByUserAndEvent(userId, eventItemId);
     if (!existing) {
-      return fail("FAVORITE_NOT_FOUND", "저장된 행사가 아닙니다.", 404);
+      return fail("FAVORITE_NOT_FOUND", "저장된 관심행사가 아닙니다.", 404);
     }
 
     await deleteFavorite(userId, eventItemId);
@@ -42,6 +42,6 @@ export async function DELETE(
     return ok({ eventItemId, isFavorited: false, favoriteCount });
   } catch (err) {
     console.error("[DELETE /api/favorites/:eventItemId]", err);
-    return fail("FAVORITE_DELETE_FAILED", "찜 해제에 실패했습니다.", 500);
+    return fail("FAVORITE_DELETE_FAILED", "관심행사 해제에 실패했습니다.", 500);
   }
 }
