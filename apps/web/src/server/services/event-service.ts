@@ -1,5 +1,6 @@
 import {
   findEventDetailById,
+  findFavoriteByUserAndEvent,
   findFavoritedEventIds,
   findNearbyEventCandidates,
 } from "@/server/repositories/event-repository";
@@ -154,9 +155,16 @@ export type EventDetail = {
   isFavorited: boolean;
 };
 
-export async function getEventDetail(id: string): Promise<EventDetail | null> {
+export async function getEventDetail(
+  id: string,
+  userId?: string | null,
+): Promise<EventDetail | null> {
   const event = await findEventDetailById(id);
   if (!event) return null;
+
+  const isFavorited = userId
+    ? !!(await findFavoriteByUserAndEvent(userId, event.id))
+    : false;
 
   return {
     eventItemId: event.id,
@@ -177,6 +185,6 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
     lat: event.lat,
     lng: event.lng,
     isIndoor: event.isIndoor,
-    isFavorited: false, // TODO: 찜하기 이슈에서 연결 예정
+    isFavorited,
   };
 }

@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { ok, fail } from "@/lib/api-response";
+import { verifyAccessToken } from "@/server/services/auth-service";
 import { getEventDetail } from "@/server/services/event-service";
 
 const UUID_REGEX =
@@ -15,9 +17,13 @@ export async function GET(
   }
 
   try {
-    const event = await getEventDetail(id);
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
+    const userId = accessToken ? await verifyAccessToken(accessToken) : null;
+
+    const event = await getEventDetail(id, userId);
     if (!event) {
-      return fail("EVENT_NOT_FOUND", "존재하지 않는 행사입니다.", 404);
+      return fail("EVENT_NOT_FOUND", "행사를 찾을 수 없습니다.", 404);
     }
 
     return ok(event);
