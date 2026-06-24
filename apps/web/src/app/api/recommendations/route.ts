@@ -136,7 +136,7 @@ export async function POST(request: Request) {
       items,
     });
 
-    const favoritedIds = await findFavoritedEventIds(userId, items.map((i) => i.id));
+    const favoritedIds = await findFavoritedEventIds(loggedInUserId, items.map((i) => i.id));
 
     return ok({
       runId,
