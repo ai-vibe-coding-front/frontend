@@ -52,7 +52,7 @@ export async function POST() {
         return fail('REFRESH_TOKEN_EXPIRED', '로그인 시간이 만료되었습니다.', 401);
       }
       if (error.message === 'USER_NOT_FOUND') {
-        return fail('USER_NOT_FOUND', '사용자를 찾을 수 없습니다', 404);
+        return fail('USER_NOT_FOUND', '사용자를 찾을 수 없습니다.', 404);
       }
     }
     console.error('[refresh]', error);
