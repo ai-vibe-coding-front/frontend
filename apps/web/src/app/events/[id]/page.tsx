@@ -15,7 +15,6 @@ import { ApiClientError } from '@/lib/api-client';
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
 
-
 function SkeletonLoader() {
   return (
     <div className="flex-1 flex flex-col px-6 pt-3 pb-6 gap-4 overflow-y-auto animate-pulse">
