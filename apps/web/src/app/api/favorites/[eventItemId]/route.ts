@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { ok, fail } from "@/lib/api-response";
 import { verifyAccessToken } from "@/server/services/auth-service";
 import {
-  countFavorites,
+  countUserFavorites,
   deleteFavorite,
   findFavoriteByUserAndEvent,
 } from "@/server/repositories/event-repository";
@@ -37,7 +37,7 @@ export async function DELETE(
     }
 
     await deleteFavorite(userId, eventItemId);
-    const favoriteCount = await countFavorites(userId);
+    const favoriteCount = await countUserFavorites(userId);
 
     return ok({ eventItemId, isFavorited: false, favoriteCount });
   } catch (err) {

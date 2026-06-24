@@ -50,7 +50,7 @@ export async function findFavoriteByUserAndEvent(userId: string, eventItemId: st
   });
 }
 
-export async function countFavorites(userId: string): Promise<number> {
+export async function countUserFavorites(userId: string): Promise<number> {
   return prisma.favorite.count({ where: { userId } });
 }
 

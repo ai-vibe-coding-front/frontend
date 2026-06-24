@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { created, fail } from "@/lib/api-response";
 import { verifyAccessToken } from "@/server/services/auth-service";
 import {
-  countFavorites,
+  countUserFavorites,
   createFavorite,
   findEventDetailById,
   findFavoriteByUserAndEvent,
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     }
 
     await createFavorite(userId, eventItemId);
-    const favoriteCount = await countFavorites(userId);
+    const favoriteCount = await countUserFavorites(userId);
 
     return created({ eventItemId, isFavorited: true, favoriteCount });
   } catch (err) {
