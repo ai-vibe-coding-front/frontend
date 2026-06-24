@@ -85,7 +85,7 @@ export default function EventDetailPage() {
             <Link href="/" className="size-4 shrink-0">
               <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
             </Link>
-            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</p>
+            <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</Link>
           </div>
           <SkeletonLoader />
         </div>
@@ -138,9 +138,9 @@ export default function EventDetailPage() {
           <Link href="/" className="size-4 shrink-0">
             <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
           </Link>
-          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+          <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
             MUUD
-          </p>
+          </Link>
           <HeartButton liked={liked} onToggle={handleHeartClick} />
         </div>
 
@@ -150,7 +150,7 @@ export default function EventDetailPage() {
           {/* 메인 이미지 */}
           <div className="relative rounded-[26px] shadow-[0px_4px_20px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
             {event.imageUrl ? (
-              <Image src={event.imageUrl} alt={event.title} fill className="object-cover" />
+              <Image src={event.imageUrl} alt={event.title} fill sizes="390px" className="object-cover" />
             ) : (
               <div className="w-full h-full bg-[#d9cfc5]" />
             )}

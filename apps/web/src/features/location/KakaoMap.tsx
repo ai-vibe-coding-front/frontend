@@ -8,12 +8,21 @@ type KakaoMapProps = {
   level?: number;
   className?: string;
   onMapReady?: (map: kakao.maps.Map) => void;
+  onError?: (error: Error) => void;
 };
 
-export function KakaoMap({ center, level = 3, className, onMapReady }: KakaoMapProps) {
+export function KakaoMap({ center, level = 3, className, onMapReady, onError }: KakaoMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<kakao.maps.Map | null>(null);
+  const hasReportedErrorRef = useRef(false);
   const { isLoaded, error } = useKakaoLoader();
+
+  useEffect(() => {
+    if (!error || hasReportedErrorRef.current) return;
+    hasReportedErrorRef.current = true;
+    onError?.(error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   useEffect(() => {
     if (!isLoaded || !containerRef.current || mapInstanceRef.current) {

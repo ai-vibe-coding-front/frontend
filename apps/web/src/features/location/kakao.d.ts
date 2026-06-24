@@ -33,6 +33,17 @@ declare namespace kakao.maps {
     setMap(map: Map | null): void;
     setPosition(position: LatLng): void;
   }
+
+  interface MarkerOptions {
+    position: LatLng;
+    map?: Map;
+  }
+
+  class Marker {
+    constructor(options: MarkerOptions);
+    setMap(map: Map | null): void;
+    setPosition(position: LatLng): void;
+  }
 }
 
 interface Window {

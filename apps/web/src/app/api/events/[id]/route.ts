@@ -1,20 +1,8 @@
-import { ok, fail } from '@/lib/api-response';
+import { ok, fail } from "@/lib/api-response";
+import { getEventDetail } from "@/server/services/event-service";
 
-const MOCK_EVENT = {
-  id: '315929',
-  title: '《생이 깃든 소나무》',
-  realmCode: 'D000',
-  realmName: '전시',
-  startDate: '2025-02-26',
-  endDate: '2026-06-30',
-  place: '성북구립미술관',
-  price: '무료',
-  description: '서울특별시 성북구 성북로 134 성북구립미술관 | 02-6925-5011',
-  imageUrl: null,
-  bookingUrl: 'https://sma.sbculture.or.kr/sma/exhibition/current.do?mode=view&articleNo=43458&article.offset=0&articleLimit=10',
-  lat: 37.59482890788785,
-  lng: 126.99488186959195,
-};
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
   _request: Request,
@@ -22,9 +10,19 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  if (id !== MOCK_EVENT.id) {
-    return fail('EVENT_NOT_FOUND', '존재하지 않는 행사입니다', 404);
+  if (!UUID_REGEX.test(id)) {
+    return fail("INVALID_EVENT_ID", "행사 ID가 올바르지 않습니다.", 400);
   }
 
-  return ok(MOCK_EVENT);
+  try {
+    const event = await getEventDetail(id);
+    if (!event) {
+      return fail("EVENT_NOT_FOUND", "존재하지 않는 행사입니다.", 404);
+    }
+
+    return ok(event);
+  } catch (err) {
+    console.error("[GET /api/events/:id]", err);
+    return fail("EVENT_FETCH_FAILED", "행사 상세 조회에 실패했습니다.", 500);
+  }
 }
