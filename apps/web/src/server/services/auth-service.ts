@@ -80,7 +80,8 @@ export async function refreshTokens(cookieToken: string) {
   const user = await findUserById(record.userId);
   if (!user) throw new Error(REFRESH_ERRORS.USER_NOT_FOUND);
 
-  await revokeRefreshToken(tokenHash);
+  const revoked = await revokeRefreshToken(tokenHash);
+  if (revoked.count === 0) throw new Error(REFRESH_ERRORS.REVOKED);
 
   const accessToken = await issueAccessToken(user.id);
   const refreshToken = await issueRefreshToken(user.id);
