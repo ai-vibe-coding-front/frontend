@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -7,69 +8,48 @@ import { TodayMoodCard } from "@/features/recommendations/TodayMoodCard";
 import { EventCarousel } from "@/features/recommendations/EventCarousel";
 import type { EventCardData } from "@/components/common/EventCard";
 import { ROUTES } from "@/constants/routes";
+import { apiClient } from "@/lib/api-client";
 
-const MOCK_EVENTS: EventCardData[] = [
-  {
-    id: "1",
-    realmName: "전시",
-    title: "빛으로 쓴 편지 — 사진전",
-    place: "성수 갤러리아 포레",
-    startDate: new Date("2026-06-01"),
-    endDate: new Date("2026-06-30"),
-    imageUrl: null,
-    isFavorite: true,
-  },
-  {
-    id: "2",
-    realmName: "음악/콘서트",
-    title: "서울 재즈 페스티벌 2026",
-    place: "올림픽공원 88잔디마당",
-    startDate: new Date("2026-05-23"),
-    endDate: new Date("2026-05-25"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-  {
-    id: "3",
-    realmName: "연극",
-    title: "햄릿 — 국립극단",
-    place: "명동예술극장",
-    startDate: new Date("2026-06-10"),
-    endDate: new Date("2026-07-05"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-  {
-    id: "4",
-    realmName: "행사/축제",
-    title: "한강 달빛 마켓",
-    place: "여의도 한강공원",
-    startDate: new Date("2026-06-14"),
-    endDate: new Date("2026-06-15"),
-    imageUrl: null,
-    isFavorite: true,
-  },
-  {
-    id: "5",
-    realmName: "뮤지컬/오페라",
-    title: "레미제라블",
-    place: "예술의전당 오페라극장",
-    startDate: new Date("2026-06-20"),
-    endDate: new Date("2026-08-31"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-  {
-    id: "6",
-    realmName: "무용/발레",
-    title: "지젤 — 국립발레단",
-    place: "예술의전당 CJ토월극장",
-    startDate: new Date("2026-06-25"),
-    endDate: new Date("2026-06-29"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-];
+interface RecentRecommendationItem {
+  recommendationRunId: string;
+  rank: number;
+  eventItemId: string;
+  title: string;
+  realmName: string | null;
+  place: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  imageUrl: string | null;
+  isFavorited: boolean;
+}
+
+interface RecentRecommendationsResponse {
+  runId: string | null;
+  curation: string | null;
+  items: RecentRecommendationItem[];
+}
+
+interface RecentRecommendationCard extends EventCardData {
+  recommendationRunId: string | null;
+}
+
+function toDate(value: string | null): Date | null {
+  return value ? new Date(value) : null;
+}
+
+function toEventCardData(item: RecentRecommendationItem): RecentRecommendationCard {
+  return {
+    id: item.eventItemId,
+    title: item.title,
+    realmName: item.realmName,
+    place: item.place,
+    startDate: toDate(item.startDate),
+    endDate: toDate(item.endDate),
+    imageUrl: item.imageUrl,
+    isFavorite: item.isFavorited,
+    recommendationRunId: item.recommendationRunId,
+  };
+}
 
 interface HomeContentProps {
   isLoggedIn: boolean;
@@ -77,9 +57,92 @@ interface HomeContentProps {
 
 export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
+  const [recentEvents, setRecentEvents] = useState<RecentRecommendationCard[]>([]);
+  const [isRecentLoading, setIsRecentLoading] = useState(false);
+  const [recentErrorMessage, setRecentErrorMessage] = useState<string | null>(null);
+  const [pendingFavoriteIds, setPendingFavoriteIds] = useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setRecentEvents([]);
+      setRecentErrorMessage(null);
+      setIsRecentLoading(false);
+      return;
+    }
+
+    let ignore = false;
+
+    setIsRecentLoading(true);
+    setRecentErrorMessage(null);
+
+    apiClient<RecentRecommendationsResponse>("/api/recommendations/recent")
+      .then((data) => {
+        if (ignore) return;
+        setRecentEvents(data.items.map(toEventCardData));
+      })
+      .catch(() => {
+        if (ignore) return;
+        setRecentEvents([]);
+        setRecentErrorMessage("최근 추천 결과를 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (ignore) return;
+        setIsRecentLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [isLoggedIn]);
 
   const goToLocationPermission = () => {
     router.push(ROUTES.locationPermission);
+  };
+
+  const handleFavorite = async (event: EventCardData) => {
+    if (pendingFavoriteIds.has(event.id)) return;
+
+    const currentEvent = recentEvents.find((item) => item.id === event.id);
+    if (!currentEvent) return;
+
+    const nextIsFavorite = !currentEvent.isFavorite;
+
+    setPendingFavoriteIds((prev) => new Set(prev).add(event.id));
+    setRecentEvents((prev) =>
+      prev.map((item) =>
+        item.id === event.id ? { ...item, isFavorite: nextIsFavorite } : item,
+      ),
+    );
+    setRecentErrorMessage(null);
+
+    try {
+      if (nextIsFavorite) {
+        await apiClient<{ eventItemId: string; isFavorited: boolean }>("/api/favorites", {
+          method: "POST",
+          body: JSON.stringify({
+            eventItemId: event.id,
+            recommendationRunId: currentEvent.recommendationRunId ?? undefined,
+          }),
+        });
+      } else {
+        await apiClient<{ eventItemId: string; isFavorited: boolean }>(`/api/favorites/${event.id}`, {
+          method: "DELETE",
+        });
+      }
+    } catch {
+      setRecentEvents((prev) =>
+        prev.map((item) =>
+          item.id === event.id ? { ...item, isFavorite: currentEvent.isFavorite } : item,
+        ),
+      );
+      setRecentErrorMessage("관심행사 상태를 변경하지 못했습니다.");
+    } finally {
+      setPendingFavoriteIds((prev) => {
+        const next = new Set(prev);
+        next.delete(event.id);
+        return next;
+      });
+    }
   };
 
   return (
@@ -106,7 +169,22 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
               <h2 className="font-bold text-base text-[#3f2a24] leading-6">
                 최근 추천 결과
               </h2>
-              <EventCarousel events={MOCK_EVENTS} />
+
+              {isRecentLoading ? (
+                <div className="h-[286px] w-full animate-pulse rounded-[20px] bg-[#eee7df]" />
+              ) : (
+                <EventCarousel
+                  events={recentEvents}
+                  onItemClick={(event) => router.push(ROUTES.eventDetail(event.id))}
+                  onFavorite={handleFavorite}
+                />
+              )}
+
+              {recentErrorMessage && (
+                <p role="alert" className="text-center text-[13px] leading-5 text-red-600">
+                  {recentErrorMessage}
+                </p>
+              )}
             </div>
           )}
         </main>
