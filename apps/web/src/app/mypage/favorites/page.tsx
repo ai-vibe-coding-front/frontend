@@ -1,9 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
 import { verifyAccessToken } from "@/server/services/auth-service";
 import { FavoritesContent } from "./FavoritesContent";
-
-const FAVORITES_PATH = "/mypage/favorites";
 
 export default async function FavoritesPage() {
   const cookieStore = await cookies();
@@ -11,7 +10,7 @@ export default async function FavoritesPage() {
   const userId = accessToken ? await verifyAccessToken(accessToken) : null;
 
   if (!userId) {
-    redirect(`/login?redirect=${FAVORITES_PATH}`);
+    redirect(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
   }
 
   return <FavoritesContent />;

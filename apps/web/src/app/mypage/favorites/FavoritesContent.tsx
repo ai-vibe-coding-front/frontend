@@ -8,8 +8,6 @@ import { EventCard, type EventCardData } from "@/components/common/EventCard";
 import { ApiClientError, apiClient } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
 
-const FAVORITES_PATH = "/mypage/favorites";
-
 type FavoriteItem = {
   eventItemId: string;
   title: string;
@@ -77,7 +75,7 @@ export function FavoritesContent() {
       })
       .catch((error: unknown) => {
         if (error instanceof ApiClientError && error.status === 401) {
-          router.replace(`/login?redirect=${FAVORITES_PATH}`);
+          router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
           return;
         }
 
@@ -120,7 +118,7 @@ export function FavoritesContent() {
       ]);
 
       if (error instanceof ApiClientError && error.status === 401) {
-        router.replace(`/login?redirect=${FAVORITES_PATH}`);
+        router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
         return;
       }
 
