@@ -157,11 +157,8 @@ export function QuestionsContent() {
             >
               {/* 질문 헤더 */}
               <div className="flex flex-col pb-4 shrink-0">
-                <span className="font-bold text-[13px] text-[#7d543c] tracking-[-0.3px] leading-[19.5px]">
-                  Q{step + 1} · {question.question.split(' ').slice(0, 2).join(' ')}
-                </span>
-                <p className="font-bold text-[22px] text-[#251e19] tracking-[-0.6px] leading-[30.8px] pt-2">
-                  {question.question}
+                <p className="font-bold text-[22px] text-[#251e19] tracking-[-0.6px] leading-[30.8px]">
+                  Q{step + 1}. {question.question}
                 </p>
               </div>
 

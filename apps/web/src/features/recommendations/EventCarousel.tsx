@@ -6,10 +6,10 @@ import type { EventCardData } from "@/components/common/EventCard";
 interface EventCarouselProps {
   events: EventCardData[];
   onItemClick?: (event: EventCardData) => void;
-  onLike?: (event: EventCardData) => void;
+  onFavorite?: (event: EventCardData) => void;
 }
 
-export function EventCarousel({ events, onItemClick, onLike }: EventCarouselProps) {
+export function EventCarousel({ events, onItemClick, onFavorite }: EventCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +34,7 @@ export function EventCarousel({ events, onItemClick, onLike }: EventCarouselProp
               event={event}
               shadow={false}
               onClick={() => onItemClick?.(event)}
-              onLike={() => onLike?.(event)}
+              onFavorite={() => onFavorite?.(event)}
             />
           </div>
         ))}
