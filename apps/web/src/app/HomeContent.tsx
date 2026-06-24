@@ -83,13 +83,13 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
   };
 
   return (
-    <div className="flex justify-center h-screen bg-[#f0ebe3]">
-      <div className="relative flex flex-col w-[390px] h-screen bg-[#f9f4ec] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+    <div className="flex min-h-dvh w-full justify-center bg-[#f0ebe3]">
+      <div className="relative flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-[#f9f4ec] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
         <header className="sticky top-0 z-10 bg-[#f9f4ec] px-6 pt-6 pb-3">
           <Header />
         </header>
 
-        <main className={`flex-1 overflow-y-auto px-6 pb-4 flex flex-col gap-4 ${!isLoggedIn ? "justify-center" : ""}`}>
+        <main className={`flex-1 overflow-y-auto no-scrollbar px-6 pb-4 flex flex-col gap-4 ${!isLoggedIn ? "justify-center" : ""}`}>
           <TodayMoodCard
             isLoggedIn={isLoggedIn}
             userName="회원"
