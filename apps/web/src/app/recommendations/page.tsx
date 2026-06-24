@@ -18,12 +18,12 @@ const MOCK_EVENTS: EventCardData[] = [
     imageUrl: null,
     isFavorite: true,
   },
-  // 찜하기 버튼이 비활성화(안 눌린) 상태 UI 확인용
+  // 찜하기 버튼이 비활성화(안 눌린) 상태 + place 없을 때 "-" 폴백 UI 확인용
   {
     id: "2",
     realmName: "전시",
     title: "빛으로 쓴 편지 — 사진전",
-    place: "성수 갤러리아 포레",
+    place: null,
     startDate: new Date("2026-06-01"),
     endDate: new Date("2026-06-30"),
     imageUrl: null,
@@ -77,7 +77,7 @@ export default async function RecommendationsPage({ searchParams }: Props) {
             {hasResults ? (
               <div className="flex flex-col gap-3">
                 {MOCK_EVENTS.map((event) => (
-                  <EventCard key={event.id} event={event} />
+                  <EventCard key={event.id} event={event} isEnded={event.id === "3"} />
                 ))}
               </div>
             ) : (
