@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { TodayMoodCard } from "@/features/recommendations/TodayMoodCard";
 import { EventCarousel } from "@/features/recommendations/EventCarousel";
+import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
 import type { EventCardData } from "@/components/common/EventCard";
 import { ROUTES } from "@/constants/routes";
-import { ApiClientError, apiClient } from "@/lib/api-client";
 
 const FALLBACK_USER_NAME = "회원";
-
-interface HomeUserResponse {
-  nickname: string;
-}
 
 const MOCK_EVENTS: EventCardData[] = [
   {
@@ -85,35 +80,8 @@ interface HomeContentProps {
 
 export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
-  const [userName, setUserName] = useState(FALLBACK_USER_NAME);
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      setUserName(FALLBACK_USER_NAME);
-      return;
-    }
-
-    let ignore = false;
-
-    apiClient<HomeUserResponse>("/api/users/me")
-      .then((user) => {
-        if (ignore) return;
-        setUserName(user.nickname || FALLBACK_USER_NAME);
-      })
-      .catch((error: unknown) => {
-        if (ignore) return;
-
-        if (error instanceof ApiClientError && error.status !== 401) {
-          console.error("[HomeContent] 사용자 닉네임 조회 실패", error);
-        }
-
-        setUserName(FALLBACK_USER_NAME);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [isLoggedIn]);
+  const { user } = useCurrentUser(isLoggedIn);
+  const userName = user?.nickname || FALLBACK_USER_NAME;
 
   const goToLocationPermission = () => {
     router.push(ROUTES.locationPermission);
