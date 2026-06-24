@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
-import { created, fail } from "@/lib/api-response";
+import { created, fail, ok } from "@/lib/api-response";
 import { verifyAccessToken } from "@/server/services/auth-service";
+import { getFavoriteEvents } from "@/server/services/event-service";
 import {
   countUserFavorites,
   createFavorite,
@@ -18,6 +19,43 @@ const schema = z.object({
   explorationSessionId: z.string().optional(),
   recommendationRunId: z.string().optional(),
 });
+
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export async function GET(request: Request) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  if (!accessToken) {
+    return fail("UNAUTHORIZED", "로그인이 필요합니다.", 401);
+  }
+  const userId = await verifyAccessToken(accessToken);
+  if (!userId) {
+    return fail("UNAUTHORIZED", "로그인이 필요합니다.", 401);
+  }
+
+  const { searchParams } = new URL(request.url);
+  const parsed = listQuerySchema.safeParse({
+    page: searchParams.get("page") ?? undefined,
+    limit: searchParams.get("limit") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return fail("INVALID_INPUT", parsed.error.issues[0]?.message ?? "입력값을 확인해주세요.", 400);
+  }
+
+  const { page, limit } = parsed.data;
+
+  try {
+    const result = await getFavoriteEvents({ userId, page, limit });
+    return ok(result);
+  } catch (err) {
+    console.error("[GET /api/favorites]", err);
+    return fail("FAVORITES_FETCH_FAILED", "관심행사 목록 조회에 실패했습니다.", 500);
+  }
+}
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();

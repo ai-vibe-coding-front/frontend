@@ -139,7 +139,11 @@ export function MyPageContent() {
             )}
           </div>
 
-          <div className="w-full flex items-center gap-4 p-6">
+          <button
+            type="button"
+            onClick={() => router.push('/mypage/favorites')}
+            className="w-full flex items-center gap-4 p-6 text-left"
+          >
             <div className="bg-[#f0e4d4] rounded-full size-12 flex items-center justify-center shrink-0">
               <SavedHeartIcon />
             </div>
@@ -152,7 +156,9 @@ export function MyPageContent() {
                 {user ? `${user.favoriteCount}개` : isLoading ? '불러오는 중' : '-개'}
               </p>
             </div>
-          </div>
+
+            <ChevronRightIcon />
+          </button>
 
           {errorMessage && (
             <p
