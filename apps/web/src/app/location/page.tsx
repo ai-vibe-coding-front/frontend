@@ -95,6 +95,20 @@ function appendIfPresent(params: URLSearchParams, key: string, value?: string | 
   params.set(key, String(value));
 }
 
+function getInitialCenter(searchParams: URLSearchParams) {
+  const latParam = searchParams.get("lat");
+  const lngParam = searchParams.get("lng");
+
+  if (!latParam || !lngParam) return DEFAULT_CENTER;
+
+  const lat = Number(latParam);
+  const lng = Number(lngParam);
+
+  return Number.isFinite(lat) && Number.isFinite(lng)
+    ? { lat, lng }
+    : DEFAULT_CENTER;
+}
+
 function LocationSkeleton() {
   return (
     <div className="absolute inset-0 z-20 bg-[#fbf9f4]">
@@ -127,12 +141,7 @@ function LocationContent() {
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const requestIdRef = useRef(0);
 
-  const initialLat = Number(searchParams.get("lat"));
-  const initialLng = Number(searchParams.get("lng"));
-  const initialCenter =
-    Number.isFinite(initialLat) && Number.isFinite(initialLng)
-      ? { lat: initialLat, lng: initialLng }
-      : DEFAULT_CENTER;
+  const initialCenter = getInitialCenter(searchParams);
 
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
