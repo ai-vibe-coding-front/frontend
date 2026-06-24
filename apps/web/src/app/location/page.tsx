@@ -78,7 +78,7 @@ function LocationSkeleton() {
   );
 }
 
-export default function LocationPage() {
+function LocationContent() {
   const router = useRouter();
   const {
     hasGpsLocation,
@@ -186,6 +186,12 @@ export default function LocationPage() {
                   className="w-10 h-1 rounded-full bg-[rgba(207,196,189,0.6)] mx-auto -mt-1 mb-1 shrink-0"
                   aria-label={isEventsExpanded ? "목록 접기" : "목록 펼치기"}
                 />
+                {isPermissionFlow && (
+                  <CTAButton
+                    label="이 위치로 설정"
+                    onClick={handleLocationConfirm}
+                  />
+                )}
                 {isLoadingEvents ? (
                   <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                     이벤트를 불러오는 중...
@@ -273,7 +279,12 @@ export default function LocationPage() {
                   </span>
                 </div>
 
-                <CTAButton label="이 위치로 설정" onClick={handleGpsClick} />
+                <CTAButton
+                  label="이 위치로 설정"
+                  onClick={
+                    isPermissionFlow ? handleLocationConfirm : handleGpsClick
+                  }
+                />
               </div>
             )}
           </div>
@@ -292,5 +303,13 @@ export default function LocationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LocationPage() {
+  return (
+    <Suspense fallback={null}>
+      <LocationContent />
+    </Suspense>
   );
 }

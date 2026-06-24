@@ -137,19 +137,21 @@ export async function findNearbyEvents(params: NearbyEventsParams): Promise<{
 }
 
 export type EventDetail = {
-  id: string;
+  eventItemId: string;
   title: string;
-  realmCode: string | null;
   realmName: string | null;
   startDate: string | null;
   endDate: string | null;
   place: string | null;
+  address: string | null;
   price: string | null;
   description: string;
   imageUrl: string | null;
   bookingUrl: string | null;
   lat: number | null;
   lng: number | null;
+  isIndoor: boolean | null;
+  isFavorited: boolean;
 };
 
 export async function getEventDetail(id: string): Promise<EventDetail | null> {
@@ -157,9 +159,8 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
   if (!event) return null;
 
   return {
-    id: event.id,
+    eventItemId: event.id,
     title: decodeHtmlEntities(event.title),
-    realmCode: event.realmCode,
     realmName: event.realmName,
     startDate: formatDate(event.startDate),
     endDate: formatDate(event.endDate),
@@ -168,11 +169,14 @@ export async function getEventDetail(id: string): Promise<EventDetail | null> {
       : event.address
         ? decodeHtmlEntities(event.address)
         : null,
+    address: event.address ? decodeHtmlEntities(event.address) : null,
     price: event.price,
     description: event.description ? decodeHtmlEntities(event.description) : "",
     imageUrl: event.imageUrl,
     bookingUrl: event.bookingUrl,
     lat: event.lat,
     lng: event.lng,
+    isIndoor: event.isIndoor,
+    isFavorited: false, // TODO: 찜하기 이슈에서 연결 예정
   };
 }
