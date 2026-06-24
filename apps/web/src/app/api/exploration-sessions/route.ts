@@ -5,8 +5,8 @@ import {
   createGuestSession,
   generateSessionKey,
   checkGuestUsed,
-  verifyAccessToken,
 } from '@/server/services/exploration-session-service';
+import { verifyAccessToken } from '@/server/services/auth-service';
 
 const locationSchema = z.object({
   lat: z.number().optional(),
@@ -36,7 +36,9 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies();
-  const isLoggedIn = await verifyAccessToken(cookieStore.get('accessToken')?.value);
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const userId = accessToken ? await verifyAccessToken(accessToken) : null;
+  const isLoggedIn = userId != null;
   const existingKey = cookieStore.get('guestSessionKey')?.value;
   const sessionKey = existingKey ?? generateSessionKey();
 
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const session = await createGuestSession(sessionKey, parsed.data.location ?? {});
+    const session = await createGuestSession(sessionKey, parsed.data.location ?? {}, userId);
 
     const response = ok({
       explorationSessionId: session.id,
