@@ -67,7 +67,22 @@ export async function findUserFavoriteEvents(
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
-      include: { eventItem: true },
+      select: {
+        id: true,
+        eventItemId: true,
+        createdAt: true,
+        eventItem: {
+          select: {
+            id: true,
+            title: true,
+            realmName: true,
+            place: true,
+            startDate: true,
+            endDate: true,
+            imageUrl: true,
+          },
+        },
+      },
     }),
     prisma.favorite.count({ where }),
   ]);
