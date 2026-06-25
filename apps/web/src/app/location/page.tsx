@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CTAButton } from "@/components/common/CTAButton";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -162,7 +162,7 @@ function LocationContent() {
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const requestIdRef = useRef(0);
 
-  const initialCenter = getInitialCenter(searchParams);
+  const initialCenter = useMemo(() => getInitialCenter(searchParams), [searchParams]);
 
   const [locationInfo, setLocationInfo] = useState<LocationInfo | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
@@ -173,7 +173,7 @@ function LocationContent() {
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
     const grid = toWeatherGrid(lat, lng);
-    const finishResolvingCurrentRequest = () => {
+    const finishResolvingIfCurrentRequest = () => {
       if (requestId === requestIdRef.current) {
         setIsResolvingLocation(false);
       }
@@ -188,65 +188,74 @@ function LocationContent() {
     });
 
     if (!window.kakao.maps.services) {
-      finishResolvingCurrentRequest();
+      finishResolvingIfCurrentRequest();
       return;
     }
 
-    const geocoder = new window.kakao.maps.services.Geocoder() as GeocoderWithAddress;
+    try {
+      const geocoder = new window.kakao.maps.services.Geocoder() as GeocoderWithAddress;
 
-    geocoder.coord2Address(lng, lat, (addressResult, addressStatus) => {
-      if (requestId !== requestIdRef.current) return;
+      geocoder.coord2Address(lng, lat, (addressResult, addressStatus) => {
+        // Stale responses belong to an older request. Do not clear resolving here,
+        // because a newer request may still be running and the CTA must stay disabled.
+        if (requestId !== requestIdRef.current) return;
 
-      void (async () => {
-        try {
-          const detailAddress =
-            addressStatus === window.kakao.maps.services.Status.OK
-              ? (addressResult[0]?.road_address?.address_name ??
-                addressResult[0]?.address?.address_name)
-              : undefined;
+        void (async () => {
+          try {
+            const detailAddress =
+              addressStatus === window.kakao.maps.services.Status.OK
+                ? (addressResult[0]?.road_address?.address_name ??
+                  addressResult[0]?.address?.address_name)
+                : undefined;
 
-          const { regionResult, regionStatus } = await new Promise<{
-            regionResult: Parameters<
-              Parameters<kakao.maps.services.Geocoder["coord2RegionCode"]>[2]
-            >[0];
-            regionStatus: Parameters<
-              Parameters<kakao.maps.services.Geocoder["coord2RegionCode"]>[2]
-            >[1];
-          }>((resolve) => {
-            geocoder.coord2RegionCode(lng, lat, (result, status) => {
-              resolve({ regionResult: result, regionStatus: status });
+            const { regionResult, regionStatus } = await new Promise<{
+              regionResult: Parameters<
+                Parameters<kakao.maps.services.Geocoder["coord2RegionCode"]>[2]
+              >[0];
+              regionStatus: Parameters<
+                Parameters<kakao.maps.services.Geocoder["coord2RegionCode"]>[2]
+              >[1];
+            }>((resolve) => {
+              geocoder.coord2RegionCode(lng, lat, (result, status) => {
+                resolve({ regionResult: result, regionStatus: status });
+              });
             });
-          });
 
-          if (requestId !== requestIdRef.current) return;
+            // Same stale guard after the second async lookup: only the latest request
+            // may update state or finish resolving, otherwise the CTA can enable too early.
+            if (requestId !== requestIdRef.current) return;
 
-          const region =
-            regionStatus === window.kakao.maps.services.Status.OK
-              ? (regionResult.find((item) => item.region_type === "H") ?? regionResult[0])
-              : undefined;
+            const region =
+              regionStatus === window.kakao.maps.services.Status.OK
+                ? (regionResult.find((item) => item.region_type === "H") ?? regionResult[0])
+                : undefined;
 
-          const districtName = region?.region_3depth_name || region?.region_2depth_name;
-          const label =
-            detailAddress ??
-            [region?.region_1depth_name, region?.region_2depth_name, region?.region_3depth_name]
-              .filter(Boolean)
-              .join(" ");
+            const districtName = region?.region_3depth_name || region?.region_2depth_name;
+            const label =
+              detailAddress ??
+              [region?.region_1depth_name, region?.region_2depth_name, region?.region_3depth_name]
+                .filter(Boolean)
+                .join(" ");
 
-          setLocationInfo({
-            lat,
-            lng,
-            nx: grid.nx,
-            ny: grid.ny,
-            sido: region?.region_1depth_name,
-            label,
-            stationName: region?.region_2depth_name,
-            districtName,
-          });
-        } finally {
-          finishResolvingCurrentRequest();
-        }
-      })();
-    });
+            setLocationInfo({
+              lat,
+              lng,
+              nx: grid.nx,
+              ny: grid.ny,
+              sido: region?.region_1depth_name,
+              label,
+              stationName: region?.region_2depth_name,
+              districtName,
+            });
+          } finally {
+            finishResolvingIfCurrentRequest();
+          }
+        })();
+      });
+    } catch (err) {
+      console.error("주소 정보를 확인하지 못했습니다.", err);
+      finishResolvingIfCurrentRequest();
+    }
   }, []);
 
   const moveMapTo = useCallback(
@@ -312,11 +321,6 @@ function LocationContent() {
   };
 
   const onMapError = () => setIsMapError(true);
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-    moveMapTo(initialCenter.lat, initialCenter.lng);
-  }, [initialCenter.lat, initialCenter.lng, moveMapTo]);
 
   const districtName = locationInfo?.districtName ?? "위치 확인 중";
   const detailAddress = locationInfo?.label ?? "현재 위치의 주소를 확인하고 있습니다.";
