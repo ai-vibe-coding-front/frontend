@@ -8,6 +8,11 @@ import { EventCarousel } from "@/features/recommendations/EventCarousel";
 import { useRecentRecommendations } from "@/features/recommendations/hooks/useRecentRecommendations";
 import { ROUTES } from "@/constants/routes";
 
+import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
+import type { EventCardData } from "@/components/common/EventCard";
+
+const FALLBACK_USER_NAME = "회원";
+
 interface HomeContentProps {
   isLoggedIn: boolean;
 }
@@ -32,6 +37,8 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
     "flex-1 overflow-y-auto no-scrollbar px-6 pb-4 flex flex-col gap-4",
     !isLoggedIn ? "justify-center" : "",
   ].join(" ");
+  const { user } = useCurrentUser(isLoggedIn);
+  const userName = user?.nickname || FALLBACK_USER_NAME;
 
   const goToLocationPermission = () => {
     router.push(ROUTES.locationPermission);
@@ -53,6 +60,12 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
             isLoggedIn={isLoggedIn}
             userName="회원"
             onCTAClick={isLoggedIn ? goToLocationPermission : goToLogin}
+            userName={userName}
+            onCTAClick={
+              isLoggedIn
+                ? goToLocationPermission
+                : () => router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`)
+            }
             onGuestClick={goToLocationPermission}
           />
 

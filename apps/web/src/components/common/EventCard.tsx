@@ -1,8 +1,11 @@
-'use client';
-import Image from "next/image";
-import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
-import { DDayBadge } from "@/components/common/DDayBadge";
+"use client";
 import { useState } from "react";
+import Image from "next/image";
+import {
+  CategoryBadge,
+  type Category,
+} from "@/components/common/CategoryBadge";
+import { DDayBadge } from "@/components/common/DDayBadge";
 
 export interface EventCardData {
   id: string;
@@ -29,12 +32,20 @@ function formatPeriod(startDate: Date | null, endDate: Date | null): string {
 }
 
 const VALID_CATEGORIES = new Set<string>([
-  "전시", "음악/콘서트", "행사/축제", "연극",
-  "뮤지컬/오페라", "국악", "무용/발레", "아동/가족", "교육/체험",
+  "전시",
+  "음악/콘서트",
+  "행사/축제",
+  "연극",
+  "뮤지컬/오페라",
+  "국악",
+  "무용/발레",
+  "아동/가족",
+  "교육/체험",
 ]);
 
 function normalizeCategory(realmName: string | null): Category | null {
-  if (realmName && VALID_CATEGORIES.has(realmName)) return realmName as Category;
+  if (realmName && VALID_CATEGORIES.has(realmName))
+    return realmName as Category;
   return null;
 }
 
@@ -58,22 +69,57 @@ interface EventCardProps {
 }
 
 const PinIcon = () => (
-  <svg width="10" height="12" viewBox="0 0 10 12" fill="none" aria-hidden="true">
-    <path d="M5 1a3 3 0 0 1 3 3c0 2.25-3 6-3 6S2 6.25 2 4a3 3 0 0 1 3-3Z" stroke="#8c6e63" strokeWidth="1" />
+  <svg
+    width="10"
+    height="12"
+    viewBox="0 0 10 12"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M5 1a3 3 0 0 1 3 3c0 2.25-3 6-3 6S2 6.25 2 4a3 3 0 0 1 3-3Z"
+      stroke="#8c6e63"
+      strokeWidth="1"
+    />
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg width="10" height="11" viewBox="0 0 10 11" fill="none" aria-hidden="true">
-    <rect x="0.5" y="1.5" width="9" height="8" rx="1.5" stroke="#bf8b6e" strokeWidth="1" />
-    <path d="M3 0.5v2M7 0.5v2M0.5 4.5h9" stroke="#bf8b6e" strokeWidth="1" strokeLinecap="round" />
+  <svg
+    width="10"
+    height="11"
+    viewBox="0 0 10 11"
+    fill="none"
+    aria-hidden="true"
+  >
+    <rect
+      x="0.5"
+      y="1.5"
+      width="9"
+      height="8"
+      rx="1.5"
+      stroke="#bf8b6e"
+      strokeWidth="1"
+    />
+    <path
+      d="M3 0.5v2M7 0.5v2M0.5 4.5h9"
+      stroke="#bf8b6e"
+      strokeWidth="1"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
 const metaRowClass = "flex items-center gap-1";
 
 const HeartIcon = ({ filled }: { filled?: boolean }) => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    aria-hidden="true"
+  >
     <path
       d="M10 17S3 12.5 3 7.5A4 4 0 0 1 10 5a4 4 0 0 1 7 2.5C17 12.5 10 17 10 17Z"
       fill={filled ? "#7d543c" : "none"}
@@ -83,7 +129,13 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
   </svg>
 );
 
-export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded = false }: EventCardProps) {
+export function EventCard({
+  event,
+  onClick,
+  onFavorite,
+  shadow = true,
+  isEnded = false,
+}: EventCardProps) {
   const category = normalizeCategory(event.realmName);
   // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백한다.
   const [imageFailed, setImageFailed] = useState(false);
@@ -95,7 +147,12 @@ export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded =
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick?.(); }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
       aria-label={event.title}
       className={`bg-white rounded-[20px] w-full overflow-hidden cursor-pointer shrink-0 text-left ${shadow ? "shadow-[0px_4px_20px_0px_rgba(63,42,36,0.1)]" : ""}`}
     >
@@ -108,28 +165,39 @@ export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded =
             fill
             sizes="100vw"
             className="object-cover"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
           />
         ) : (
           // imageUrl이 없거나 로드 실패한 경우 공통 placeholder 배경
           <div className="absolute inset-0 bg-[#d9cfc5]" aria-hidden="true" />
         )}
         {isEnded && (
-          <div className="absolute top-0 left-0 right-0 h-7 bg-[rgba(0,0,0,0.72)] flex items-center justify-center z-10" aria-hidden="true">
+          <div
+            className="absolute top-0 left-0 right-0 h-7 bg-[rgba(0,0,0,0.72)] flex items-center justify-center z-10"
+            aria-hidden="true"
+          >
             <span className="text-white text-[12px]">행사 종료</span>
           </div>
         )}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent" aria-hidden="true" />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgba(30,20,14,0.45)] to-transparent"
+          aria-hidden="true"
+        />
         {/* 카테고리/D-Day 배지. z-index 미지정 → 그라디언트(아래)보다는 위지만 좋아요 버튼(z-20)보다는 아래. 새 오버레이 추가 시 z 순서 주의 */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
-          {category && (
-            <CategoryBadge category={category} />
+          {category && <CategoryBadge category={category} />}
+          {!isEnded && event.endDate && (
+            <DDayBadge days={calcDDay(event.endDate)} />
           )}
-          {!isEnded && event.endDate && <DDayBadge days={calcDDay(event.endDate)} />}
         </div>
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onFavorite?.();
+          }}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
           className={`absolute top-3 right-3 z-20 ${event.isFavorite ? "bg-[rgba(240,228,212,0.85)]" : "bg-[rgba(255,255,255,0.85)]"} rounded-[14px] size-8 flex items-center justify-center`}

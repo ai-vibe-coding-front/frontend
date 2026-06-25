@@ -50,6 +50,46 @@ export async function findFavoriteByUserAndEvent(userId: string, eventItemId: st
   });
 }
 
+export async function findUserFavoriteEvents(
+  userId: string,
+  page: number,
+  limit: number,
+) {
+  const skip = (page - 1) * limit;
+  const where = {
+    userId,
+    eventItem: { deletedAt: null },
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.favorite.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        eventItemId: true,
+        createdAt: true,
+        eventItem: {
+          select: {
+            id: true,
+            title: true,
+            realmName: true,
+            place: true,
+            startDate: true,
+            endDate: true,
+            imageUrl: true,
+          },
+        },
+      },
+    }),
+    prisma.favorite.count({ where }),
+  ]);
+
+  return { items, total };
+}
+
 export async function countUserFavorites(userId: string): Promise<number> {
   return prisma.favorite.count({ where: { userId } });
 }
