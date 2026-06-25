@@ -137,6 +137,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const updateCultureEvents = (events: CultureEvent[]) => {
     setCultureEvents(events);
     renderEventMarkers(events);
+    setSelectedEventId((prev) =>
+      prev && events.some((event) => event.eventItemId === prev) ? prev : null,
+    );
   };
 
   const fetchNearbyEvents = async (

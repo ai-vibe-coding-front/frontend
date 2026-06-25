@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -101,12 +101,12 @@ export default function ExplorePage() {
     if (selectedEventId && selectedCardRef.current) {
       selectedCardRef.current.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "nearest",
       });
     }
   }, [selectedEventId]);
 
-  const displayedEvents = (() => {
+  const displayedEvents = useMemo(() => {
     if (!cultureEvents) return [];
     if (!selectedEventId) return cultureEvents.slice(0, 10);
     const selected = cultureEvents.find(
@@ -117,7 +117,7 @@ export default function ExplorePage() {
       (event) => event.eventItemId !== selectedEventId,
     );
     return [selected, ...rest].slice(0, 10);
-  })();
+  }, [cultureEvents, selectedEventId]);
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -267,15 +267,14 @@ export default function ExplorePage() {
                       </span>
                     )}
                     <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
-                      {NEARBY_EVENTS_RADIUS_KM}KM
+                      반경 {NEARBY_EVENTS_RADIUS_KM}km
                     </span>
                     {mapScaleMeters != null && (
                       <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
-                        (
+                        ·{" "}
                         {mapScaleMeters >= 1000
                           ? `${(mapScaleMeters / 1000).toFixed(1)}km`
                           : `${Math.round(mapScaleMeters)}m`}
-                        )
                       </span>
                     )}
                   </div>
@@ -302,6 +301,12 @@ export default function ExplorePage() {
                           shadow={false}
                           onClick={() =>
                             router.push(`/events/${event.eventItemId}`)
+                          }
+                          onFavorite={() =>
+                            handleToggleFavorite(
+                              event.eventItemId,
+                              event.isFavorited,
+                            )
                           }
                         />
                       </div>
