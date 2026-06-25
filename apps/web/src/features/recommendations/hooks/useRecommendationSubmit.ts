@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-import type { Answers } from '../questions';
+import type { Answers } from '@/app/questions/questions';
 
 type SubmitVariables = {
   answers: Answers;
