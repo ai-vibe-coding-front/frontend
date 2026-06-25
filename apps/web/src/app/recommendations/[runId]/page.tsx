@@ -75,10 +75,10 @@ export default function RecommendationsPage() {
       <div className="flex justify-center h-dvh bg-[#f0ebe3]">
         <div className="relative flex flex-col w-[390px] h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
           <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
-            <Link href="/" className="size-4 shrink-0">
+            <Link href="/questions" className="size-4 shrink-0">
               <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} />
             </Link>
-            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
               오늘의 추천
             </p>
           </div>
@@ -142,10 +142,10 @@ export default function RecommendationsPage() {
 
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
-          <Link href="/" className="size-4 shrink-0">
+          <Link href="/questions" className="size-4 shrink-0">
             <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} />
           </Link>
-          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
             오늘의 추천
           </p>
         </div>
