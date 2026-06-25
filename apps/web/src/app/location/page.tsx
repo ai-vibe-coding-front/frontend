@@ -207,7 +207,9 @@ function LocationContent() {
                       <button
                         key={event.eventItemId}
                         type="button"
-                        onClick={() => router.push(`/events/${event.eventItemId}`)}
+                        onClick={() =>
+                          router.push(`/events/${event.eventItemId}`)
+                        }
                         className="flex gap-3 pb-3 border-b border-[rgba(207,196,189,0.2)] last:border-b-0 last:pb-0 text-left"
                       >
                         <div className="size-16 rounded-[12px] overflow-hidden bg-[#f0ebe3] shrink-0">

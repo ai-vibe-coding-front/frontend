@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -15,7 +15,11 @@ import {
 
 const DEFAULT_CENTER = { lat: 37.544581, lng: 127.055961 };
 
-const CATEGORY_FILTERS: { label: string; value: string | null; color: string }[] = [
+const CATEGORY_FILTERS: {
+  label: string;
+  value: string | null;
+  color: string;
+}[] = [
   { label: "전체", value: null, color: "#e5e5e5" },
   { label: "전시", value: "전시", color: "#8ecdf5" },
   { label: "음악/콘서트", value: "음악/콘서트", color: "#9fa7d1" },
@@ -80,6 +84,7 @@ export default function ExplorePage() {
     selectedCategory,
     districtName,
     mapScaleMeters,
+    selectedEventId,
     onMapReady,
     onMapError,
     handleGpsClick,
@@ -88,7 +93,31 @@ export default function ExplorePage() {
     handleZoomOut,
     handleToggleFavorite,
   } = useNearbyEventsMap({ persistLocation: true });
-  const [isLocationPromptDismissed, setIsLocationPromptDismissed] = useState(false);
+  const [isLocationPromptDismissed, setIsLocationPromptDismissed] =
+    useState(false);
+  const selectedCardRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (selectedEventId && selectedCardRef.current) {
+      selectedCardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [selectedEventId]);
+
+  const displayedEvents = (() => {
+    if (!cultureEvents) return [];
+    if (!selectedEventId) return cultureEvents.slice(0, 10);
+    const selected = cultureEvents.find(
+      (event) => event.eventItemId === selectedEventId,
+    );
+    if (!selected) return cultureEvents.slice(0, 10);
+    const rest = cultureEvents.filter(
+      (event) => event.eventItemId !== selectedEventId,
+    );
+    return [selected, ...rest].slice(0, 10);
+  })();
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -152,7 +181,11 @@ export default function ExplorePage() {
                           ? "border-transparent text-[#3f2a24]"
                           : "border-[rgba(207,196,189,0.4)] bg-white text-[#6b6763]"
                       }`}
-                      style={isSelected ? { backgroundColor: filter.color } : undefined}
+                      style={
+                        isSelected
+                          ? { backgroundColor: filter.color }
+                          : undefined
+                      }
                     >
                       {filter.label}
                     </button>
@@ -229,14 +262,20 @@ export default function ExplorePage() {
                   </p>
                   <div className="flex items-center gap-1">
                     {districtName && (
-                      <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">{districtName}</span>
+                      <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
+                        {districtName}
+                      </span>
                     )}
-                    <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">{NEARBY_EVENTS_RADIUS_KM}KM</span>
+                    <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
+                      {NEARBY_EVENTS_RADIUS_KM}KM
+                    </span>
                     {mapScaleMeters != null && (
                       <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
-                        ({mapScaleMeters >= 1000
+                        (
+                        {mapScaleMeters >= 1000
                           ? `${(mapScaleMeters / 1000).toFixed(1)}km`
-                          : `${Math.round(mapScaleMeters)}m`})
+                          : `${Math.round(mapScaleMeters)}m`}
+                        )
                       </span>
                     )}
                   </div>
@@ -246,17 +285,28 @@ export default function ExplorePage() {
                     이벤트를 불러오는 중...
                   </span>
                 ) : cultureEvents && cultureEvents.length > 0 ? (
-                  cultureEvents.slice(0, 10).map((event) => (
-                    <EventCard
-                      key={event.eventItemId}
-                      event={toEventCardData(event)}
-                      shadow={false}
-                      onClick={() => router.push(`/events/${event.eventItemId}`)}
-                      onLike={() =>
-                        handleToggleFavorite(event.eventItemId, event.isFavorited)
-                      }
-                    />
-                  ))
+                  displayedEvents.map((event) => {
+                    const isSelected = event.eventItemId === selectedEventId;
+                    return (
+                      <div
+                        key={event.eventItemId}
+                        ref={isSelected ? selectedCardRef : undefined}
+                        className={
+                          isSelected
+                            ? "rounded-[20px] ring-2 ring-[#7d543c]"
+                            : ""
+                        }
+                      >
+                        <EventCard
+                          event={toEventCardData(event)}
+                          shadow={false}
+                          onClick={() =>
+                            router.push(`/events/${event.eventItemId}`)
+                          }
+                        />
+                      </div>
+                    );
+                  })
                 ) : (
                   <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                     주변에 이벤트를 찾을 수 없습니다
