@@ -27,6 +27,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
     currentX: 0,
     isDragging: false,
     hasMoved: false,
+    eventIndex: -1,
   });
   const suppressClickRef = useRef(false);
   const hasEventLengthChanged = carouselEventLength !== events.length;
@@ -80,6 +81,11 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!hasLoop) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+
+    const clickedSlide = (event.target as HTMLElement).closest<HTMLElement>(
+      "[data-carousel-event-index]",
+    );
 
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -87,6 +93,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
       currentX: event.clientX,
       isDragging: true,
       hasMoved: false,
+      eventIndex: Number(clickedSlide?.dataset.carouselEventIndex ?? -1),
     };
     setTransitionEnabled(false);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -112,7 +119,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
     const movedEnough = Math.abs(distance) >= threshold;
 
     dragState.isDragging = false;
-    if (dragState.hasMoved) {
+    if (movedEnough) {
       suppressClickRef.current = true;
       window.setTimeout(() => {
         suppressClickRef.current = false;
@@ -125,6 +132,13 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
 
     if (!movedEnough) {
       moveToSlide(safeSlideIndex);
+      if (dragState.eventIndex >= 0) {
+        suppressClickRef.current = true;
+        onItemClick?.(slides[dragState.eventIndex]);
+        window.setTimeout(() => {
+          suppressClickRef.current = false;
+        }, 0);
+      }
       return;
     }
 
@@ -151,7 +165,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex w-full flex-col gap-3">
       {events.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-[18px] bg-white py-8">
           <p className="font-bold text-[17px] text-[#251e19]">
@@ -161,7 +175,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
       ) : (
         <div
           ref={containerRef}
-          className="overflow-hidden"
+          className="w-full overflow-hidden"
           onClickCapture={handleClickCapture}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
@@ -170,7 +184,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
           style={{ touchAction: "pan-y" }}
         >
           <div
-            className={`flex ${transitionEnabled && !hasEventLengthChanged ? "transition-transform duration-300 ease-out" : ""}`}
+            className={`flex w-full ${transitionEnabled && !hasEventLengthChanged ? "transition-transform duration-300 ease-out" : ""}`}
             style={{
               transform: `translateX(calc(${-visualSlideIndex * 100}% + ${visualDragOffset}px))`,
             }}
@@ -179,7 +193,8 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
             {slides.map((event, index) => (
               <div
                 key={`${event.id}-${index}`}
-                className="min-w-full shrink-0 select-none"
+                data-carousel-event-index={index}
+                className="w-full flex-none select-none"
               >
                 <EventCard
                   event={event}
