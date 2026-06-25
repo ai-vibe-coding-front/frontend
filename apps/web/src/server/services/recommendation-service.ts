@@ -161,6 +161,42 @@ export function scoreAndRankEvents(
 const NEARBY_KM = 30;
 const MAX_RESULTS = 7;
 
+const HTML_ENTITY_MAP: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  '#39': "'",
+  apos: "'",
+  middot: '·',
+  nbsp: ' ',
+  ndash: '–',
+  mdash: '—',
+  lsquo: '‘',
+  rsquo: '’',
+  ldquo: '“',
+  rdquo: '”',
+};
+
+function decodeHtmlEntitiesOnce(value: string): string {
+  return value
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([\da-f]+);/gi, (_, code: string) => String.fromCodePoint(parseInt(code, 16)))
+    .replace(/&([a-zA-Z]+|#39);/g, (match, entity: string) => HTML_ENTITY_MAP[entity] ?? match);
+}
+
+function decodeHtmlEntities(value: string): string {
+  let decoded = value;
+
+  for (let i = 0; i < 5; i += 1) {
+    const next = decodeHtmlEntitiesOnce(decoded);
+    if (next === decoded) break;
+    decoded = next;
+  }
+
+  return decoded;
+}
+
 function sortScored(arr: ScoredEvent[]): ScoredEvent[] {
   return [...arr].sort(
     (a, b) =>
@@ -247,9 +283,9 @@ export async function getRecentRecommendations(params: {
       recommendationRunId: run.id,
       rank: item.rank,
       eventItemId: item.eventItem.id,
-      title: item.eventItem.title,
+      title: decodeHtmlEntities(item.eventItem.title),
       realmName: item.eventItem.realmName,
-      place: item.eventItem.place,
+      place: item.eventItem.place ? decodeHtmlEntities(item.eventItem.place) : null,
       startDate: item.eventItem.startDate?.toISOString().slice(0, 10) ?? null,
       endDate: item.eventItem.endDate?.toISOString().slice(0, 10) ?? null,
       imageUrl: item.eventItem.imageUrl,
