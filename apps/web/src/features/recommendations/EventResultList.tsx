@@ -14,8 +14,12 @@ interface EventResultListProps {
 export function EventResultList({ events }: EventResultListProps) {
   const router = useRouter();
   const [items, setItems] = useState(events);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
 
   const handleFavorite = async (eventId: string, isFavorite: boolean | undefined) => {
+    if (pendingIds.has(eventId)) return;
+
+    setPendingIds((current) => new Set(current).add(eventId));
     setItems((current) =>
       current.map((item) =>
         item.id === eventId ? { ...item, isFavorite: !isFavorite } : item,
@@ -41,6 +45,12 @@ export function EventResultList({ events }: EventResultListProps) {
       if (error instanceof ApiClientError && error.status === 401) {
         router.push(ROUTES.login);
       }
+    } finally {
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(eventId);
+        return next;
+      });
     }
   };
 
@@ -52,6 +62,7 @@ export function EventResultList({ events }: EventResultListProps) {
           event={event}
           onClick={() => router.push(ROUTES.eventDetail(event.id))}
           onFavorite={() => handleFavorite(event.id, event.isFavorite)}
+          favoriteDisabled={pendingIds.has(event.id)}
         />
       ))}
     </div>

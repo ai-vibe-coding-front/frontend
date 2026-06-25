@@ -55,6 +55,8 @@ interface EventCardProps {
   shadow?: boolean;
   /** 행사 종료 상태 */
   isEnded?: boolean;
+  /** 찜 요청 처리 중일 때 좋아요 버튼 비활성화 */
+  favoriteDisabled?: boolean;
 }
 
 const PinIcon = () => (
@@ -83,7 +85,7 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
   </svg>
 );
 
-export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded = false }: EventCardProps) {
+export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded = false, favoriteDisabled = false }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
   // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백한다.
   const [imageFailed, setImageFailed] = useState(false);
@@ -130,6 +132,7 @@ export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded =
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
+          disabled={favoriteDisabled}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
           className={`absolute top-3 right-3 z-20 ${event.isFavorite ? "bg-[rgba(240,228,212,0.85)]" : "bg-[rgba(255,255,255,0.85)]"} rounded-[14px] size-8 flex items-center justify-center`}
