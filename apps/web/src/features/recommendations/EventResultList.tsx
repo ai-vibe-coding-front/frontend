@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { EventCard } from "@/components/common/EventCard";
 import type { EventCardData } from "@/components/common/EventCard";
+import { ROUTES } from "@/constants/routes";
 
 interface EventResultListProps {
   events: EventCardData[];
@@ -17,7 +18,7 @@ export function EventResultList({ events }: EventResultListProps) {
         <EventCard
           key={event.id}
           event={event}
-          onClick={() => router.push(`/events/${event.id}`)}
+          onClick={() => router.push(ROUTES.eventDetail(event.id))}
         />
       ))}
     </div>
