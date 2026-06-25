@@ -82,7 +82,7 @@ export async function GET(
       items: run.items.map((item) => ({
         rank: item.rank,
         score: item.score,
-        distanceKm: item.distanceKm,
+        distanceKm: item.distanceKm != null ? Math.round(item.distanceKm * 100) / 100 : null,
         isFavorited: favoritedIds.has(item.eventItem.id),
         eventItem: {
           id: item.eventItem.id,
