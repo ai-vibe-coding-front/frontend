@@ -6,9 +6,11 @@ async function fetchRecommendationRun(runId: string): Promise<RecommendationRunD
   return apiClient<RecommendationRunDetail>(`/api/recommendations/${runId}`);
 }
 
+export const recommendationRunKey = (runId: string) => ['recommendation-run', runId] as const;
+
 export function useRecommendationRun(runId: string) {
   return useQuery({
-    queryKey: ['recommendation-run', runId],
+    queryKey: recommendationRunKey(runId),
     queryFn: () => fetchRecommendationRun(runId),
     enabled: !!runId,
     staleTime: Infinity,

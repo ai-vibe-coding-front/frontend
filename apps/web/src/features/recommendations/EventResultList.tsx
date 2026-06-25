@@ -9,6 +9,7 @@ import { ROUTES } from "@/constants/routes";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import { LoginGuardModal } from "@/features/event-detail/components/LoginGuardModal";
 import type { RecommendationRunDetail } from "@/features/recommendations/types";
+import { recommendationRunKey } from "@/features/recommendations/hooks/useRecommendationRun";
 
 interface EventResultListProps {
   events: EventCardData[];
@@ -31,7 +32,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
 
   const setCachedFavorite = (eventId: string, isFavorited: boolean) => {
     queryClient.setQueryData<RecommendationRunDetail>(
-      ["recommendation-run", runId],
+      recommendationRunKey(runId),
       (old) =>
         old && {
           ...old,
