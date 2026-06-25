@@ -48,7 +48,6 @@ export function QuestionsContent() {
       const ny = searchParams.get("ny");
 
       setIsSubmitting(true);
-      let explorationSessionId: string | undefined;
       try {
         const session = await apiClient<{ explorationSessionId: string }>('/api/exploration-sessions', {
           method: 'POST',
@@ -64,32 +63,27 @@ export function QuestionsContent() {
             },
           }),
         });
-        explorationSessionId = session.explorationSessionId;
+        const recommendation = await apiClient<{ runId: string }>('/api/recommendations', {
+          method: 'POST',
+          body: JSON.stringify({
+            sessionId: session.explorationSessionId,
+            answers: [
+              { questionKey: 'q1', answerValue: answers.q1 },
+              { questionKey: 'q2', answerValue: answers.q2 },
+              { questionKey: 'q3', answerValue: answers.q3 },
+              { questionKey: 'q4', answerValue: answers.q4 },
+            ],
+          }),
+        });
+        router.push(`/recommendations?runId=${recommendation.runId}`);
       } catch (err) {
         if (err instanceof ApiClientError && err.status === 403) {
           setIsBlocked(true);
           setShowModal(true);
-          return;
         }
-        // 그 외 세션 생성 실패 시에도 추천 페이지로 이동
       } finally {
         setIsSubmitting(false);
       }
-
-      const params = new URLSearchParams({
-        q1: answers.q1!,
-        q2: answers.q2!,
-        q3: answers.q3!,
-        q4: answers.q4!,
-        nx: searchParams.get("nx") ?? "",
-        ny: searchParams.get("ny") ?? "",
-        stationName: searchParams.get("stationName") ?? "",
-        label: searchParams.get("label") ?? "",
-        lat: searchParams.get("lat") ?? "",
-        lng: searchParams.get("lng") ?? "",
-        ...(explorationSessionId ? { explorationSessionId } : {}),
-      });
-      router.push(`/recommendations?${params}`);
     } else {
       setDirection(1);
       setStep((s) => s + 1);
