@@ -95,6 +95,7 @@ export default function ExplorePage() {
     handleZoomIn,
     handleZoomOut,
     handleToggleFavorite,
+    favoriteError,
   } = useNearbyEventsMap({ persistLocation: true, excludeExpiredEvents: true });
   const [isLocationPromptDismissed, setIsLocationPromptDismissed] =
     useState(false);
@@ -254,82 +255,95 @@ export default function ExplorePage() {
           <div className="absolute top-4 bottom-0 left-1/2 -translate-x-1/2 z-10 p-4 w-full flex flex-col justify-end pointer-events-none">
             {hasGpsLocation ? (
               <div
-                onScroll={handleListScroll}
-                className={`pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] p-[25px] flex flex-col gap-3 overflow-y-auto transition-[max-height] duration-300 ${
+                className={`pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden transition-[max-height] duration-300 ${
                   isEventsExpanded ? "max-h-full" : "max-h-[280px]"
                 }`}
               >
-                <button
-                  onClick={() => setIsEventsExpanded((prev) => !prev)}
-                  className="w-full py-3 -mt-3 -mb-1 shrink-0 flex items-center justify-center"
-                  aria-label={isEventsExpanded ? "목록 접기" : "목록 펼치기"}
-                >
-                  <span className="w-10 h-1 rounded-full bg-[rgba(207,196,189,0.6)]" />
-                </button>
-                <div className="flex items-end justify-between pb-1 shrink-0">
-                  <p className="font-bold text-[20px] text-[#251e19] leading-[30px] tracking-[-0.5px]">
-                    내 주변 추천 {Math.min(cultureEvents?.length ?? 0, visibleCount)}곳
-                  </p>
-                  <div className="flex items-center gap-1">
-                    {districtName && (
+                <div className="shrink-0 px-[25px] pt-[13px]">
+                  <button
+                    onClick={() => setIsEventsExpanded((prev) => !prev)}
+                    className="w-full py-3 -mb-1 flex items-center justify-center"
+                    aria-label={isEventsExpanded ? "목록 접기" : "목록 펼치기"}
+                  >
+                    <span className="w-10 h-1 rounded-full bg-[rgba(207,196,189,0.6)]" />
+                  </button>
+                  <div className="flex items-end justify-between pb-1">
+                    <p className="font-bold text-[20px] text-[#251e19] leading-[30px] tracking-[-0.5px]">
+                      내 주변 추천 {Math.min(cultureEvents?.length ?? 0, visibleCount)}곳
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {districtName && (
+                        <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
+                          {districtName}
+                        </span>
+                      )}
                       <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
-                        {districtName}
+                        반경 {NEARBY_EVENTS_RADIUS_KM}km
                       </span>
-                    )}
-                    <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
-                      반경 {NEARBY_EVENTS_RADIUS_KM}km
-                    </span>
-                    {mapScaleMeters != null && (
-                      <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
-                        ·{" "}
-                        {mapScaleMeters >= 1000
-                          ? `${(mapScaleMeters / 1000).toFixed(1)}km`
-                          : `${Math.round(mapScaleMeters)}m`}
-                      </span>
-                    )}
+                      {mapScaleMeters != null && (
+                        <span className="font-normal text-[12px] text-[#6b6763] leading-[18px]">
+                          ·{" "}
+                          {mapScaleMeters >= 1000
+                            ? `${(mapScaleMeters / 1000).toFixed(1)}km`
+                            : `${Math.round(mapScaleMeters)}m`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {isLoadingEvents ? (
-                  <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
-                    이벤트를 불러오는 중...
-                  </span>
-                ) : cultureEvents && cultureEvents.length > 0 ? (
-                  <>
-                    {displayedEvents.map((event) => {
-                      const isSelected =
-                        event.eventItemId === selectedEventId;
-                      return (
-                        <div
-                          key={event.eventItemId}
-                          ref={isSelected ? selectedCardRef : undefined}
-                        >
-                          <EventCard
-                            event={toEventCardData(event)}
-                            shadow={false}
-                            onClick={() =>
-                              router.push(`/events/${event.eventItemId}`)
-                            }
-                            onFavorite={() =>
-                              handleToggleFavorite(
-                                event.eventItemId,
-                                event.isFavorited,
-                              )
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                    {isLoadingMore && (
-                      <div className="flex justify-center py-2">
-                        <div className="size-5 border-2 border-[#d9cfc5] border-t-[#7d543c] rounded-full animate-spin" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
-                    주변에 이벤트를 찾을 수 없습니다
-                  </span>
+
+                {favoriteError && (
+                  <p className="text-[12px] text-[#dc2626] px-[25px] pb-2 shrink-0">
+                    {favoriteError}
+                  </p>
                 )}
+
+                <div
+                  onScroll={handleListScroll}
+                  className="flex-1 overflow-y-auto px-[25px] pb-[25px] flex flex-col gap-3"
+                >
+                  {isLoadingEvents ? (
+                    <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
+                      이벤트를 불러오는 중...
+                    </span>
+                  ) : cultureEvents && cultureEvents.length > 0 ? (
+                    <>
+                      {displayedEvents.map((event) => {
+                        const isSelected =
+                          event.eventItemId === selectedEventId;
+                        return (
+                          <div
+                            key={event.eventItemId}
+                            ref={isSelected ? selectedCardRef : undefined}
+                          >
+                            <EventCard
+                              event={toEventCardData(event)}
+                              shadow={false}
+                              onClick={() =>
+                                router.push(`/events/${event.eventItemId}`)
+                              }
+                              onFavorite={() =>
+                                handleToggleFavorite(
+                                  event.eventItemId,
+                                  event.isFavorited,
+                                )
+                              }
+                            />
+                          </div>
+                        );
+                      })}
+                      {isLoadingMore && (
+                        <div className="flex justify-center py-2">
+                          <div className="size-5 border-2 border-[#d9cfc5] border-t-[#7d543c] rounded-full animate-spin" />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
+                      주변에 이벤트를 찾을 수 없습니다
+                    </span>
+                  )}
+                </div>
               </div>
             ) : null}
           </div>

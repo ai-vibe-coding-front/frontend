@@ -96,6 +96,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   const selectedCategoryRef = useRef<string | null>(null);
+  const pendingFavoriteIdsRef = useRef<Set<string>>(new Set());
   const requestIdRef = useRef(0);
   const { getCurrentLocation } = useCurrentLocation();
 
@@ -121,6 +122,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
 
   const loadMoreEvents = () => {
     if (isLoadingMore) return;
@@ -324,6 +326,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     eventItemId: string,
     isFavorited: boolean,
   ) => {
+    if (pendingFavoriteIdsRef.current.has(eventItemId)) return;
+    pendingFavoriteIdsRef.current.add(eventItemId);
+    setFavoriteError(null);
     setCultureEvents((prev) =>
       prev
         ? prev.map((event) =>
@@ -347,9 +352,13 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     };
 
     try {
-      const response = await fetch(`/api/events/${eventItemId}/favorite`, {
-        method: isFavorited ? "DELETE" : "POST",
-      });
+      const response = isFavorited
+        ? await fetch(`/api/favorites/${eventItemId}`, { method: "DELETE" })
+        : await fetch("/api/favorites", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ eventItemId }),
+          });
 
       if (response.status === 401) {
         revert();
@@ -357,10 +366,15 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
         return;
       }
 
+      if (response.status === 409) return;
+
       if (!response.ok) throw new Error("관심 행사 설정 요청이 실패했습니다.");
     } catch (err) {
       console.error("관심 행사 설정에 실패했습니다.", err);
       revert();
+      setFavoriteError("관심 행사 설정에 실패했습니다.");
+    } finally {
+      pendingFavoriteIdsRef.current.delete(eventItemId);
     }
   };
 
@@ -411,5 +425,6 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     handleZoomIn,
     handleZoomOut,
     handleToggleFavorite,
+    favoriteError,
   };
 }
