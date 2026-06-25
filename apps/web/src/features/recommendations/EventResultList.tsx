@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { EventCard } from "@/components/common/EventCard";
 import type { EventCardData } from "@/components/common/EventCard";
 import { ROUTES } from "@/constants/routes";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import { LoginGuardModal } from "@/features/event-detail/components/LoginGuardModal";
+import type { RecommendationRunDetail } from "@/features/recommendations/types";
 
 interface EventResultListProps {
   events: EventCardData[];
@@ -15,6 +17,7 @@ interface EventResultListProps {
 
 export function EventResultList({ events, runId }: EventResultListProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [items, setItems] = useState(events);
   // 카드별 in-flight 요청 추적 → 같은 카드 연타 시 중복 호출 방지
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
@@ -26,6 +29,19 @@ export function EventResultList({ events, runId }: EventResultListProps) {
   const isLoggedIn = () =>
     typeof document !== "undefined" &&
     document.cookie.split(";").some((c) => c.trim().startsWith("isLoggedIn="));
+
+  const setCachedFavorite = (eventId: string, isFavorited: boolean) => {
+    queryClient.setQueryData<RecommendationRunDetail>(
+      ["recommendation-run", runId],
+      (old) =>
+        old && {
+          ...old,
+          items: old.items.map((item) =>
+            item.eventItem.id === eventId ? { ...item, isFavorited } : item,
+          ),
+        },
+    );
+  };
 
   const handleFavorite = async (eventId: string, isFavorite: boolean | undefined) => {
     if (!isLoggedIn()) {
@@ -47,6 +63,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         item.id === eventId ? { ...item, isFavorite: !isFavorite } : item,
       ),
     );
+    setCachedFavorite(eventId, !isFavorite);
 
     try {
       if (isFavorite) {
@@ -63,6 +80,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
           item.id === eventId ? { ...item, isFavorite } : item,
         ),
       );
+      setCachedFavorite(eventId, Boolean(isFavorite));
 
       if (error instanceof ApiClientError && error.status === 401) {
         setAuthRequiredEventId(eventId);
