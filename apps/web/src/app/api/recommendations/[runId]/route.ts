@@ -53,6 +53,8 @@ export async function GET(
     const accessToken = cookieStore.get('accessToken')?.value;
     const loggedInUserId = accessToken ? await verifyAccessToken(accessToken) : null;
 
+    // accessToken 만료 시 loggedInUserId는 null이며, findFavoritedEventIds가 빈 Set을 반환해
+    // isFavorited: false로 일관되게 처리됨
     const favoritedIds = await findFavoritedEventIds(
       loggedInUserId,
       run.items.map((item) => item.eventItem.id),
