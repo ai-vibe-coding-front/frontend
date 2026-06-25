@@ -23,30 +23,16 @@ export function useCurrentUser(enabled = true): UseCurrentUserResult {
   const [error, setError] = useState<Error | ApiClientError | null>(null);
 
   useEffect(() => {
-    let ignore = false;
-
     if (!enabled) {
-      queueMicrotask(() => {
-        if (ignore) return;
-        setUser(null);
-        setError(null);
-        setIsLoading(false);
-      });
-
-      return () => {
-        ignore = true;
-      };
+      return;
     }
 
-    queueMicrotask(() => {
-      if (ignore) return;
-      setIsLoading(true);
-      setError(null);
-    });
+    let ignore = false;
 
     apiClient<CurrentUser>("/api/users/me")
       .then((currentUser) => {
         if (ignore) return;
+        setError(null);
         setUser(currentUser);
       })
       .catch((unknownError: unknown) => {
@@ -68,6 +54,15 @@ export function useCurrentUser(enabled = true): UseCurrentUserResult {
       ignore = true;
     };
   }, [enabled]);
+
+  if (!enabled) {
+    return {
+      user: null,
+      isLoading: false,
+      error: null,
+      isUnauthorized: false,
+    };
+  }
 
   return {
     user,
