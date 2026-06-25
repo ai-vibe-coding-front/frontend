@@ -70,6 +70,10 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
 
               {recent.isLoading ? (
                 <div className="h-[286px] w-full animate-pulse rounded-[20px] bg-[#eee7df]" />
+              ) : recent.errorMessage ? (
+                <p className="text-center text-[13px] leading-5 text-red-600">
+                  {recent.errorMessage}
+                </p>
               ) : recent.events.length === 0 ? (
                 <RecentRecommendationsEmptyState />
               ) : (
