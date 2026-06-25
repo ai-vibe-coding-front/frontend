@@ -55,37 +55,23 @@ function toEventCardData(item: RecentRecommendationItem): RecentRecommendationCa
 
 export function useRecentRecommendations(enabled: boolean): UseRecentRecommendationsResult {
   const [events, setEvents] = useState<RecentRecommendationCard[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(enabled);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const pendingFavoriteIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    let ignore = false;
-
     if (!enabled) {
-      queueMicrotask(() => {
-        if (ignore) return;
-        setEvents([]);
-        setErrorMessage(null);
-        setIsLoading(false);
-      });
-
-      return () => {
-        ignore = true;
-      };
+      return;
     }
 
-    queueMicrotask(() => {
-      if (ignore) return;
-      setIsLoading(true);
-      setErrorMessage(null);
-    });
+    let ignore = false;
 
     apiClient<RecentRecommendationsResponse>(
       `/api/recommendations/recent?limit=${RECENT_RECOMMENDATIONS_LIMIT}`,
     )
       .then((data) => {
         if (ignore) return;
+        setErrorMessage(null);
         setEvents(data.items.map(toEventCardData));
       })
       .catch(() => {
@@ -104,6 +90,7 @@ export function useRecentRecommendations(enabled: boolean): UseRecentRecommendat
   }, [enabled]);
 
   const toggleFavorite = async (event: EventCardData) => {
+    if (!enabled) return;
     if (pendingFavoriteIdsRef.current.has(event.id)) return;
 
     const currentEvent = events.find((item) => item.id === event.id);
@@ -144,6 +131,15 @@ export function useRecentRecommendations(enabled: boolean): UseRecentRecommendat
       pendingFavoriteIdsRef.current.delete(event.id);
     }
   };
+
+  if (!enabled) {
+    return {
+      events: [],
+      isLoading: false,
+      errorMessage: null,
+      toggleFavorite,
+    };
+  }
 
   return {
     events,
