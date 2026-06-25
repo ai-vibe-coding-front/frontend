@@ -5,8 +5,11 @@ import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { TodayMoodCard } from "@/features/recommendations/TodayMoodCard";
 import { EventCarousel } from "@/features/recommendations/EventCarousel";
+import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
 import type { EventCardData } from "@/components/common/EventCard";
 import { ROUTES } from "@/constants/routes";
+
+const FALLBACK_USER_NAME = "회원";
 
 const MOCK_EVENTS: EventCardData[] = [
   {
@@ -77,6 +80,8 @@ interface HomeContentProps {
 
 export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
+  const { user } = useCurrentUser(isLoggedIn);
+  const userName = user?.nickname || FALLBACK_USER_NAME;
 
   const goToLocationPermission = () => {
     router.push(ROUTES.locationPermission);
@@ -92,7 +97,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
         <main className={`flex-1 overflow-y-auto no-scrollbar px-6 pb-4 flex flex-col gap-4 ${!isLoggedIn ? "justify-center" : ""}`}>
           <TodayMoodCard
             isLoggedIn={isLoggedIn}
-            userName="회원"
+            userName={userName}
             onCTAClick={
               isLoggedIn
                 ? goToLocationPermission

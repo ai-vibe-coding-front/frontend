@@ -1,30 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { ApiClientError, apiClient } from '@/lib/api-client';
 import { ROUTES } from '@/constants/routes';
-
-type UserProfile = {
-  id: string;
-  email: string;
-  nickname: string;
-  favoriteCount: number;
-};
-
-const ChevronRightIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path
-      d="M6 4l4 4-4 4"
-      stroke="#3f2a24"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
+import { useCurrentUser } from '@/features/users/hooks/useCurrentUser';
 
 const SavedHeartIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -39,37 +21,34 @@ const SavedHeartIcon = () => (
 
 export function MyPageContent() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading, error, isUnauthorized } = useCurrentUser();
+  const [logoutErrorMessage, setLogoutErrorMessage] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    apiClient<UserProfile>('/api/users/me')
-      .then(setUser)
-      .catch((error: unknown) => {
-        if (error instanceof ApiClientError && error.status === 401) {
-          router.replace(`${ROUTES.login}?redirect=${ROUTES.mypage}`);
-          return;
-        }
+    if (isUnauthorized) {
+      router.replace(`${ROUTES.login}?redirect=${ROUTES.mypage}`);
+    }
+  }, [isUnauthorized, router]);
 
-        if (
-          error instanceof ApiClientError &&
-          error.errorCode === 'USER_NOT_FOUND'
-        ) {
-          setErrorMessage('사용자 정보를 찾을 수 없습니다.');
-          return;
-        }
+  const userErrorMessage = useMemo(() => {
+    if (!error || isUnauthorized) {
+      return null;
+    }
 
-        setErrorMessage('사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
-      })
-      .finally(() => setIsLoading(false));
-  }, [router]);
+    if (error instanceof ApiClientError && error.errorCode === 'USER_NOT_FOUND') {
+      return '사용자 정보를 찾을 수 없습니다.';
+    }
+
+    return '사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
+  }, [error, isUnauthorized]);
+
+  const errorMessage = logoutErrorMessage ?? userErrorMessage;
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
-    setErrorMessage(null);
+    setLogoutErrorMessage(null);
 
     try {
       await apiClient<null>('/api/auth/logout', {
@@ -84,7 +63,7 @@ export function MyPageContent() {
         return;
       }
 
-      setErrorMessage('로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setLogoutErrorMessage('로그아웃에 실패했습니다. 잠시 후 다시 시도해주세요.');
       setIsLoggingOut(false);
     }
   };
