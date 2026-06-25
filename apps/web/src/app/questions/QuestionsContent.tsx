@@ -63,8 +63,6 @@ export function QuestionsContent() {
             },
           }),
         });
-        sessionStorage.setItem('explorationSessionId', session.explorationSessionId);
-
         const recommendation = await apiClient<{ runId: string }>('/api/recommendations', {
           method: 'POST',
           body: JSON.stringify({

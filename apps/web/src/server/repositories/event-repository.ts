@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 
 type BoundingBox = {
   minLat: number;
@@ -7,7 +7,10 @@ type BoundingBox = {
   maxLng: number;
 };
 
-export async function findNearbyEventCandidates(bbox: BoundingBox, category?: string) {
+export async function findNearbyEventCandidates(
+  bbox: BoundingBox,
+  category?: string,
+) {
   return prisma.eventItem.findMany({
     where: {
       deletedAt: null,
@@ -39,4 +42,66 @@ export async function findFavoritedEventIds(
   });
 
   return new Set(favorites.map((favorite) => favorite.eventItemId));
+}
+
+export async function findFavoriteByUserAndEvent(userId: string, eventItemId: string) {
+  return prisma.favorite.findFirst({
+    where: { userId, eventItemId },
+  });
+}
+
+export async function findUserFavoriteEvents(
+  userId: string,
+  page: number,
+  limit: number,
+) {
+  const skip = (page - 1) * limit;
+  const where = {
+    userId,
+    eventItem: { deletedAt: null },
+  };
+
+  const [items, total] = await Promise.all([
+    prisma.favorite.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        eventItemId: true,
+        createdAt: true,
+        eventItem: {
+          select: {
+            id: true,
+            title: true,
+            realmName: true,
+            place: true,
+            startDate: true,
+            endDate: true,
+            imageUrl: true,
+          },
+        },
+      },
+    }),
+    prisma.favorite.count({ where }),
+  ]);
+
+  return { items, total };
+}
+
+export async function countUserFavorites(userId: string): Promise<number> {
+  return prisma.favorite.count({ where: { userId } });
+}
+
+export async function createFavorite(userId: string, eventItemId: string) {
+  return prisma.favorite.create({
+    data: { userId, eventItemId },
+  });
+}
+
+export async function deleteFavorite(userId: string, eventItemId: string) {
+  return prisma.favorite.deleteMany({
+    where: { userId, eventItemId },
+  });
 }

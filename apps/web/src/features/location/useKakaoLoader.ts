@@ -14,7 +14,7 @@ function loadKakaoSdk(appKey: string): Promise<void> {
   if (!kakaoLoaderPromise) {
     kakaoLoaderPromise = new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = `${KAKAO_SDK_SRC}?appkey=${appKey}&autoload=false`;
+      script.src = `${KAKAO_SDK_SRC}?appkey=${appKey}&autoload=false&libraries=services`;
       script.async = true;
       script.onload = () => window.kakao.maps.load(() => resolve());
       script.onerror = () =>
