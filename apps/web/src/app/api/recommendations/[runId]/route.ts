@@ -2,26 +2,13 @@ import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { ok, fail } from '@/lib/api-response';
 import { verifyAccessToken } from '@/server/services/auth-service';
+import { decodeHtmlEntities, formatDate } from '@/server/services/event-service';
 import {
   findRecommendationRunById,
   findFavoritedEventIds,
 } from '@/server/repositories/recommendation-repository';
 
 const paramsSchema = z.object({ runId: z.uuid() });
-
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-}
-
-function formatDate(value: Date | null): string | null {
-  if (!value) return null;
-  return value.toISOString().slice(0, 10);
-}
 
 function ptyToWeatherType(
   pty: number | null,

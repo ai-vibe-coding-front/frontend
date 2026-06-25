@@ -44,14 +44,14 @@ function boundingBoxFromRadius(lat: number, lng: number, radiusKm: number) {
   };
 }
 
-function formatDate(value: Date | null): string | null {
+export function formatDate(value: Date | null): string | null {
   if (!value) return null;
   return value.toISOString().slice(0, 10);
 }
 
 // 공공데이터포털 동기화 데이터에 HTML 엔티티가 이중으로 인코딩되어 들어온 경우가 있어
 // "&lt;"같은 표기가 그대로 남는다. 한 번 더 풀어준다.
-function decodeHtmlEntities(value: string): string {
+export function decodeHtmlEntities(value: string): string {
   return value
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
