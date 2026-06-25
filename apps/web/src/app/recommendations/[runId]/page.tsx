@@ -50,9 +50,9 @@ export default function RecommendationsPage() {
   const router = useRouter();
   const runId = typeof params.runId === 'string' ? params.runId : '';
 
-  const { data: run, isPending, error } = useRecommendationRun(runId);
-
   if (!runId) notFound();
+
+  const { data: run, isPending, error } = useRecommendationRun(runId);
 
   if (isPending) {
     return (
