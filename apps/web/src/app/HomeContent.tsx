@@ -81,12 +81,6 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
                   onFavorite={recent.toggleFavorite}
                 />
               )}
-
-              {recent.errorMessage && (
-                <p className="text-center text-[13px] leading-5 text-red-600">
-                  {recent.errorMessage}
-                </p>
-              )}
             </div>
           )}
         </main>
