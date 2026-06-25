@@ -2,6 +2,7 @@ import {
   findEventDetailById,
   findFavoriteByUserAndEvent,
   findFavoritedEventIds,
+  findUserFavoriteEvents,
   findNearbyEventCandidates,
 } from "@/server/repositories/event-repository";
 
@@ -134,6 +135,60 @@ export async function findNearbyEvents(params: NearbyEventsParams): Promise<{
     items,
     total: items.length,
     radiusKm: params.radiusKm,
+  };
+}
+
+type FavoriteEventsParams = {
+  userId: string;
+  page: number;
+  limit: number;
+};
+
+export type FavoriteEventItem = {
+  eventItemId: string;
+  title: string;
+  realmName: string | null;
+  place: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  imageUrl: string | null;
+  isFavorited: boolean;
+  favoritedAt: string;
+};
+
+export async function getFavoriteEvents(params: FavoriteEventsParams): Promise<{
+  items: FavoriteEventItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasNext: boolean;
+  };
+}> {
+  const result = await findUserFavoriteEvents(
+    params.userId,
+    params.page,
+    params.limit,
+  );
+
+  return {
+    items: result.items.map(({ createdAt, eventItem }) => ({
+      eventItemId: eventItem.id,
+      title: decodeHtmlEntities(eventItem.title),
+      realmName: eventItem.realmName,
+      place: eventItem.place ? decodeHtmlEntities(eventItem.place) : null,
+      startDate: formatDate(eventItem.startDate),
+      endDate: formatDate(eventItem.endDate),
+      imageUrl: eventItem.imageUrl,
+      isFavorited: true,
+      favoritedAt: createdAt.toISOString(),
+    })),
+    pagination: {
+      page: params.page,
+      limit: params.limit,
+      total: result.total,
+      hasNext: params.page * params.limit < result.total,
+    },
   };
 }
 

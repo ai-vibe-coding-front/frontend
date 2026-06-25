@@ -7,5 +7,6 @@ export const ROUTES = {
   questions: '/questions',
   recommendations: '/recommendations',
   mypage: '/mypage',
+  mypageFavorites: '/mypage/favorites',
   eventDetail: (id: string) => `/events/${id}`,
 } as const;
