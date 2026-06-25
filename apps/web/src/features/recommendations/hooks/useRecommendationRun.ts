@@ -11,6 +11,7 @@ export function useRecommendationRun(runId: string) {
     queryKey: ['recommendation-run', runId],
     queryFn: () => fetchRecommendationRun(runId),
     enabled: !!runId,
+    staleTime: Infinity,
     retry: (failureCount, error) => {
       if (error instanceof ApiClientError && error.status === 404) return false;
       return failureCount < 2;
