@@ -71,11 +71,17 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         });
       }
     } catch (error) {
-      setCachedFavorite(eventId, Boolean(isFavorite));
-
-      if (error instanceof ApiClientError && error.status === 401) {
+      if (
+        error instanceof ApiClientError &&
+        (error.errorCode === "FAVORITE_ALREADY_EXISTS" || error.errorCode === "FAVORITE_NOT_FOUND")
+      ) {
+        // 캐시가 실제 서버 상태와 어긋나 있던 경우(예: 로그인 전후 재진입) → 서버가 맞다고 하는 상태로 캐시만 맞춰줌
+        setCachedFavorite(eventId, error.errorCode === "FAVORITE_ALREADY_EXISTS");
+      } else if (error instanceof ApiClientError && error.status === 401) {
+        setCachedFavorite(eventId, Boolean(isFavorite));
         setAuthRequiredEventId(eventId);
       } else {
+        setCachedFavorite(eventId, Boolean(isFavorite));
         setErrorIds((current) => new Set(current).add(eventId));
       }
     } finally {
