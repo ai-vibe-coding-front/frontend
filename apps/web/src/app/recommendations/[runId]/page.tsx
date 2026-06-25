@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { CTAButton } from '@/components/common/CTAButton';
@@ -51,6 +52,21 @@ export default function RecommendationsPage() {
   const runId = typeof params.runId === 'string' ? params.runId : '';
 
   const { data: run, isPending, error } = useRecommendationRun(runId);
+
+  const events: EventCardData[] = useMemo(
+    () =>
+      (run?.items ?? []).map((item) => ({
+        id: item.eventItem.id,
+        title: item.eventItem.title,
+        realmName: item.eventItem.realmName,
+        place: item.eventItem.place,
+        startDate: item.eventItem.startDate ? new Date(item.eventItem.startDate) : null,
+        endDate: item.eventItem.endDate ? new Date(item.eventItem.endDate) : null,
+        imageUrl: item.eventItem.imageUrl,
+        isFavorite: item.isFavorited,
+      })),
+    [run?.items],
+  );
 
   if (!runId) notFound();
 
@@ -116,17 +132,6 @@ export default function RecommendationsPage() {
       </div>
     );
   }
-
-  const events: EventCardData[] = run.items.map((item) => ({
-    id: item.eventItem.id,
-    title: item.eventItem.title,
-    realmName: item.eventItem.realmName,
-    place: item.eventItem.place,
-    startDate: item.eventItem.startDate ? new Date(item.eventItem.startDate) : null,
-    endDate: item.eventItem.endDate ? new Date(item.eventItem.endDate) : null,
-    imageUrl: item.eventItem.imageUrl,
-    isFavorite: item.isFavorited,
-  }));
 
   const hasResults = events.length > 0;
   const weather = run.weather;

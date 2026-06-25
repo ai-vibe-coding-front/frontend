@@ -14,12 +14,6 @@ interface EventResultListProps {
 export function EventResultList({ events }: EventResultListProps) {
   const router = useRouter();
   const [items, setItems] = useState(events);
-  const [prevEvents, setPrevEvents] = useState(events);
-
-  if (events !== prevEvents) {
-    setPrevEvents(events);
-    setItems(events);
-  }
 
   const handleFavorite = async (eventId: string, isFavorite: boolean | undefined) => {
     setItems((current) =>
