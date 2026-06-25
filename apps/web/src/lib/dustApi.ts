@@ -57,7 +57,7 @@ export async function getDust(stationName: string): Promise<DustResult> {
     `https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty?${params}`;
 
   const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`AirKorea API error: ${res.status}`);
+  if (!res.ok) return { pm10Grade: null, pm25Grade: null, pm10Value: null, pm25Value: null };
 
   const json = (await res.json()) as AirQualityResponse;
   const items = json.response?.body?.items;

@@ -11,7 +11,6 @@ import {
   findFavoritedEventIds,
 } from '@/server/repositories/recommendation-repository';
 import {
-  FALLBACK_LOCATION,
   checkIndoorForced,
   scoreAndRankEvents,
   filterAndSort,
@@ -95,15 +94,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const nx = session.nx ?? FALLBACK_LOCATION.nx;
-    const ny = session.ny ?? FALLBACK_LOCATION.ny;
-    const lat = session.lat ?? FALLBACK_LOCATION.lat;
-    const lng = session.lng ?? FALLBACK_LOCATION.lng;
-    const stationName = session.stationName ?? FALLBACK_LOCATION.stationName;
-
     const [weatherResult, dustResult] = await Promise.allSettled([
-      getWeather(nx, ny),
-      getDust(stationName),
+      session.nx != null && session.ny != null
+        ? getWeather(session.nx, session.ny)
+        : Promise.resolve(null),
+      session.stationName
+        ? getDust(session.stationName)
+        : Promise.resolve(null),
     ]);
 
     const weather = weatherResult.status === 'fulfilled' ? weatherResult.value : null;
@@ -113,8 +110,10 @@ export async function POST(request: Request) {
 
     const candidates = await findRecommendationCandidates();
 
-    const answersMap = Object.fromEntries(answers.map((a) => [a.questionKey, a.answerValue]));
-    const scored = scoreAndRankEvents(candidates, answersMap, lat, lng, indoorForced);
+    const answersMap = Object.fromEntries(
+      answers.map((a) => [a.questionKey, a.answerValue]),
+    ) as Record<'q1' | 'q2' | 'q3' | 'q4', string>;
+    const scored = scoreAndRankEvents(candidates, answersMap, session.lat, session.lng, indoorForced);
     const { items, nearbyExpanded } = filterAndSort(scored);
 
     const curation = buildCurationMessage(weather, answersMap['q2'], answersMap['q4']);
@@ -124,9 +123,9 @@ export async function POST(request: Request) {
     const runId = await saveRecommendation({
       sessionId,
       userId,
-      sido: session.sido ?? FALLBACK_LOCATION.sido,
-      nx,
-      ny,
+      sido: session.sido ?? null,
+      nx: session.nx ?? null,
+      ny: session.ny ?? null,
       answers: answers.map((a) => ({ questionKey: a.questionKey, answerValue: a.answerValue })),
       weather,
       dust,
@@ -143,6 +142,7 @@ export async function POST(request: Request) {
       curation,
       indoorForced,
       nearbyExpanded,
+      totalCount: items.length,
       weather: weather
         ? { skyLabel: weather.skyLabel, temperature: weather.temperature, pty: weather.pty }
         : null,
