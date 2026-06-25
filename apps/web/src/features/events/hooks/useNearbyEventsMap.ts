@@ -108,6 +108,12 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   );
   const [districtName, setDistrictName] = useState<string | null>(null);
   const [mapScaleMeters, setMapScaleMeters] = useState<number | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+
+  const handleMarkerClick = (event: CultureEvent) => {
+    setSelectedEventId(event.eventItemId);
+    setIsEventsExpanded(true);
+  };
 
   const renderEventMarkers = (events: CultureEvent[]) => {
     eventMarkersRef.current.forEach((marker) => marker.setMap(null));
@@ -116,18 +122,24 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     const map = mapRef.current;
     if (!map) return;
 
-    eventMarkersRef.current = events.map(
-      (event) =>
-        new window.kakao.maps.Marker({
-          position: new window.kakao.maps.LatLng(event.lat, event.lng),
-          map,
-        }),
-    );
+    eventMarkersRef.current = events.map((event) => {
+      const marker = new window.kakao.maps.Marker({
+        position: new window.kakao.maps.LatLng(event.lat, event.lng),
+        map,
+      });
+      window.kakao.maps.event.addListener(marker, "click", () => {
+        handleMarkerClick(event);
+      });
+      return marker;
+    });
   };
 
   const updateCultureEvents = (events: CultureEvent[]) => {
     setCultureEvents(events);
     renderEventMarkers(events);
+    setSelectedEventId((prev) =>
+      prev && events.some((event) => event.eventItemId === prev) ? prev : null,
+    );
   };
 
   const fetchNearbyEvents = async (
@@ -223,20 +235,24 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     resolveDistrictName(lat, lng);
   };
 
-  const handleGpsClick = async () => {
+  const applyKnownLocation = async (lat: number, lng: number) => {
     const map = mapRef.current;
     if (!map) return;
 
+    setIsEventsExpanded(false);
+    applyLocation(lat, lng);
+
+    if (persistLocation) {
+      sessionStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify({ lat, lng }));
+    }
+
+    await fetchNearbyEvents(lat, lng, selectedCategory);
+  };
+
+  const handleGpsClick = async () => {
     try {
       const { lat, lng } = await getCurrentLocation();
-      setIsEventsExpanded(false);
-      applyLocation(lat, lng);
-
-      if (persistLocation) {
-        sessionStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify({ lat, lng }));
-      }
-
-      await fetchNearbyEvents(lat, lng, selectedCategory);
+      await applyKnownLocation(lat, lng);
     } catch (err) {
       console.error(
         "현재 위치를 가져오지 못했습니다. GPS 안 켜져 있습니다",
@@ -343,9 +359,11 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     selectedCategory,
     districtName,
     mapScaleMeters,
+    selectedEventId,
     onMapReady,
     onMapError,
     handleGpsClick,
+    applyKnownLocation,
     handleCategorySelect,
     handleZoomIn,
     handleZoomOut,
