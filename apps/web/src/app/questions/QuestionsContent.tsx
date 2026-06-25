@@ -32,7 +32,13 @@ export function QuestionsContent() {
   });
   const [showModal, setShowModal] = useState(false);
 
-  const hasLocation = !!(searchParams.get("lat") && searchParams.get("lng"));
+  const hasLocation = !!(
+    searchParams.get("lat") &&
+    searchParams.get("lng") &&
+    searchParams.get("nx") &&
+    searchParams.get("ny") &&
+    searchParams.get("stationName")
+  );
 
   useEffect(() => {
     if (!hasLocation) {
