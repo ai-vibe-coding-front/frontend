@@ -33,13 +33,14 @@ export function EventResultList({ events, runId }: EventResultListProps) {
   const setCachedFavorite = (eventId: string, isFavorited: boolean) => {
     queryClient.setQueryData<RecommendationRunDetail>(
       recommendationRunKey(runId),
-      (old) =>
-        old && {
-          ...old,
-          items: old.items.map((item) =>
-            item.eventItem.id === eventId ? { ...item, isFavorited } : item,
-          ),
-        },
+      (old) => {
+        if (!old) return old;
+        const index = old.items.findIndex((item) => item.eventItem.id === eventId);
+        if (index === -1) return old;
+        const items = old.items.slice();
+        items[index] = { ...items[index], isFavorited };
+        return { ...old, items };
+      },
     );
   };
 
