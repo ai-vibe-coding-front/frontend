@@ -27,7 +27,7 @@ function ptyToWeatherType(
   pty: number | null,
   skyLabel: string | null,
 ): 'sunny' | 'cloudy' | 'rainy' | 'snowy' {
-  if (pty === 3 || pty === 7) return 'snowy';
+  if (pty === 2 || pty === 3) return 'snowy';
   if (pty != null && pty > 0) return 'rainy';
   if (skyLabel === '흐림' || skyLabel === '구름많음' || skyLabel === '구름조금') return 'cloudy';
   return 'sunny';
