@@ -1,5 +1,4 @@
 'use client';
-import { useState } from "react";
 import Image from "next/image";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
@@ -87,9 +86,6 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
 
 export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded = false, favoriteDisabled = false }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
-  // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백한다.
-  const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(event.imageUrl) && !imageFailed;
 
   return (
     // 카드 전체를 클릭 가능하게 만들기 위해 div에 role="button"을 부여한 구조.
