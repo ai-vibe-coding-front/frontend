@@ -75,7 +75,7 @@ export function QuestionsContent() {
             ],
           }),
         });
-        router.push(`/recommendations?runId=${recommendation.runId}`);
+        router.push(`/recommendations/${recommendation.runId}`);
       } catch (err) {
         if (err instanceof ApiClientError && err.status === 403) {
           setIsBlocked(true);
