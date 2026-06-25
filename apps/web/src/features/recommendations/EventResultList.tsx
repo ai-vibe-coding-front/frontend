@@ -18,7 +18,6 @@ interface EventResultListProps {
 export function EventResultList({ events, runId }: EventResultListProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [items, setItems] = useState(events);
   // 카드별 in-flight 요청 추적 → 같은 카드 연타 시 중복 호출 방지
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
   // 401 외 실패 카드 추적 → 카드별 독립적으로 에러 메시지 노출 (다른 카드 상태에 영향 없음)
@@ -58,11 +57,6 @@ export function EventResultList({ events, runId }: EventResultListProps) {
       next.delete(eventId);
       return next;
     });
-    setItems((current) =>
-      current.map((item) =>
-        item.id === eventId ? { ...item, isFavorite: !isFavorite } : item,
-      ),
-    );
     setCachedFavorite(eventId, !isFavorite);
 
     try {
@@ -75,11 +69,6 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         });
       }
     } catch (error) {
-      setItems((current) =>
-        current.map((item) =>
-          item.id === eventId ? { ...item, isFavorite } : item,
-        ),
-      );
       setCachedFavorite(eventId, Boolean(isFavorite));
 
       if (error instanceof ApiClientError && error.status === 401) {
@@ -98,7 +87,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
 
   return (
     <div className="flex flex-col gap-3">
-      {items.map((event) => (
+      {events.map((event) => (
         <div key={event.id} className="relative">
           <EventCard
             event={event}
