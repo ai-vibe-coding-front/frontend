@@ -9,7 +9,6 @@ import { useRecentRecommendations } from "@/features/recommendations/hooks/useRe
 import { ROUTES } from "@/constants/routes";
 
 import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
-import type { EventCardData } from "@/components/common/EventCard";
 
 const FALLBACK_USER_NAME = "회원";
 
