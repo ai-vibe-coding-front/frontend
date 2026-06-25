@@ -1,4 +1,5 @@
 'use client';
+import { useState } from "react";
 import Image from "next/image";
 import { CategoryBadge, type Category } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
@@ -86,6 +87,9 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
 
 export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded = false, favoriteDisabled = false }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
+  // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(event.imageUrl) && !imageFailed;
 
   return (
     // 카드 전체를 클릭 가능하게 만들기 위해 div에 role="button"을 부여한 구조.
@@ -99,14 +103,14 @@ export function EventCard({ event, onClick, onFavorite, shadow = true, isEnded =
     >
       {/* 썸네일 영역: 높이 고정(192px) + absolute 레이어로 이미지/배지/그라디언트를 쌓는 구조 */}
       <div className="relative h-[192px] w-full">
-        {event.imageUrl ? (
+        {showImage ? (
           <Image
-            src={event.imageUrl}
+            src={event.imageUrl as string}
             alt={event.title}
             fill
             sizes="100vw"
             className="object-cover"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            onError={() => setImageFailed(true)}
           />
         ) : (
           // imageUrl이 없거나 로드 실패한 경우 공통 placeholder 배경
