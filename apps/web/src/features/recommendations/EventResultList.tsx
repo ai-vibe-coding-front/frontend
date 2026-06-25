@@ -91,7 +91,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
           {errorIds.has(event.id) && (
             <p
               role="alert"
-              className="absolute top-3 right-3 z-30 text-[11px] text-[#c0392b] bg-[#fefefe] border border-[#ded0be] rounded-[8px] px-2 py-1 whitespace-nowrap shadow-sm"
+              className="absolute top-[52px] right-3 z-30 text-[11px] text-[#c0392b] bg-[#fefefe] border border-[#ded0be] rounded-[8px] px-2 py-1 whitespace-nowrap shadow-sm"
             >
               잠시 후 다시 시도해주세요.
             </p>
