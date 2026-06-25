@@ -177,18 +177,18 @@ export default function RecommendationsPage() {
                 </div>
                 <div className="flex flex-col items-center gap-2 text-center">
                   <p className="font-bold text-[17px] text-[#251e19] tracking-[-0.4px] leading-[26px]">
-                    추천 결과가 없어요
+                    조건에 맞는 추천을 찾지 못했어요
                   </p>
                   <p className="font-medium text-[13px] text-[#716456] leading-[20px]">
-                    오늘의 무드를 알려주시면 맞춤 추천을 보여드릴게요
+                    다른 무드로 다시 시도해보세요
                   </p>
                 </div>
                 <div className="mt-1">
                   <Link
                     href="/questions"
-                    className="bg-[#251e19] text-white font-bold text-[15px] tracking-[-0.3px] leading-[20px] px-7 py-[13px] rounded-full"
+                    className="bg-[#251e19] text-white font-bold text-[15px] tracking-[-0.3px] leading-[20px] px-7 py-[13px] rounded-full cursor-pointer"
                   >
-                    추천받기
+                    다시 추천받기
                   </Link>
                 </div>
               </div>
