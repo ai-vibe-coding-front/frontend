@@ -12,6 +12,19 @@ interface HomeContentProps {
   isLoggedIn: boolean;
 }
 
+function RecentRecommendationsEmptyState() {
+  return (
+    <div className="flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-[20px] bg-white px-6 py-7 text-center shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)]">
+      <p className="font-bold text-[17px] leading-6 text-[#251e19]">
+        아직 추천 내역이 없어요
+      </p>
+      <p className="text-[14px] leading-5 text-[#8c6e63]">
+        지금 기분에 맞는 문화생활을 추천받아보세요.
+      </p>
+    </div>
+  );
+}
+
 export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
   const recent = useRecentRecommendations(isLoggedIn);
@@ -51,6 +64,8 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
 
               {recent.isLoading ? (
                 <div className="h-[286px] w-full animate-pulse rounded-[20px] bg-[#eee7df]" />
+              ) : recent.events.length === 0 ? (
+                <RecentRecommendationsEmptyState />
               ) : (
                 <EventCarousel
                   events={recent.events}
