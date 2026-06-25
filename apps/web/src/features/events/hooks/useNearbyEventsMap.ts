@@ -53,7 +53,16 @@ const GPS_PIN_OVERLAY_HTML = `
 
 type UseNearbyEventsMapOptions = {
   persistLocation?: boolean;
+  excludeExpiredEvents?: boolean;
 };
+
+function isEventExpired(event: CultureEvent): boolean {
+  const dateStr = event.endDate ?? event.startDate;
+  if (!dateStr) return false;
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return dateStr < todayStr;
+}
 
 function readStoredLocation(): { lat: number; lng: number } | null {
   try {
@@ -80,7 +89,7 @@ function getHasStoredLocationServerSnapshot(): boolean {
 }
 
 export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
-  const { persistLocation = false } = options;
+  const { persistLocation = false, excludeExpiredEvents = false } = options;
   const router = useRouter();
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
@@ -147,10 +156,13 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   };
 
   const updateCultureEvents = (events: CultureEvent[]) => {
-    setCultureEvents(events);
-    renderEventMarkers(events);
+    const activeEvents = excludeExpiredEvents
+      ? events.filter((event) => !isEventExpired(event))
+      : events;
+    setCultureEvents(activeEvents);
+    renderEventMarkers(activeEvents);
     setSelectedEventId((prev) =>
-      prev && events.some((event) => event.eventItemId === prev) ? prev : null,
+      prev && activeEvents.some((event) => event.eventItemId === prev) ? prev : null,
     );
     setVisibleCount(10);
   };
@@ -359,6 +371,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     const lng = center.getLng();
     lastPositionRef.current = { lat, lng };
     setSelectedEventId(null);
+    resolveDistrictName(lat, lng);
     fetchNearbyEvents(lat, lng, selectedCategoryRef.current);
   };
 

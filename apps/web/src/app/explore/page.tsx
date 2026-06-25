@@ -33,14 +33,6 @@ const CATEGORY_FILTERS: {
   { label: "기타", value: "기타", color: "#e5e5e5" },
 ];
 
-function isEventExpired(event: CultureEvent): boolean {
-  const dateStr = event.endDate ?? event.startDate;
-  if (!dateStr) return false;
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  return dateStr < todayStr;
-}
-
 function toEventCardData(event: CultureEvent): EventCardData {
   return {
     id: event.eventItemId,
@@ -103,20 +95,15 @@ export default function ExplorePage() {
     handleZoomIn,
     handleZoomOut,
     handleToggleFavorite,
-  } = useNearbyEventsMap({ persistLocation: true });
+  } = useNearbyEventsMap({ persistLocation: true, excludeExpiredEvents: true });
   const [isLocationPromptDismissed, setIsLocationPromptDismissed] =
     useState(false);
   const selectedCardRef = useRef<HTMLDivElement | null>(null);
 
-  const activeEvents = useMemo(() => {
-    if (!cultureEvents) return null;
-    return cultureEvents.filter((event) => !isEventExpired(event));
-  }, [cultureEvents]);
-
   const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
-    if (reachedBottom && activeEvents && visibleCount < activeEvents.length) {
+    if (reachedBottom && cultureEvents && visibleCount < cultureEvents.length) {
       loadMoreEvents();
     }
   };
@@ -131,15 +118,15 @@ export default function ExplorePage() {
   }, [selectedEventId]);
 
   const displayedEvents = useMemo(() => {
-    if (!activeEvents) return [];
+    if (!cultureEvents) return [];
     if (selectedEventId) {
-      const selected = activeEvents.find(
+      const selected = cultureEvents.find(
         (event) => event.eventItemId === selectedEventId,
       );
       if (selected) return [selected];
     }
-    return activeEvents.slice(0, visibleCount);
-  }, [activeEvents, selectedEventId, visibleCount]);
+    return cultureEvents.slice(0, visibleCount);
+  }, [cultureEvents, selectedEventId, visibleCount]);
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -281,7 +268,7 @@ export default function ExplorePage() {
                 </button>
                 <div className="flex items-end justify-between pb-1 shrink-0">
                   <p className="font-bold text-[20px] text-[#251e19] leading-[30px] tracking-[-0.5px]">
-                    내 주변 추천 {Math.min(activeEvents?.length ?? 0, visibleCount)}곳
+                    내 주변 추천 {Math.min(cultureEvents?.length ?? 0, visibleCount)}곳
                   </p>
                   <div className="flex items-center gap-1">
                     {districtName && (
@@ -306,7 +293,7 @@ export default function ExplorePage() {
                   <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                     이벤트를 불러오는 중...
                   </span>
-                ) : activeEvents && activeEvents.length > 0 ? (
+                ) : cultureEvents && cultureEvents.length > 0 ? (
                   <>
                     {displayedEvents.map((event) => {
                       const isSelected =
