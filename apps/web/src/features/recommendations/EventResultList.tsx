@@ -10,9 +10,10 @@ import { LoginGuardModal } from "@/features/event-detail/components/LoginGuardMo
 
 interface EventResultListProps {
   events: EventCardData[];
+  runId: string;
 }
 
-export function EventResultList({ events }: EventResultListProps) {
+export function EventResultList({ events, runId }: EventResultListProps) {
   const router = useRouter();
   const [items, setItems] = useState(events);
   // 카드별 in-flight 요청 추적 → 같은 카드 연타 시 중복 호출 방지
@@ -100,7 +101,7 @@ export function EventResultList({ events }: EventResultListProps) {
 
       {authRequiredEventId && (
         <LoginGuardModal
-          eventId={authRequiredEventId}
+          redirectPath={ROUTES.recommendationResult(runId)}
           onClose={() => setAuthRequiredEventId(null)}
         />
       )}

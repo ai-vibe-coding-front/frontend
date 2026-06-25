@@ -5,15 +5,15 @@ import { ROUTES } from '@/constants/routes';
 import { CTAButton } from '@/components/common/CTAButton';
 
 type Props = {
-  eventId: string;
+  redirectPath: string;
   onClose: () => void;
 };
 
-export function LoginGuardModal({ eventId, onClose }: Props) {
+export function LoginGuardModal({ redirectPath, onClose }: Props) {
   const router = useRouter();
 
   const handleLogin = () => {
-    router.push(`${ROUTES.login}?redirect=${ROUTES.eventDetail(eventId)}`);
+    router.push(`${ROUTES.login}?redirect=${redirectPath}`);
   };
 
   return (

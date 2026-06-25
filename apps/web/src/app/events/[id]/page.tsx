@@ -10,6 +10,7 @@ import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
 import { KakaoMap, KakaoMapFallback } from '@/features/event-detail/components/KakaoMap';
 import { LoginGuardModal } from '@/features/event-detail/components/LoginGuardModal';
 import { ApiClientError } from '@/lib/api-client';
+import { ROUTES } from '@/constants/routes';
 
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
@@ -221,7 +222,7 @@ export default function EventDetailPage() {
       </div>
 
       {showLoginModal && (
-        <LoginGuardModal eventId={id} onClose={() => setShowLoginModal(false)} />
+        <LoginGuardModal redirectPath={ROUTES.eventDetail(id)} onClose={() => setShowLoginModal(false)} />
       )}
     </div>
   );

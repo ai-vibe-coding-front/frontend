@@ -169,7 +169,7 @@ export default function RecommendationsPage() {
             </p>
 
             {hasResults ? (
-              <EventResultList events={events} />
+              <EventResultList events={events} runId={runId} />
             ) : (
               <div className="bg-[#fefefe] rounded-[18px] shadow-[0px_4px_10px_rgba(63,42,36,0.1)] flex flex-col items-center justify-center gap-4 py-[52px] px-6">
                 <div className="bg-[#f5ede0] rounded-[12px] size-16 flex items-center justify-center">

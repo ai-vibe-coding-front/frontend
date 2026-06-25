@@ -6,6 +6,7 @@ export const ROUTES = {
   location: '/location',
   questions: '/questions',
   recommendations: '/recommendations',
+  recommendationResult: (runId: string) => `/recommendations/${runId}`,
   mypage: '/mypage',
   mypageFavorites: '/mypage/favorites',
   eventDetail: (id: string) => `/events/${id}`,
