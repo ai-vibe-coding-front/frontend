@@ -353,6 +353,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   };
 
   const handleMapDragEnd = (map: kakao.maps.Map) => {
+    if (!lastPositionRef.current) return;
     const center = map.getCenter();
     const lat = center.getLat();
     const lng = center.getLng();
