@@ -85,6 +85,9 @@ export default function ExplorePage() {
     districtName,
     mapScaleMeters,
     selectedEventId,
+    visibleCount,
+    loadMoreEvents,
+    isLoadingMore,
     onMapReady,
     onMapError,
     handleGpsClick,
@@ -92,10 +95,18 @@ export default function ExplorePage() {
     handleZoomIn,
     handleZoomOut,
     handleToggleFavorite,
-  } = useNearbyEventsMap({ persistLocation: true });
+  } = useNearbyEventsMap({ persistLocation: true, excludeExpiredEvents: true });
   const [isLocationPromptDismissed, setIsLocationPromptDismissed] =
     useState(false);
   const selectedCardRef = useRef<HTMLDivElement | null>(null);
+
+  const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+    if (reachedBottom && cultureEvents && visibleCount < cultureEvents.length) {
+      loadMoreEvents();
+    }
+  };
 
   useEffect(() => {
     if (selectedEventId && selectedCardRef.current) {
@@ -108,16 +119,14 @@ export default function ExplorePage() {
 
   const displayedEvents = useMemo(() => {
     if (!cultureEvents) return [];
-    if (!selectedEventId) return cultureEvents.slice(0, 10);
-    const selected = cultureEvents.find(
-      (event) => event.eventItemId === selectedEventId,
-    );
-    if (!selected) return cultureEvents.slice(0, 10);
-    const rest = cultureEvents.filter(
-      (event) => event.eventItemId !== selectedEventId,
-    );
-    return [selected, ...rest].slice(0, 10);
-  }, [cultureEvents, selectedEventId]);
+    if (selectedEventId) {
+      const selected = cultureEvents.find(
+        (event) => event.eventItemId === selectedEventId,
+      );
+      if (selected) return [selected];
+    }
+    return cultureEvents.slice(0, visibleCount);
+  }, [cultureEvents, selectedEventId, visibleCount]);
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -245,6 +254,7 @@ export default function ExplorePage() {
           <div className="absolute top-4 bottom-0 left-1/2 -translate-x-1/2 z-10 p-4 w-full flex flex-col justify-end pointer-events-none">
             {hasGpsLocation ? (
               <div
+                onScroll={handleListScroll}
                 className={`pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] p-[25px] flex flex-col gap-3 overflow-y-auto transition-[max-height] duration-300 ${
                   isEventsExpanded ? "max-h-full" : "max-h-[280px]"
                 }`}
@@ -258,7 +268,7 @@ export default function ExplorePage() {
                 </button>
                 <div className="flex items-end justify-between pb-1 shrink-0">
                   <p className="font-bold text-[20px] text-[#251e19] leading-[30px] tracking-[-0.5px]">
-                    내 주변 추천 {Math.min(cultureEvents?.length ?? 0, 10)}곳
+                    내 주변 추천 {Math.min(cultureEvents?.length ?? 0, visibleCount)}곳
                   </p>
                   <div className="flex items-center gap-1">
                     {districtName && (
@@ -284,34 +294,37 @@ export default function ExplorePage() {
                     이벤트를 불러오는 중...
                   </span>
                 ) : cultureEvents && cultureEvents.length > 0 ? (
-                  displayedEvents.map((event) => {
-                    const isSelected = event.eventItemId === selectedEventId;
-                    return (
-                      <div
-                        key={event.eventItemId}
-                        ref={isSelected ? selectedCardRef : undefined}
-                        className={
-                          isSelected
-                            ? "rounded-[20px] ring-2 ring-[#7d543c]"
-                            : ""
-                        }
-                      >
-                        <EventCard
-                          event={toEventCardData(event)}
-                          shadow={false}
-                          onClick={() =>
-                            router.push(`/events/${event.eventItemId}`)
-                          }
-                          onFavorite={() =>
-                            handleToggleFavorite(
-                              event.eventItemId,
-                              event.isFavorited,
-                            )
-                          }
-                        />
+                  <>
+                    {displayedEvents.map((event) => {
+                      const isSelected =
+                        event.eventItemId === selectedEventId;
+                      return (
+                        <div
+                          key={event.eventItemId}
+                          ref={isSelected ? selectedCardRef : undefined}
+                        >
+                          <EventCard
+                            event={toEventCardData(event)}
+                            shadow={false}
+                            onClick={() =>
+                              router.push(`/events/${event.eventItemId}`)
+                            }
+                            onFavorite={() =>
+                              handleToggleFavorite(
+                                event.eventItemId,
+                                event.isFavorited,
+                              )
+                            }
+                          />
+                        </div>
+                      );
+                    })}
+                    {isLoadingMore && (
+                      <div className="flex justify-center py-2">
+                        <div className="size-5 border-2 border-[#d9cfc5] border-t-[#7d543c] rounded-full animate-spin" />
                       </div>
-                    );
-                  })
+                    )}
+                  </>
                 ) : (
                   <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                     주변에 이벤트를 찾을 수 없습니다

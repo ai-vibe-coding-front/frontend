@@ -4,8 +4,8 @@ import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 
 const MIN_ZOOM_LEVEL = 1;
 const MAX_ZOOM_LEVEL = 14;
-export const NEARBY_EVENTS_RADIUS_KM = 30;
-const NEARBY_EVENTS_LIMIT = 100;
+export const NEARBY_EVENTS_RADIUS_KM = 10;
+const NEARBY_EVENTS_LIMIT = 1000;
 
 export type CultureEvent = {
   eventItemId: string;
@@ -53,7 +53,16 @@ const GPS_PIN_OVERLAY_HTML = `
 
 type UseNearbyEventsMapOptions = {
   persistLocation?: boolean;
+  excludeExpiredEvents?: boolean;
 };
+
+function isEventExpired(event: CultureEvent): boolean {
+  const dateStr = event.endDate ?? event.startDate;
+  if (!dateStr) return false;
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return dateStr < todayStr;
+}
 
 function readStoredLocation(): { lat: number; lng: number } | null {
   try {
@@ -80,12 +89,13 @@ function getHasStoredLocationServerSnapshot(): boolean {
 }
 
 export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
-  const { persistLocation = false } = options;
+  const { persistLocation = false, excludeExpiredEvents = false } = options;
   const router = useRouter();
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
   const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+  const selectedCategoryRef = useRef<string | null>(null);
   const requestIdRef = useRef(0);
   const { getCurrentLocation } = useCurrentLocation();
 
@@ -109,6 +119,17 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const [districtName, setDistrictName] = useState<string | null>(null);
   const [mapScaleMeters, setMapScaleMeters] = useState<number | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const loadMoreEvents = () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setVisibleCount((prev) => prev + 10);
+      setIsLoadingMore(false);
+    }, 400);
+  };
 
   const handleMarkerClick = (event: CultureEvent) => {
     setSelectedEventId(event.eventItemId);
@@ -135,11 +156,15 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   };
 
   const updateCultureEvents = (events: CultureEvent[]) => {
-    setCultureEvents(events);
-    renderEventMarkers(events);
+    const activeEvents = excludeExpiredEvents
+      ? events.filter((event) => !isEventExpired(event))
+      : events;
+    setCultureEvents(activeEvents);
+    renderEventMarkers(activeEvents);
     setSelectedEventId((prev) =>
-      prev && events.some((event) => event.eventItemId === prev) ? prev : null,
+      prev && activeEvents.some((event) => event.eventItemId === prev) ? prev : null,
     );
+    setVisibleCount(10);
   };
 
   const fetchNearbyEvents = async (
@@ -272,6 +297,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
 
   const handleCategorySelect = async (category: string | null) => {
     setSelectedCategory(category);
+    selectedCategoryRef.current = category;
     const position = lastPositionRef.current;
     if (!position) return;
     setIsEventsExpanded(false);
@@ -338,10 +364,24 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     }
   };
 
+  const handleMapDragEnd = (map: kakao.maps.Map) => {
+    if (!lastPositionRef.current) return;
+    const center = map.getCenter();
+    const lat = center.getLat();
+    const lng = center.getLng();
+    lastPositionRef.current = { lat, lng };
+    setSelectedEventId(null);
+    resolveDistrictName(lat, lng);
+    fetchNearbyEvents(lat, lng, selectedCategoryRef.current);
+  };
+
   const onMapReady = (map: kakao.maps.Map) => {
     mapRef.current = map;
     setIsMapReady(true);
     window.kakao.maps.event.addListener(map, "zoom_changed", updateMapScale);
+    window.kakao.maps.event.addListener(map, "dragend", () => {
+      handleMapDragEnd(map);
+    });
     updateMapScale();
     restoreSavedLocation();
   };
@@ -360,6 +400,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     districtName,
     mapScaleMeters,
     selectedEventId,
+    visibleCount,
+    loadMoreEvents,
+    isLoadingMore,
     onMapReady,
     onMapError,
     handleGpsClick,
