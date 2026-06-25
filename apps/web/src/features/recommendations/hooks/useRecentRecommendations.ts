@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { EventCardData } from "@/components/common/EventCard";
+import { RECENT_RECOMMENDATIONS_LIMIT } from "@/features/recommendations/constants";
 import { apiClient } from "@/lib/api-client";
 
 interface RecentRecommendationItem {
@@ -80,7 +81,9 @@ export function useRecentRecommendations(enabled: boolean): UseRecentRecommendat
       setErrorMessage(null);
     });
 
-    apiClient<RecentRecommendationsResponse>("/api/recommendations/recent")
+    apiClient<RecentRecommendationsResponse>(
+      `/api/recommendations/recent?limit=${RECENT_RECOMMENDATIONS_LIMIT}`,
+    )
       .then((data) => {
         if (ignore) return;
         setEvents(data.items.map(toEventCardData));
