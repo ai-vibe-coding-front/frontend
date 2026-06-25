@@ -58,14 +58,8 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
         <main className={mainClassName}>
           <TodayMoodCard
             isLoggedIn={isLoggedIn}
-            userName="회원"
             onCTAClick={isLoggedIn ? goToLocationPermission : goToLogin}
             userName={userName}
-            onCTAClick={
-              isLoggedIn
-                ? goToLocationPermission
-                : () => router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`)
-            }
             onGuestClick={goToLocationPermission}
           />
 
@@ -82,7 +76,9 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
               ) : (
                 <EventCarousel
                   events={recent.events}
-                  onItemClick={(event) => router.push(ROUTES.eventDetail(event.id))}
+                  onItemClick={(event) =>
+                    router.push(ROUTES.eventDetail(event.id))
+                  }
                   onFavorite={recent.toggleFavorite}
                 />
               )}
