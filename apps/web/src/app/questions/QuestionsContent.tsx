@@ -6,8 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { QUESTIONS, type Answers } from "./questions";
 import { GuestLimitModal } from "./GuestLimitModal";
 import { ApiClientError } from "@/lib/api-client";
-import { useExplorationSessionMe } from "./hooks/useExplorationSessionMe";
-import { useRecommendationSubmit } from "./hooks/useRecommendationSubmit";
+import { useExplorationSessionMe } from "@/features/exploration/hooks/useExplorationSessionMe";
+import { useRecommendationSubmit } from "@/features/recommendations/hooks/useRecommendationSubmit";
 
 const slideVariants = {
   enter: (d: number) => ({ x: `${d * 60}%`, opacity: 0 }),
