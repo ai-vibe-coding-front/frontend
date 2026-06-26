@@ -15,7 +15,7 @@ const Q1_ENERGY: Record<string, string> = {
 
 const Q2_MOOD: Record<string, string[]> = {
   warmth: ['힐링'],
-  comfort: ['감성적'],
+  touched: ['감성적'],
   recharge: ['힐링', '차분한'],
   thrill: ['활기찬', '설레는'],
   stimulate: ['호기심'],
@@ -218,7 +218,7 @@ const SKY_LABEL_MAP: Record<string, [string, string]> = {
 
 const Q2_MOOD_WORDS: Record<string, string> = {
   warmth: '따뜻한',
-  comfort: '편안한',
+  touched: '감동적인',
   recharge: '힐링되는',
   thrill: '활기찬',
   stimulate: '호기심 가득한',
