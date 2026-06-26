@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
 import { AnimatePresence, motion } from "framer-motion";
 import { QUESTIONS, type Answers } from "./questions";
 import { GuestLimitModal } from "./GuestLimitModal";
@@ -23,13 +24,34 @@ export function QuestionsContent() {
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [answers, setAnswers] = useState<Answers>({ q1: null, q2: null, q3: null, q4: null });
+  const [answers, setAnswers] = useState<Answers>({
+    q1: null,
+    q2: null,
+    q3: null,
+    q4: null,
+  });
   const [showModal, setShowModal] = useState(false);
+
+  const hasLocation = !!(
+    searchParams.get("lat") &&
+    searchParams.get("lng") &&
+    searchParams.get("nx") &&
+    searchParams.get("ny") &&
+    searchParams.get("stationName")
+  );
+
+  useEffect(() => {
+    if (!hasLocation) {
+      router.replace(ROUTES.location);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: sessionMeData } = useExplorationSessionMe();
   const isBlocked = sessionMeData?.hasUsed ?? false;
 
-  const { mutate: submitAnswers, isPending: isSubmitting } = useRecommendationSubmit();
+  const { mutate: submitAnswers, isPending: isSubmitting } =
+    useRecommendationSubmit();
 
   const question = QUESTIONS[step];
   const isFirst = step === 0;
@@ -58,7 +80,8 @@ export function QuestionsContent() {
         },
         {
           onError: (err) => {
-            if (err instanceof ApiClientError && err.status === 403) setShowModal(true);
+            if (err instanceof ApiClientError && err.status === 403)
+              setShowModal(true);
           },
         },
       );
@@ -81,27 +104,36 @@ export function QuestionsContent() {
     setAnswers((prev) => ({ ...prev, [question.key]: value as never }));
   };
 
+  if (!hasLocation) return null;
+
   return (
-    <main className="h-dvh flex flex-col overflow-hidden bg-[#fbf9f4]">
+    <main className="relative h-dvh flex flex-col overflow-hidden bg-[#fbf9f4]">
+      {isSubmitting && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[rgba(251,249,244,0.95)]">
+          <div className="size-10 rounded-full border-4 border-[#c2ede7] border-t-[#5bbfb0] animate-spin" />
+          <p className="font-semibold text-[15px] text-[#251e19] tracking-[-0.3px]">
+            맞춤 행사를 찾고 있어요
+          </p>
+        </div>
+      )}
       {showModal && <GuestLimitModal onClose={() => setShowModal(false)} />}
 
       {/* TopAppBar */}
       <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
         <button
           type="button"
-          onClick={() => router.push("/")}
+          onClick={() => router.push(ROUTES.home)}
           className="size-4 shrink-0"
         >
           <img src="/icons/back-arrow.svg" alt="홈으로" className="size-full" />
         </button>
-        <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+        <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
           큐레이션
         </p>
       </div>
 
       {/* Content */}
       <div className="min-h-0 flex-1 flex flex-col px-6 pb-6 overflow-hidden">
-
         {/* 진행바 */}
         <div className="flex flex-col pt-4 pb-1 shrink-0">
           <div className="bg-[#c2ede7] h-[5px] rounded-full w-full">
@@ -111,8 +143,12 @@ export function QuestionsContent() {
             />
           </div>
           <div className="flex items-center justify-between pt-2">
-            <span className="text-[12px] text-[#8c6e63] leading-[18px]">질문 {step + 1}/{TOTAL_STEPS}</span>
-            <span className="text-[12px] text-[#8c6e63] leading-[18px]">{TOTAL_STEPS - step - 1}단계 남음</span>
+            <span className="text-[12px] text-[#8c6e63] leading-[18px]">
+              질문 {step + 1}/{TOTAL_STEPS}
+            </span>
+            <span className="text-[12px] text-[#8c6e63] leading-[18px]">
+              {TOTAL_STEPS - step - 1}단계 남음
+            </span>
           </div>
         </div>
 
@@ -137,7 +173,11 @@ export function QuestionsContent() {
               </div>
 
               {/* 선택지 */}
-              <div className="flex flex-col gap-3 overflow-y-auto" role="radiogroup" aria-label={question.question}>
+              <div
+                className="flex flex-col gap-3 overflow-y-auto"
+                role="radiogroup"
+                aria-label={question.question}
+              >
                 {question.choices.map((choice) => {
                   const isActive = currentAnswer === choice.value;
                   return (
@@ -163,9 +203,11 @@ export function QuestionsContent() {
                           <div className="border-2 border-[#ded0be] size-[22px] rounded-full" />
                         )}
                       </div>
-                      <span className={`flex-1 font-medium text-[15px] tracking-[-0.3px] leading-[22.5px] ${
-                        isActive ? "text-[#245b6b]" : "text-[#3f2a24]"
-                      }`}>
+                      <span
+                        className={`flex-1 font-medium text-[15px] tracking-[-0.3px] leading-[22.5px] ${
+                          isActive ? "text-[#245b6b]" : "text-[#3f2a24]"
+                        }`}
+                      >
                         {choice.label}
                       </span>
                     </button>
@@ -186,7 +228,9 @@ export function QuestionsContent() {
               onClick={goPrev}
               className="flex-1 bg-[#fefefe] border border-[#8edfd2] rounded-[16px] py-[13px] flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)]"
             >
-              <span className="font-semibold text-[14px] text-[#245b6b] leading-[21px]">이전</span>
+              <span className="font-semibold text-[14px] text-[#245b6b] leading-[21px]">
+                이전
+              </span>
             </button>
           )}
           <button
@@ -194,7 +238,9 @@ export function QuestionsContent() {
             onClick={goNext}
             disabled={!currentAnswer || isSubmitting}
             className={`flex-1 bg-[#8edfd2] rounded-[16px] py-3 flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)] transition-opacity ${
-              currentAnswer && !isSubmitting ? "opacity-100" : "opacity-50 cursor-not-allowed"
+              currentAnswer && !isSubmitting
+                ? "opacity-100"
+                : "opacity-50 cursor-not-allowed"
             }`}
           >
             <span className="font-semibold text-[14px] text-[#245b6b] leading-[21px]">

@@ -15,6 +15,7 @@ export function useCurrentLocation() {
           resolve({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
         (err) => reject(err),
+        { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false },
       );
     });
   };

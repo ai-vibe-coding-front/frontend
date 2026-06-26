@@ -191,6 +191,7 @@ export async function saveRecommendation(params: {
 
     for (const answer of params.answers) {
       const qk = QUESTION_KEY_MAP[answer.questionKey];
+      if (!qk) throw new Error(`Unknown questionKey: ${answer.questionKey}`);
       await tx.explorationAnswer.upsert({
         where: {
           explorationSessionId_questionKey: {
