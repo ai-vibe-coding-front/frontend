@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { memo, useState } from "react";
 import Image from "next/image";
 import {
   CategoryBadge,
@@ -131,7 +131,7 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
   </svg>
 );
 
-export function EventCard({
+export const EventCard = memo(function EventCard({
   event,
   onClick,
   onFavorite,
@@ -225,4 +225,12 @@ export function EventCard({
       </div>
     </div>
   );
-}
+},
+(prev, next) =>
+  prev.event.id === next.event.id &&
+  prev.event.isFavorite === next.event.isFavorite &&
+  prev.event.imageUrl === next.event.imageUrl &&
+  prev.favoriteDisabled === next.favoriteDisabled &&
+  prev.isEnded === next.isEnded &&
+  prev.shadow === next.shadow,
+);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { EventCard } from "@/components/common/EventCard";
@@ -21,6 +21,11 @@ export function EventResultList({ events, runId }: EventResultListProps) {
   const queryClient = useQueryClient();
   // 카드별 in-flight 요청 추적 → 같은 카드 연타 시 중복 호출 방지
   const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
+  // handleFavorite를 useCallback으로 고정하기 위한 pendingIds 동기 참조 (state는 렌더링용)
+  const pendingIdsRef = useRef(pendingIds);
+  useEffect(() => {
+    pendingIdsRef.current = pendingIds;
+  }, [pendingIds]);
   // 401 외 실패 카드 추적 → 카드별 독립적으로 에러 메시지 노출 (다른 카드 상태에 영향 없음)
   const [errorIds, setErrorIds] = useState<Set<string>>(() => new Set());
   // 비로그인 클릭 또는 401 응답 시 로그인 모달을 띄울 대상 eventId (#131 FavoriteButton 패턴과 동일)
@@ -30,7 +35,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
     typeof document !== "undefined" &&
     document.cookie.split(";").some((c) => c.trim().startsWith("isLoggedIn="));
 
-  const setCachedFavorite = (eventId: string, isFavorited: boolean) => {
+  const setCachedFavorite = useCallback((eventId: string, isFavorited: boolean) => {
     queryClient.setQueryData<RecommendationRunDetail>(
       recommendationRunKey(runId),
       (old) => {
@@ -42,15 +47,15 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         return { ...old, items };
       },
     );
-  };
+  }, [queryClient, runId]);
 
-  const handleFavorite = async (eventId: string, isFavorite: boolean | undefined) => {
+  const handleFavorite = useCallback(async (eventId: string, isFavorite: boolean | undefined) => {
     if (!isLoggedIn()) {
       setAuthRequiredEventId(eventId);
       return;
     }
 
-    if (pendingIds.has(eventId)) return;
+    if (pendingIdsRef.current.has(eventId)) return;
 
     setPendingIds((current) => new Set(current).add(eventId));
     setErrorIds((current) => {
@@ -91,7 +96,12 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         return next;
       });
     }
-  };
+  }, [setCachedFavorite]);
+
+  const handleClickEvent = useCallback(
+    (eventId: string) => router.push(ROUTES.eventDetail(eventId)),
+    [router],
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -99,7 +109,7 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         <div key={event.id} className="relative">
           <EventCard
             event={event}
-            onClick={() => router.push(ROUTES.eventDetail(event.id))}
+            onClick={() => handleClickEvent(event.id)}
             onFavorite={() => handleFavorite(event.id, event.isFavorite)}
             favoriteDisabled={pendingIds.has(event.id)}
           />
