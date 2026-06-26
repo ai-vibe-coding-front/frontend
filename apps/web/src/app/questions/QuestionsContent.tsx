@@ -121,12 +121,12 @@ export function QuestionsContent() {
       <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
         <button
           type="button"
-          onClick={() => router.push("/")}
+          onClick={() => router.push(ROUTES.home)}
           className="size-4 shrink-0"
         >
           <img src="/icons/back-arrow.svg" alt="홈으로" className="size-full" />
         </button>
-        <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+        <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
           큐레이션
         </p>
       </div>
