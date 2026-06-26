@@ -2,7 +2,11 @@
 const config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['var(--font-pretendard)', 'system-ui', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 };
