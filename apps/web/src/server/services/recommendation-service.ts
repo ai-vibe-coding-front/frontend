@@ -221,7 +221,7 @@ const Q2_MOOD_WORDS: Record<string, string> = {
   comfort: '편안한',
   recharge: '힐링되는',
   thrill: '활기찬',
-  stimulate: '감성적인',
+  stimulate: '호기심 가득한',
 };
 
 const Q4_COMPANION_WORDS: Record<string, string> = {
