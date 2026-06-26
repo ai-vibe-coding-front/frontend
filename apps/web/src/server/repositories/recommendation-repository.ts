@@ -151,26 +151,24 @@ export async function saveRecommendation(params: {
       data: { status: "RECOMMENDATION_REQUESTED" },
     });
 
-    await Promise.all(
-      params.answers.map((answer) => {
-        const qk = QUESTION_KEY_MAP[answer.questionKey];
-        if (!qk) throw new Error(`Unknown questionKey: ${answer.questionKey}`);
-        return tx.explorationAnswer.upsert({
-          where: {
-            explorationSessionId_questionKey: {
-              explorationSessionId: params.sessionId,
-              questionKey: qk,
-            },
-          },
-          update: { answerValue: answer.answerValue },
-          create: {
+    for (const answer of params.answers) {
+      const qk = QUESTION_KEY_MAP[answer.questionKey];
+      if (!qk) throw new Error(`Unknown questionKey: ${answer.questionKey}`);
+      await tx.explorationAnswer.upsert({
+        where: {
+          explorationSessionId_questionKey: {
             explorationSessionId: params.sessionId,
             questionKey: qk,
-            answerValue: answer.answerValue,
           },
-        });
-      }),
-    );
+        },
+        update: { answerValue: answer.answerValue },
+        create: {
+          explorationSessionId: params.sessionId,
+          questionKey: qk,
+          answerValue: answer.answerValue,
+        },
+      });
+    }
 
     await tx.explorationSession.update({
       where: { id: params.sessionId },

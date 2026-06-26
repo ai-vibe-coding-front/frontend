@@ -44,6 +44,7 @@ export function QuestionsContent() {
     if (!hasLocation) {
       router.replace(ROUTES.location);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { data: sessionMeData } = useExplorationSessionMe();
