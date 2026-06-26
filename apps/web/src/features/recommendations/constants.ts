@@ -1,0 +1,1 @@
+export const RECENT_RECOMMENDATIONS_LIMIT = 7;

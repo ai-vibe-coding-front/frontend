@@ -5,81 +5,46 @@ import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { TodayMoodCard } from "@/features/recommendations/TodayMoodCard";
 import { EventCarousel } from "@/features/recommendations/EventCarousel";
-import type { EventCardData } from "@/components/common/EventCard";
+import { useRecentRecommendations } from "@/features/recommendations/hooks/useRecentRecommendations";
 import { ROUTES } from "@/constants/routes";
 
-const MOCK_EVENTS: EventCardData[] = [
-  {
-    id: "1",
-    realmName: "전시",
-    title: "빛으로 쓴 편지 — 사진전",
-    place: "성수 갤러리아 포레",
-    startDate: new Date("2026-06-01"),
-    endDate: new Date("2026-06-30"),
-    imageUrl: null,
-    isFavorite: true,
-  },
-  {
-    id: "2",
-    realmName: "음악/콘서트",
-    title: "서울 재즈 페스티벌 2026",
-    place: "올림픽공원 88잔디마당",
-    startDate: new Date("2026-05-23"),
-    endDate: new Date("2026-05-25"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-  {
-    id: "3",
-    realmName: "연극",
-    title: "햄릿 — 국립극단",
-    place: "명동예술극장",
-    startDate: new Date("2026-06-10"),
-    endDate: new Date("2026-07-05"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-  {
-    id: "4",
-    realmName: "행사/축제",
-    title: "한강 달빛 마켓",
-    place: "여의도 한강공원",
-    startDate: new Date("2026-06-14"),
-    endDate: new Date("2026-06-15"),
-    imageUrl: null,
-    isFavorite: true,
-  },
-  {
-    id: "5",
-    realmName: "뮤지컬/오페라",
-    title: "레미제라블",
-    place: "예술의전당 오페라극장",
-    startDate: new Date("2026-06-20"),
-    endDate: new Date("2026-08-31"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-  {
-    id: "6",
-    realmName: "무용/발레",
-    title: "지젤 — 국립발레단",
-    place: "예술의전당 CJ토월극장",
-    startDate: new Date("2026-06-25"),
-    endDate: new Date("2026-06-29"),
-    imageUrl: null,
-    isFavorite: false,
-  },
-];
+import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
+
+const FALLBACK_USER_NAME = "회원";
 
 interface HomeContentProps {
   isLoggedIn: boolean;
 }
 
+function RecentRecommendationsEmptyState() {
+  return (
+    <div className="flex min-h-[132px] flex-col items-center justify-center gap-2 rounded-[20px] bg-white px-6 py-7 text-center shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)]">
+      <p className="font-bold text-[17px] leading-6 text-[#251e19]">
+        아직 추천 내역이 없어요
+      </p>
+      <p className="text-[14px] leading-5 text-[#8c6e63]">
+        지금 기분에 맞는 문화생활을 추천받아보세요.
+      </p>
+    </div>
+  );
+}
+
 export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
+  const recent = useRecentRecommendations(isLoggedIn);
+  const mainClassName = [
+    "flex-1 overflow-y-auto no-scrollbar px-6 pb-4 flex flex-col gap-4",
+    !isLoggedIn ? "justify-center" : "",
+  ].join(" ");
+  const { user } = useCurrentUser(isLoggedIn);
+  const userName = user?.nickname || FALLBACK_USER_NAME;
 
   const goToLocationPermission = () => {
     router.push(ROUTES.locationPermission);
+  };
+
+  const goToLogin = () => {
+    router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`);
   };
 
   return (
@@ -89,15 +54,11 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
           <Header />
         </header>
 
-        <main className={`flex-1 overflow-y-auto no-scrollbar px-6 pb-4 flex flex-col gap-4 ${!isLoggedIn ? "justify-center" : ""}`}>
+        <main className={mainClassName}>
           <TodayMoodCard
             isLoggedIn={isLoggedIn}
-            userName="회원"
-            onCTAClick={
-              isLoggedIn
-                ? goToLocationPermission
-                : () => router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`)
-            }
+            onCTAClick={isLoggedIn ? goToLocationPermission : goToLogin}
+            userName={userName}
             onGuestClick={goToLocationPermission}
           />
 
@@ -106,7 +67,24 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
               <h2 className="font-bold text-base text-[#3f2a24] leading-6">
                 최근 추천 결과
               </h2>
-              <EventCarousel events={MOCK_EVENTS} />
+
+              {recent.isLoading ? (
+                <div className="h-[286px] w-full animate-pulse rounded-[20px] bg-[#eee7df]" />
+              ) : recent.errorMessage ? (
+                <p className="text-center text-[13px] leading-5 text-red-600">
+                  {recent.errorMessage}
+                </p>
+              ) : recent.events.length === 0 ? (
+                <RecentRecommendationsEmptyState />
+              ) : (
+                <EventCarousel
+                  events={recent.events}
+                  onItemClick={(event) =>
+                    router.push(ROUTES.eventDetail(event.id))
+                  }
+                  onFavorite={recent.toggleFavorite}
+                />
+              )}
             </div>
           )}
         </main>

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { QUESTIONS, type Answers } from "./questions";
 import { GuestLimitModal } from "./GuestLimitModal";
-import { apiClient, ApiClientError } from "@/lib/api-client";
+import { ApiClientError } from "@/lib/api-client";
+import { useExplorationSessionMe } from "@/features/exploration/hooks/useExplorationSessionMe";
+import { useRecommendationSubmit } from "@/features/recommendations/hooks/useRecommendationSubmit";
 
 const slideVariants = {
   enter: (d: number) => ({ x: `${d * 60}%`, opacity: 0 }),
@@ -22,68 +24,44 @@ export function QuestionsContent() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState<Answers>({ q1: null, q2: null, q3: null, q4: null });
-  const [isBlocked, setIsBlocked] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    apiClient<{ hasUsed: boolean }>('/api/exploration-sessions/me')
-      .then(({ hasUsed }) => {
-        if (hasUsed) setIsBlocked(true);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: sessionMeData } = useExplorationSessionMe();
+  const isBlocked = sessionMeData?.hasUsed ?? false;
+
+  const { mutate: submitAnswers, isPending: isSubmitting } = useRecommendationSubmit();
 
   const question = QUESTIONS[step];
   const isFirst = step === 0;
   const isLast = step === TOTAL_STEPS - 1;
   const currentAnswer = answers[question.key];
 
-  const goNext = async () => {
+  const goNext = () => {
     if (!currentAnswer || isBlocked || isSubmitting) return;
     if (isLast) {
       const lat = searchParams.get("lat");
       const lng = searchParams.get("lng");
       const nx = searchParams.get("nx");
       const ny = searchParams.get("ny");
-
-      setIsSubmitting(true);
-      try {
-        const session = await apiClient<{ explorationSessionId: string }>('/api/exploration-sessions', {
-          method: 'POST',
-          body: JSON.stringify({
-            location: {
-              lat: lat ? parseFloat(lat) : undefined,
-              lng: lng ? parseFloat(lng) : undefined,
-              nx: nx ? parseInt(nx, 10) : undefined,
-              ny: ny ? parseInt(ny, 10) : undefined,
-              sido: searchParams.get("sido") ?? undefined,
-              address: searchParams.get("label") ?? undefined,
-              stationName: searchParams.get("stationName") ?? undefined,
-            },
-          }),
-        });
-        const recommendation = await apiClient<{ runId: string }>('/api/recommendations', {
-          method: 'POST',
-          body: JSON.stringify({
-            sessionId: session.explorationSessionId,
-            answers: [
-              { questionKey: 'q1', answerValue: answers.q1 },
-              { questionKey: 'q2', answerValue: answers.q2 },
-              { questionKey: 'q3', answerValue: answers.q3 },
-              { questionKey: 'q4', answerValue: answers.q4 },
-            ],
-          }),
-        });
-        router.push(`/recommendations/${recommendation.runId}`);
-      } catch (err) {
-        if (err instanceof ApiClientError && err.status === 403) {
-          setIsBlocked(true);
-          setShowModal(true);
-        }
-      } finally {
-        setIsSubmitting(false);
-      }
+      submitAnswers(
+        {
+          answers,
+          location: {
+            lat: lat ? parseFloat(lat) : undefined,
+            lng: lng ? parseFloat(lng) : undefined,
+            nx: nx ? parseInt(nx, 10) : undefined,
+            ny: ny ? parseInt(ny, 10) : undefined,
+            sido: searchParams.get("sido") ?? undefined,
+            address: searchParams.get("label") ?? undefined,
+            stationName: searchParams.get("stationName") ?? undefined,
+          },
+        },
+        {
+          onError: (err) => {
+            if (err instanceof ApiClientError && err.status === 403) setShowModal(true);
+          },
+        },
+      );
     } else {
       setDirection(1);
       setStep((s) => s + 1);

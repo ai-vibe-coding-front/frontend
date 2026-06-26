@@ -21,7 +21,7 @@ export function generateSessionKey(): string {
   return randomBytes(32).toString('hex');
 }
 
-export async function createGuestSession(
+export async function createExplorationSessionForUserOrGuest(
   sessionKey: string,
   location: {
     lat?: number;
@@ -32,11 +32,13 @@ export async function createGuestSession(
     address?: string;
     stationName?: string;
   },
+  userId?: string | null,
 ) {
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30일
   return createExplorationSession({
     sessionKey,
-    isGuest: true,
+    userId: userId ?? undefined,
+    isGuest: userId == null,
     expiresAt,
     ...location,
   });
