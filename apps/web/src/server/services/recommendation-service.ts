@@ -14,11 +14,11 @@ const Q1_ENERGY: Record<string, string> = {
 };
 
 const Q2_MOOD: Record<string, string[]> = {
-  warmth: ['힐링', '감성적'],
-  comfort: ['힐링', '감성적'],
+  warmth: ['힐링'],
+  comfort: ['감성적'],
   recharge: ['힐링', '차분한'],
-  thrill: ['활기찬'],
-  stimulate: ['감성적', '차분한'],
+  thrill: ['활기찬', '설레는'],
+  stimulate: ['호기심'],
 };
 
 const Q3_REALM: Record<string, string[]> = {
