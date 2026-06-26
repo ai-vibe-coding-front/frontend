@@ -58,7 +58,7 @@ export default function EventDetailPage() {
 
   useEffect(() => {
     setImageFailed(false);
-  }, [id]);
+  }, [id, event?.imageUrl]);
 
   const { data: event, isPending, error } = useEventDetail(id);
 
