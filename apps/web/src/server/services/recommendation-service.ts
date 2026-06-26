@@ -6,14 +6,6 @@ import {
 } from '@/server/repositories/recommendation-repository';
 import type { EventCandidate, ScoredEvent } from '@/server/repositories/recommendation-repository';
 
-export const FALLBACK_LOCATION = {
-  nx: 60,
-  ny: 127,
-  lat: 37.5665,
-  lng: 126.978,
-  sido: '서울',
-  stationName: '중구',
-} as const;
 
 const Q1_ENERGY: Record<string, string> = {
   high: '고에너지',
@@ -80,8 +72,8 @@ const INDOOR_BONUS = 3;
 export function scoreAndRankEvents(
   candidates: EventCandidate[],
   answers: Record<string, string>,
-  userLat: number,
-  userLng: number,
+  userLat: number | null,
+  userLng: number | null,
   indoorForced: boolean = false,
 ): ScoredEvent[] {
   const energyTag = Q1_ENERGY[answers['q1']] ?? null;
@@ -132,7 +124,7 @@ export function scoreAndRankEvents(
     }
 
     const distanceKm =
-      event.lat != null && event.lng != null
+      userLat != null && userLng != null && event.lat != null && event.lng != null
         ? calcDistanceKm(userLat, userLng, event.lat, event.lng)
         : null;
 
