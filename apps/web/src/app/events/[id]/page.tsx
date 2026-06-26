@@ -56,11 +56,11 @@ export default function EventDetailPage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
+  const { data: event, isPending, error } = useEventDetail(id);
+
   useEffect(() => {
     setImageFailed(false);
   }, [id, event?.imageUrl]);
-
-  const { data: event, isPending, error } = useEventDetail(id);
 
   if (!id) notFound();
 
