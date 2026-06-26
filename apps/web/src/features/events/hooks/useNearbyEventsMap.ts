@@ -368,6 +368,11 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
 
       if (response.status === 409) return;
 
+      if (response.status === 404 && isFavorited) {
+        const body = await response.json().catch(() => null);
+        if (body?.errorCode === "FAVORITE_NOT_FOUND") return;
+      }
+
       if (!response.ok) throw new Error("관심 행사 설정 요청이 실패했습니다.");
     } catch (err) {
       console.error("관심 행사 설정에 실패했습니다.", err);
