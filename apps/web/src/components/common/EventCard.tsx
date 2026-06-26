@@ -66,6 +66,8 @@ interface EventCardProps {
   shadow?: boolean;
   /** 행사 종료 상태 */
   isEnded?: boolean;
+  /** 찜 요청 처리 중일 때 좋아요 버튼 비활성화 */
+  favoriteDisabled?: boolean;
 }
 
 const PinIcon = () => (
@@ -135,9 +137,10 @@ export function EventCard({
   onFavorite,
   shadow = true,
   isEnded = false,
+  favoriteDisabled = false,
 }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
-  // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백한다.
+  // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(event.imageUrl) && !imageFailed;
 
@@ -158,16 +161,14 @@ export function EventCard({
     >
       {/* 썸네일 영역: 높이 고정(192px) + absolute 레이어로 이미지/배지/그라디언트를 쌓는 구조 */}
       <div className="relative h-[192px] w-full">
-        {event.imageUrl ? (
+        {showImage ? (
           <Image
-            src={event.imageUrl}
+            src={event.imageUrl as string}
             alt={event.title}
             fill
             sizes="100vw"
             className="object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
+            onError={() => setImageFailed(true)}
           />
         ) : (
           // imageUrl이 없거나 로드 실패한 경우 공통 placeholder 배경
@@ -194,10 +195,8 @@ export function EventCard({
         </div>
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onFavorite?.();
-          }}
+          onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
+          disabled={favoriteDisabled}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
           className={`absolute top-3 right-3 z-20 ${event.isFavorite ? "bg-[rgba(240,228,212,0.85)]" : "bg-[rgba(255,255,255,0.85)]"} rounded-[14px] size-8 flex items-center justify-center`}
