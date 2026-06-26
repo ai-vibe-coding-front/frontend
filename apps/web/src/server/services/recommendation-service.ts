@@ -147,7 +147,7 @@ export function scoreAndRankEvents(
   });
 }
 
-const NEARBY_KM = 30;
+const NEARBY_KM = 10;
 const MAX_RESULTS = 7;
 
 const HTML_ENTITY_MAP: Record<string, string> = {
@@ -197,16 +197,10 @@ export function filterAndSort(scored: ScoredEvent[]): {
   items: ScoredEvent[];
   nearbyExpanded: boolean;
 } {
-  const withDistance = scored.filter((e) => e.distanceKm !== null);
-  const noDistance = scored.filter((e) => e.distanceKm === null);
-
-  const nearby = sortScored(withDistance.filter((e) => e.distanceKm! <= NEARBY_KM));
-  if (nearby.length >= MAX_RESULTS) {
-    return { items: nearby.slice(0, MAX_RESULTS), nearbyExpanded: false };
-  }
-
-  const expanded = sortScored([...withDistance, ...noDistance]);
-  return { items: expanded.slice(0, MAX_RESULTS), nearbyExpanded: true };
+  const nearby = sortScored(
+    scored.filter((e) => e.distanceKm !== null && e.distanceKm <= NEARBY_KM),
+  );
+  return { items: nearby.slice(0, MAX_RESULTS), nearbyExpanded: false };
 }
 
 const SKY_LABEL_MAP: Record<string, [string, string]> = {
