@@ -54,6 +54,7 @@ export default function EventDetailPage() {
   const id = typeof params.id === 'string' ? params.id : '';
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const { data: event, isPending, error } = useEventDetail(id);
 
@@ -95,6 +96,8 @@ export default function EventDetailPage() {
     window.open(event.bookingUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const showImage = Boolean(event.imageUrl) && !imageFailed;
+
   const period =
     event.startDate && event.endDate
       ? `${event.startDate} — ${event.endDate}`
@@ -124,10 +127,10 @@ export default function EventDetailPage() {
 
           {/* 메인 이미지 */}
           <div className="relative rounded-[26px] shadow-[0px_4px_20px_0px_rgba(63,42,36,0.06)] overflow-hidden h-[298.5px] w-full shrink-0">
-            {event.imageUrl ? (
-              <Image src={event.imageUrl} alt={event.title} fill sizes="390px" className="object-cover" />
+            {showImage ? (
+              <Image src={event.imageUrl as string} alt={event.title} fill sizes="390px" className="object-cover" onError={() => setImageFailed(true)} />
             ) : (
-              <div className="w-full h-full bg-[#d9cfc5]" />
+              <div className="w-full h-full bg-[#d9cfc5]" aria-hidden="true" />
             )}
           </div>
 
