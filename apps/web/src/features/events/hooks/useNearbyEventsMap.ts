@@ -41,6 +41,16 @@ const GPS_PIN_OVERLAY_HTML = `
   </svg>
 `;
 
+const ACTIVE_MARKER_FILL = "#8edfd2";
+
+function createPinMarkerImage(fill: string): kakao.maps.MarkerImage {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 30"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.373 0 0 5.373 0 12C0 19.2 12 30 12 30C12 30 24 19.2 24 12C24 5.373 18.627 0 12 0ZM12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16Z" fill="${fill}"/></svg>`;
+  return new window.kakao.maps.MarkerImage(
+    `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+    new window.kakao.maps.Size(24, 30),
+  );
+}
+
 type UseNearbyEventsMapOptions = {
   persistLocation?: boolean;
   excludeExpiredEvents?: boolean;
@@ -74,8 +84,11 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const { persistLocation = false, excludeExpiredEvents = false } = options;
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const gpsOverlayRef = useRef<kakao.maps.CustomOverlay | null>(null);
-  const eventMarkersRef = useRef<kakao.maps.Marker[]>([]);
+  const eventMarkersRef = useRef<
+    { eventItemId: string; marker: kakao.maps.Marker }[]
+  >([]);
   const lastPositionRef = useRef<{ lat: number; lng: number } | null>(null);
+  const gpsPositionRef = useRef<{ lat: number; lng: number } | null>(null);
   const selectedCategoryRef = useRef<string | null>(null);
   const { getCurrentLocation } = useCurrentLocation();
 
@@ -88,6 +101,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     isLoadingMore,
     loadMoreEvents,
     favoriteError,
+    eventsError,
     fetchEvents,
     handleToggleFavorite,
   } = useNearbyEvents({ excludeExpiredEvents });
@@ -119,31 +133,36 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   };
 
   const renderEventMarkers = (events: CultureEvent[]) => {
-    eventMarkersRef.current.forEach((marker) => marker.setMap(null));
+    eventMarkersRef.current.forEach(({ marker }) => marker.setMap(null));
     eventMarkersRef.current = [];
 
     const map = mapRef.current;
     if (!map) return;
 
     eventMarkersRef.current = events.map((event) => {
+      const isSelected = event.eventItemId === selectedEventId;
       const marker = new window.kakao.maps.Marker({
         position: new window.kakao.maps.LatLng(event.lat, event.lng),
         map,
+        ...(isSelected
+          ? { image: createPinMarkerImage(ACTIVE_MARKER_FILL) }
+          : {}),
       });
       window.kakao.maps.event.addListener(marker, "click", () => {
         handleMarkerClick(event);
       });
-      return marker;
+      return { eventItemId: event.eventItemId, marker };
     });
   };
 
   // cultureEvents는 데이터 hook(useNearbyEvents)이 관리한다.
   // 지도 마커 렌더링은 그 결과(외부 Kakao 지도 시스템과의 동기화)에 반응하는 지도 hook의 책임이다.
+  // 선택 상태가 바뀌어도 다시 그려야 비선택 마커가 카카오 기본 핀으로 보인다.
   useEffect(() => {
     if (!cultureEvents) return;
     renderEventMarkers(cultureEvents);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cultureEvents]);
+  }, [cultureEvents, selectedEventId]);
 
   const resolveDistrictName = (lat: number, lng: number) => {
     if (!window.kakao.maps.services) {
@@ -192,6 +211,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     gpsOverlayRef.current.setMap(map);
     setHasGpsLocation(true);
     lastPositionRef.current = { lat, lng };
+    gpsPositionRef.current = { lat, lng };
     resolveDistrictName(lat, lng);
   };
 
@@ -255,11 +275,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     });
   };
 
-  const handleMapDragEnd = (map: kakao.maps.Map) => {
-    if (!lastPositionRef.current) return;
-    const center = map.getCenter();
-    const lat = center.getLat();
-    const lng = center.getLng();
+  const handleMapClick = () => {
+    if (!gpsPositionRef.current) return;
+    const { lat, lng } = gpsPositionRef.current;
     lastPositionRef.current = { lat, lng };
     setRawSelectedEventId(null);
     resolveDistrictName(lat, lng);
@@ -270,8 +288,8 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     mapRef.current = map;
     setIsMapReady(true);
     window.kakao.maps.event.addListener(map, "zoom_changed", updateMapScale);
-    window.kakao.maps.event.addListener(map, "dragend", () => {
-      handleMapDragEnd(map);
+    window.kakao.maps.event.addListener(map, "click", () => {
+      handleMapClick();
     });
     updateMapScale();
     restoreSavedLocation();
@@ -303,5 +321,6 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     handleZoomOut,
     handleToggleFavorite,
     favoriteError,
+    eventsError,
   };
 }

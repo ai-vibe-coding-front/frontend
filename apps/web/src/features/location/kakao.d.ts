@@ -26,16 +26,20 @@ declare namespace kakao.maps {
     getBounds(): LatLngBounds;
   }
 
+  interface MouseEvent {
+    latLng: LatLng;
+  }
+
   namespace event {
     function addListener(
       target: object,
       type: string,
-      handler: () => void,
+      handler: (event: MouseEvent) => void,
     ): void;
     function removeListener(
       target: object,
       type: string,
-      handler: () => void,
+      handler: (event: MouseEvent) => void,
     ): void;
   }
 
@@ -53,15 +57,25 @@ declare namespace kakao.maps {
     setPosition(position: LatLng): void;
   }
 
+  class Size {
+    constructor(width: number, height: number);
+  }
+
+  class MarkerImage {
+    constructor(src: string, size: Size);
+  }
+
   interface MarkerOptions {
     position: LatLng;
     map?: Map;
+    image?: MarkerImage;
   }
 
   class Marker {
     constructor(options: MarkerOptions);
     setMap(map: Map | null): void;
     setPosition(position: LatLng): void;
+    setImage(image: MarkerImage): void;
   }
 
   namespace services {

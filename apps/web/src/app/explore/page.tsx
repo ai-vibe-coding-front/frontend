@@ -71,6 +71,19 @@ function ExploreSkeleton() {
   );
 }
 
+function EventCardSkeleton() {
+  return (
+    <div className="bg-white rounded-[20px] w-full overflow-hidden shrink-0 animate-pulse">
+      <div className="h-[192px] w-full bg-[#d9cfc5]" />
+      <div className="flex flex-col gap-1.5 px-4 pt-3 pb-4">
+        <div className="h-[18px] w-3/4 bg-[#d9cfc5] rounded-[4px]" />
+        <div className="h-[14px] w-1/2 bg-[#d9cfc5] rounded-[4px]" />
+        <div className="h-[14px] w-1/3 bg-[#d9cfc5] rounded-[4px]" />
+      </div>
+    </div>
+  );
+}
+
 export default function ExplorePage() {
   const router = useRouter();
   const {
@@ -96,14 +109,17 @@ export default function ExplorePage() {
     handleZoomOut,
     handleToggleFavorite,
     favoriteError,
+    eventsError,
   } = useNearbyEventsMap({ persistLocation: true, excludeExpiredEvents: true });
   const [isLocationPromptDismissed, setIsLocationPromptDismissed] =
     useState(false);
   const selectedCardRef = useRef<HTMLDivElement | null>(null);
 
   const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (selectedEventId) return;
     const el = e.currentTarget;
-    const reachedBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
+    const reachedBottom =
+      el.scrollTop + el.clientHeight >= el.scrollHeight - 50;
     if (reachedBottom && cultureEvents && visibleCount < cultureEvents.length) {
       loadMoreEvents();
     }
@@ -252,10 +268,10 @@ export default function ExplorePage() {
           </div>
 
           {/* 하단 정보 카드 */}
-          <div className="absolute top-4 bottom-0 left-1/2 -translate-x-1/2 z-10 p-4 w-full flex flex-col justify-end pointer-events-none">
+          <div className="absolute top-4 bottom-0 left-1/2 -translate-x-1/2 z-10 pt-4 pb-0 px-0 w-full flex flex-col justify-end pointer-events-none">
             {hasGpsLocation ? (
               <div
-                className={`pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden transition-[max-height] duration-300 ${
+                className={`pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-t-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden transition-[max-height] duration-300 ${
                   isEventsExpanded ? "max-h-full" : "max-h-[280px]"
                 }`}
               >
@@ -268,8 +284,8 @@ export default function ExplorePage() {
                     <span className="w-10 h-1 rounded-full bg-[rgba(207,196,189,0.6)]" />
                   </button>
                   <div className="flex items-end justify-between pb-1">
-                    <p className="font-bold text-[20px] text-[#251e19] leading-[30px] tracking-[-0.5px]">
-                      내 주변 추천 {Math.min(cultureEvents?.length ?? 0, visibleCount)}곳
+                    <p className="font-bold text-[18px] text-[#251e19] leading-[30px] tracking-[-0.5px]">
+                      내 주변 추천 문화 생활
                     </p>
                     <div className="flex items-center gap-1">
                       {districtName && (
@@ -300,12 +316,14 @@ export default function ExplorePage() {
 
                 <div
                   onScroll={handleListScroll}
-                  className="flex-1 overflow-y-auto px-[25px] pb-[25px] flex flex-col gap-3"
+                  className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-[25px] pb-[25px] flex flex-col gap-3"
                 >
-                  {isLoadingEvents ? (
-                    <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
-                      이벤트를 불러오는 중...
-                    </span>
+                  {isLoadingEvents && !selectedEventId ? (
+                    <>
+                      <EventCardSkeleton />
+                      <EventCardSkeleton />
+                      <EventCardSkeleton />
+                    </>
                   ) : cultureEvents && cultureEvents.length > 0 ? (
                     <>
                       {displayedEvents.map((event) => {
@@ -315,6 +333,7 @@ export default function ExplorePage() {
                           <div
                             key={event.eventItemId}
                             ref={isSelected ? selectedCardRef : undefined}
+                            className="rounded-[20px] border border-[#d9cfc5]"
                           >
                             <EventCard
                               event={toEventCardData(event)}
@@ -338,6 +357,10 @@ export default function ExplorePage() {
                         </div>
                       )}
                     </>
+                  ) : eventsError ? (
+                    <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
+                      이벤트를 불러오지 못했어요. 다시 시도해 주세요.
+                    </span>
                   ) : (
                     <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                       주변에 이벤트를 찾을 수 없습니다
