@@ -81,7 +81,14 @@ export function scoreAndRankEvents(
   const realmKeywords = Q3_REALM[answers['q3']] ?? [];
   const companionTags = Q4_COMPANION[answers['q4']] ?? [];
 
-  return candidates.map((event) => {
+  const filtered =
+    answers['q3'] !== 'any' && realmKeywords.length > 0
+      ? candidates.filter((event) =>
+          realmKeywords.some((kw) => event.realmName?.includes(kw)),
+        )
+      : candidates;
+
+  return filtered.map((event) => {
     const eventTagNames = event.tags.map((et) => et.tag.name);
     let score = 0;
     const matchedTags: string[] = [];
@@ -91,16 +98,6 @@ export function scoreAndRankEvents(
       if (eventTagNames.includes(mood)) {
         score += 3;
         matchedTags.push(mood);
-      }
-    }
-
-    // 장르(Q3): 감정을 구체적 행사로 연결하는 번역 축 — 3점
-    let realmMatched = false;
-    for (const keyword of realmKeywords) {
-      if (!realmMatched && event.realmName?.includes(keyword)) {
-        score += 3;
-        realmMatched = true;
-        matchedTags.push(keyword);
       }
     }
 
