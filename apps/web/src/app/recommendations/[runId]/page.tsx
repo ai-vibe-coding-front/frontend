@@ -171,22 +171,17 @@ export default function RecommendationsPage() {
             {hasResults ? (
               <EventResultList events={events} runId={runId} />
             ) : (
-              <div className="bg-[#fefefe] rounded-[18px] shadow-[0px_4px_10px_rgba(63,42,36,0.1)] flex flex-col items-center justify-center gap-4 py-[52px] px-6">
-                <div className="bg-[#f5ede0] rounded-[12px] size-16 flex items-center justify-center">
-                  <span className="text-[28px]">✨</span>
-                </div>
-                <div className="flex flex-col items-center gap-2 text-center">
-                  <p className="font-bold text-[17px] text-[#251e19] tracking-[-0.4px] leading-[26px]">
-                    조건에 맞는 추천을 찾지 못했어요
-                  </p>
-                  <p className="font-medium text-[13px] text-[#716456] leading-[20px]">
-                    다른 무드로 다시 시도해보세요
-                  </p>
-                </div>
-                <div className="mt-1">
+              <div className="flex flex-col items-center gap-2 text-center py-[52px] px-6">
+                <p className="font-bold text-[17px] text-[#251e19] tracking-[-0.4px] leading-[26px]">
+                  조건에 맞는 추천을 찾지 못했어요
+                </p>
+                <p className="font-medium text-[13px] text-[#716456] leading-[20px]">
+                  다른 무드로 다시 시도해보세요
+                </p>
+                <div className="mt-6">
                   <Link
                     href="/questions"
-                    className="bg-[#251e19] text-white font-bold text-[15px] tracking-[-0.3px] leading-[20px] px-7 py-[13px] rounded-full cursor-pointer"
+                    className="bg-[#8edfd2] text-[#245b6b] font-bold text-[15px] tracking-[-0.3px] leading-[20px] px-7 py-[13px] rounded-full cursor-pointer"
                   >
                     다시 추천받기
                   </Link>
