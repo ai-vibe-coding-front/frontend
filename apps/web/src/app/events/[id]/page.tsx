@@ -110,6 +110,7 @@ export default function EventDetailPage() {
   };
 
   const showImage = Boolean(event.imageUrl) && !imageFailed;
+  const dday = event.endDate ? calcDday(event.endDate) : null;
 
   const period =
     event.startDate && event.endDate
@@ -159,14 +160,11 @@ export default function EventDetailPage() {
             <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
               {event.title}
             </p>
-            {event.endDate && (() => {
-              const dday = calcDday(event.endDate);
-              return dday ? (
-                <span className={`self-start text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full ${dday === '종료' ? 'bg-[#e8e4de] text-[#8c6e63]' : 'bg-[#8edfd2] text-[#245b6b]'}`}>
-                  {dday}
-                </span>
-              ) : null;
-            })()}
+            {dday && (
+              <span className={`self-start text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full ${dday === '종료' ? 'bg-[#e8e4de] text-[#8c6e63]' : 'bg-[#8edfd2] text-[#245b6b]'}`}>
+                {dday}
+              </span>
+            )}
           </div>
 
           {/* 정보 카드 */}
