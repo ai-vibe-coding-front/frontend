@@ -358,9 +358,14 @@ export default function ExplorePage() {
                       )}
                     </>
                   ) : eventsError ? (
-                    <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
-                      이벤트를 불러오지 못했어요. 다시 시도해 주세요.
-                    </span>
+                    <div className="flex flex-col items-center justify-center gap-[10px] py-6 text-center">
+                      <p className="font-bold text-[17px] leading-[26px] text-[#251e19]">
+                        이벤트를 불러오지 못했어요
+                      </p>
+                      <p className="font-medium text-[13px] leading-[19px] text-[#716456]">
+                        잠시 후 다시 시도해 주세요.
+                      </p>
+                    </div>
                   ) : (
                     <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
                       주변에 이벤트를 찾을 수 없습니다
