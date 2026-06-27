@@ -149,16 +149,18 @@ export default function EventDetailPage() {
           </div>
 
           {/* 카테고리 + D-day */}
-          <div className="flex items-center gap-2">
-            {event.realmName && (
-              <CategoryBadge category={event.realmName as Category} size="large" />
-            )}
-            {dday && (
-              <span className={`text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full border ${dday === '종료' ? 'bg-[#e8e4de] border-[#e8e4de] text-[#8c6e63]' : 'bg-[#fefefe] border-[#f25c3a] text-[#f25c3a]'}`}>
-                {dday}
-              </span>
-            )}
-          </div>
+          {(event.realmName || dday) && (
+            <div className="flex items-center gap-1.5">
+              {event.realmName && (
+                <CategoryBadge category={event.realmName as Category} size="large" />
+              )}
+              {dday && (
+                <span className="self-start text-[14px] leading-[14px] font-bold px-3 py-[6px] rounded-full border border-[#f25c3a] bg-[#fefefe] text-[#f25c3a]">
+                  {dday}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* 제목 */}
           <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
