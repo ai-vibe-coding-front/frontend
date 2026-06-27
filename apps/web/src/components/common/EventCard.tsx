@@ -67,8 +67,6 @@ interface EventCardProps {
   onFavorite?: (eventId: string, isFavorite?: boolean) => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
-  /** 행사 종료 상태 */
-  isEnded?: boolean;
   /** 찜 요청 처리 중일 때 좋아요 버튼 비활성화 */
   favoriteDisabled?: boolean;
 }
@@ -139,10 +137,11 @@ export const EventCard = memo(function EventCard({
   onClick,
   onFavorite,
   shadow = true,
-  isEnded = false,
   favoriteDisabled = false,
 }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
+  const ddayLabel = event.endDate ? calcDDay(event.endDate) : null;
+  const isEnded = ddayLabel === '종료';
   // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(event.imageUrl) && !imageFailed;
@@ -192,8 +191,7 @@ export const EventCard = memo(function EventCard({
         {/* 카테고리/D-Day 배지. z-index 미지정 → 그라디언트(아래)보다는 위지만 좋아요 버튼(z-20)보다는 아래. 새 오버레이 추가 시 z 순서 주의 */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
           {category && <CategoryBadge category={category} />}
-          {/* calcDDay가 종료 라벨까지 처리하므로 isEnded로 따로 가리지 않음 */}
-          {event.endDate && <DDayBadge label={calcDDay(event.endDate)} />}
+          {ddayLabel && <DDayBadge label={ddayLabel} />}
         </div>
         <button
           type="button"
@@ -238,6 +236,5 @@ export const EventCard = memo(function EventCard({
   prev.event.startDate === next.event.startDate &&
   prev.event.endDate === next.event.endDate &&
   prev.favoriteDisabled === next.favoriteDisabled &&
-  prev.isEnded === next.isEnded &&
   prev.shadow === next.shadow,
 );
