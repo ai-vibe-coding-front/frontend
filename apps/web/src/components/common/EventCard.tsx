@@ -60,6 +60,8 @@ function calcDDay(endDate: Date | null): number {
 
 interface EventCardProps {
   event: EventCardData;
+  /** next/image fill 사용 시 렌더링 폭에 맞춘 sizes */
+  imageSizes?: string;
   onClick?: (eventId: string) => void;
   onFavorite?: (eventId: string, isFavorite?: boolean) => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
@@ -135,6 +137,7 @@ export const EventCard = memo(function EventCard({
   event,
   onClick,
   onFavorite,
+  imageSizes = "100vw",
   shadow = true,
   isEnded = false,
   favoriteDisabled = false,
@@ -166,7 +169,7 @@ export const EventCard = memo(function EventCard({
             src={event.imageUrl as string}
             alt={event.title}
             fill
-            sizes="100vw"
+            sizes={imageSizes}
             className="object-cover"
             onError={() => setImageFailed(true)}
           />
