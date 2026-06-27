@@ -34,11 +34,41 @@ type AddressResult = {
   };
   road_address?: {
     address_name?: string;
+    building_name?: string;
     region_1depth_name?: string;
     region_2depth_name?: string;
     region_3depth_name?: string;
   };
 };
+
+type PlaceSearchResult = {
+  distance?: string;
+  place_name?: string;
+};
+
+type PlacesSearchOptions = {
+  location: kakao.maps.LatLng;
+  radius: number;
+  sort?: string;
+};
+
+type PlacesService = {
+  categorySearch: (
+    category: string,
+    callback: (result: PlaceSearchResult[], status: string) => void,
+    options: PlacesSearchOptions,
+  ) => void;
+};
+
+type KakaoServicesWithPlaces = typeof kakao.maps.services & {
+  Places?: new () => PlacesService;
+  SortBy?: {
+    DISTANCE?: string;
+  };
+};
+
+const FACILITY_CATEGORY_CODES = ["SW8", "PK6", "CT1", "PO3", "AT4", "AD5"] as const;
+const FACILITY_SEARCH_RADIUS_M = 25;
 
 type GeocoderWithAddress = kakao.maps.services.Geocoder & {
   coord2Address: (
@@ -93,6 +123,55 @@ function toWeatherGrid(lat: number, lng: number) {
 function appendIfPresent(params: URLSearchParams, key: string, value?: string | number) {
   if (value === undefined || value === null || value === "") return;
   params.set(key, String(value));
+}
+
+function getShortAddressName(address?: string) {
+  if (!address) return undefined;
+
+  const parts = address.split(" ").filter(Boolean);
+  if (parts.length <= 2) return address;
+
+  return parts.slice(-2).join(" ");
+}
+
+async function getNearbyFacilityName(lat: number, lng: number) {
+  const services = window.kakao.maps.services as KakaoServicesWithPlaces;
+  const Places = services.Places;
+  if (!Places) return undefined;
+
+  return Promise.all(
+    FACILITY_CATEGORY_CODES.map(
+      (category) =>
+        new Promise<PlaceSearchResult | undefined>((resolve) => {
+          const places = new Places();
+
+          places.categorySearch(
+            category,
+            (placeResult, placeStatus) => {
+              resolve(
+                placeStatus === window.kakao.maps.services.Status.OK
+                  ? placeResult[0]
+                  : undefined,
+              );
+            },
+            {
+              location: new window.kakao.maps.LatLng(lat, lng),
+              radius: FACILITY_SEARCH_RADIUS_M,
+              sort: services.SortBy?.DISTANCE,
+            },
+          );
+        }),
+    ),
+  ).then(
+    (places) =>
+      places
+        .filter((place): place is PlaceSearchResult => Boolean(place?.place_name))
+        .sort(
+          (a, b) =>
+            Number(a.distance ?? Number.POSITIVE_INFINITY) -
+            Number(b.distance ?? Number.POSITIVE_INFINITY),
+        )[0]?.place_name,
+  );
 }
 
 function isCompleteLocationInfo(
@@ -230,7 +309,18 @@ function LocationContent() {
                 ? (regionResult.find((item) => item.region_type === "H") ?? regionResult[0])
                 : undefined;
 
-            const districtName = region?.region_3depth_name || region?.region_2depth_name;
+            const buildingName = addressResult[0]?.road_address?.building_name;
+            const facilityName = buildingName
+              ? undefined
+              : await getNearbyFacilityName(lat, lng);
+
+            if (requestId !== requestIdRef.current) return;
+
+            const districtName =
+              buildingName ||
+              facilityName ||
+              getShortAddressName(detailAddress) ||
+              (region?.region_3depth_name || region?.region_2depth_name);
             const label =
               detailAddress ??
               [region?.region_1depth_name, region?.region_2depth_name, region?.region_3depth_name]
