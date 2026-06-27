@@ -49,13 +49,16 @@ function normalizeCategory(realmName: string | null): Category | null {
   return null;
 }
 
-function calcDDay(endDate: Date | null): number {
-  if (!endDate) return 0;
+function calcDDay(endDate: Date | null): string {
+  if (!endDate) return 'D-DAY';
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const end = new Date(endDate);
   end.setHours(0, 0, 0, 0);
-  return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return '종료';
+  if (diff === 0) return 'D-DAY';
+  return `D-${diff}`;
 }
 
 interface EventCardProps {
@@ -190,7 +193,7 @@ export const EventCard = memo(function EventCard({
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
           {category && <CategoryBadge category={category} />}
           {!isEnded && event.endDate && (
-            <DDayBadge days={calcDDay(event.endDate)} />
+            <DDayBadge label={calcDDay(event.endDate)} />
           )}
         </div>
         <button
