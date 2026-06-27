@@ -31,6 +31,7 @@ export function QuestionsContent() {
     q4: null,
   });
   const [showModal, setShowModal] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const hasLocation = !!(
     searchParams.get("lat") &&
@@ -59,7 +60,7 @@ export function QuestionsContent() {
   const currentAnswer = answers[question.key];
 
   const goNext = () => {
-    if (!currentAnswer || isBlocked || isSubmitting) return;
+    if (!currentAnswer || isBlocked || isSubmitting || isNavigating) return;
     if (isLast) {
       const lat = searchParams.get("lat");
       const lng = searchParams.get("lng");
@@ -79,7 +80,12 @@ export function QuestionsContent() {
           },
         },
         {
+          onSuccess: ({ runId }) => {
+            setIsNavigating(true);
+            router.push(`/recommendations/${runId}`);
+          },
           onError: (err) => {
+            setIsNavigating(false);
             if (err instanceof ApiClientError && err.status === 403)
               setShowModal(true);
           },
@@ -108,7 +114,7 @@ export function QuestionsContent() {
 
   return (
     <main className="relative h-dvh flex flex-col overflow-hidden bg-[#fbf9f4]">
-      {isSubmitting && (
+      {(isSubmitting || isNavigating) && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[rgba(251,249,244,0.95)]">
           <div className="size-10 rounded-full border-4 border-[#c2ede7] border-t-[#5bbfb0] animate-spin" />
           <p className="font-semibold text-[15px] text-[#251e19] tracking-[-0.3px]">
@@ -236,9 +242,9 @@ export function QuestionsContent() {
           <button
             type="button"
             onClick={goNext}
-            disabled={!currentAnswer || isSubmitting}
+            disabled={!currentAnswer || isSubmitting || isNavigating}
             className={`flex-1 bg-[#8edfd2] rounded-[16px] py-3 flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)] transition-opacity ${
-              currentAnswer && !isSubmitting
+              currentAnswer && !isSubmitting && !isNavigating
                 ? "opacity-100"
                 : "opacity-50 cursor-not-allowed"
             }`}
