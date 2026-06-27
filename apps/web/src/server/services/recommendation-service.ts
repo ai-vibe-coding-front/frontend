@@ -14,11 +14,11 @@ const Q1_ENERGY: Record<string, string> = {
 };
 
 const Q2_MOOD: Record<string, string[]> = {
-  warmth: ['힐링', '감성적'],
-  comfort: ['힐링', '감성적'],
+  warmth: ['힐링'],
+  touched: ['감성적'],
   recharge: ['힐링', '차분한'],
-  thrill: ['활기찬'],
-  stimulate: ['감성적', '차분한'],
+  thrill: ['활기찬', '설레는'],
+  stimulate: ['호기심'],
 };
 
 const Q3_REALM: Record<string, string[]> = {
@@ -81,7 +81,14 @@ export function scoreAndRankEvents(
   const realmKeywords = Q3_REALM[answers['q3']] ?? [];
   const companionTags = Q4_COMPANION[answers['q4']] ?? [];
 
-  return candidates.map((event) => {
+  const filtered =
+    answers['q3'] !== 'any' && realmKeywords.length > 0
+      ? candidates.filter((event) =>
+          realmKeywords.some((kw) => event.realmName?.includes(kw)),
+        )
+      : candidates;
+
+  return filtered.map((event) => {
     const eventTagNames = event.tags.map((et) => et.tag.name);
     let score = 0;
     const matchedTags: string[] = [];
@@ -91,16 +98,6 @@ export function scoreAndRankEvents(
       if (eventTagNames.includes(mood)) {
         score += 3;
         matchedTags.push(mood);
-      }
-    }
-
-    // 장르(Q3): 감정을 구체적 행사로 연결하는 번역 축 — 3점
-    let realmMatched = false;
-    for (const keyword of realmKeywords) {
-      if (!realmMatched && event.realmName?.includes(keyword)) {
-        score += 3;
-        realmMatched = true;
-        matchedTags.push(keyword);
       }
     }
 
@@ -150,7 +147,7 @@ export function scoreAndRankEvents(
   });
 }
 
-const NEARBY_KM = 30;
+const NEARBY_KM = 10;
 const MAX_RESULTS = 7;
 
 const HTML_ENTITY_MAP: Record<string, string> = {
@@ -200,16 +197,10 @@ export function filterAndSort(scored: ScoredEvent[]): {
   items: ScoredEvent[];
   nearbyExpanded: boolean;
 } {
-  const withDistance = scored.filter((e) => e.distanceKm !== null);
-  const noDistance = scored.filter((e) => e.distanceKm === null);
-
-  const nearby = sortScored(withDistance.filter((e) => e.distanceKm! <= NEARBY_KM));
-  if (nearby.length >= MAX_RESULTS) {
-    return { items: nearby.slice(0, MAX_RESULTS), nearbyExpanded: false };
-  }
-
-  const expanded = sortScored([...withDistance, ...noDistance]);
-  return { items: expanded.slice(0, MAX_RESULTS), nearbyExpanded: true };
+  const nearby = sortScored(
+    scored.filter((e) => e.distanceKm !== null && e.distanceKm <= NEARBY_KM),
+  );
+  return { items: nearby.slice(0, MAX_RESULTS), nearbyExpanded: false };
 }
 
 const SKY_LABEL_MAP: Record<string, [string, string]> = {
@@ -221,10 +212,10 @@ const SKY_LABEL_MAP: Record<string, [string, string]> = {
 
 const Q2_MOOD_WORDS: Record<string, string> = {
   warmth: '따뜻한',
-  comfort: '편안한',
+  touched: '감동적인',
   recharge: '힐링되는',
   thrill: '활기찬',
-  stimulate: '감성적인',
+  stimulate: '호기심 가득한',
 };
 
 const Q4_COMPANION_WORDS: Record<string, string> = {

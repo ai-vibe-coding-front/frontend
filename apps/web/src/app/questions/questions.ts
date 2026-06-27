@@ -1,5 +1,5 @@
 export type Q1Answer = "high" | "medium" | "low";
-export type Q2Answer = "recharge" | "comfort" | "thrill" | "stimulate" | "warmth";
+export type Q2Answer = "recharge" | "touched" | "thrill" | "stimulate" | "warmth";
 export type Q3Answer = "performance" | "music" | "exhibition" | "experience" | "festival" | "any";
 export type Q4Answer = "alone" | "special" | "group" | "family";
 
@@ -25,7 +25,7 @@ export const QUESTIONS = [
     question: "지금 나에게 가장 필요한 게 뭔가요?",
     choices: [
       { value: "recharge" as Q2Answer, label: "😮‍💨 그냥 아무 생각 없이 쉬고 싶어" },
-      { value: "comfort" as Q2Answer, label: "🥹 뭔가 뭉클하고 감동받고 싶어" },
+      { value: "touched" as Q2Answer, label: "🥹 뭔가 뭉클하고 감동받고 싶어" },
       { value: "thrill" as Q2Answer, label: "🤩 신나고 에너지 받고 싶어" },
       { value: "stimulate" as Q2Answer, label: "🤔 새로운 걸 보고 생각하고 싶어" },
       { value: "warmth" as Q2Answer, label: "🥰 따뜻하고 포근한 시간이 필요해" },

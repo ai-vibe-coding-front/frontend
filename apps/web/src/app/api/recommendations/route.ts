@@ -29,7 +29,7 @@ const bodySchema = z
           }),
           z.object({
             questionKey: z.literal('q2'),
-            answerValue: z.enum(['warmth', 'comfort', 'recharge', 'thrill', 'stimulate']),
+            answerValue: z.enum(['warmth', 'touched', 'recharge', 'thrill', 'stimulate']),
           }),
           z.object({
             questionKey: z.literal('q3'),
