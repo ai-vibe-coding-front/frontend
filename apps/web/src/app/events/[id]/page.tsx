@@ -155,7 +155,7 @@ export default function EventDetailPage() {
                 <CategoryBadge category={event.realmName as Category} size="large" />
               )}
               {dday && (
-                <span className="self-start text-[14px] leading-[14px] font-bold px-3 py-[6px] rounded-full border border-[#f25c3a] bg-[#fefefe] text-[#f25c3a]">
+                <span className={`self-start text-[14px] leading-[14px] font-bold px-3 py-[6px] rounded-full border ${dday === '종료' ? 'border-[#e8e4de] bg-[#e8e4de] text-[#8c6e63]' : 'border-[#f25c3a] bg-[#fefefe] text-[#f25c3a]'}`}>
                   {dday}
                 </span>
               )}
