@@ -49,13 +49,16 @@ function normalizeCategory(realmName: string | null): Category | null {
   return null;
 }
 
-function calcDDay(endDate: Date | null): number {
-  if (!endDate) return 0;
+function calcDDay(endDate: Date | null): string {
+  if (!endDate) return 'D-DAY';
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const end = new Date(endDate);
-  end.setHours(0, 0, 0, 0);
-  return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const endUTC = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  const diff = Math.round((endUTC - todayUTC) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return '종료';
+  if (diff === 0) return 'D-DAY';
+  return `D-${diff}`;
 }
 
 interface EventCardProps {
@@ -66,8 +69,6 @@ interface EventCardProps {
   onFavorite?: (eventId: string, isFavorite?: boolean) => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
-  /** 행사 종료 상태 */
-  isEnded?: boolean;
   /** 찜 요청 처리 중일 때 좋아요 버튼 비활성화 */
   favoriteDisabled?: boolean;
 }
@@ -139,10 +140,11 @@ export const EventCard = memo(function EventCard({
   onFavorite,
   imageSizes = "100vw",
   shadow = true,
-  isEnded = false,
   favoriteDisabled = false,
 }: EventCardProps) {
   const category = normalizeCategory(event.realmName);
+  const ddayLabel = event.endDate ? calcDDay(event.endDate) : null;
+  const isEnded = ddayLabel === '종료';
   // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(event.imageUrl) && !imageFailed;
@@ -192,9 +194,7 @@ export const EventCard = memo(function EventCard({
         {/* 카테고리/D-Day 배지. z-index 미지정 → 그라디언트(아래)보다는 위지만 좋아요 버튼(z-20)보다는 아래. 새 오버레이 추가 시 z 순서 주의 */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
           {category && <CategoryBadge category={category} />}
-          {!isEnded && event.endDate && (
-            <DDayBadge days={calcDDay(event.endDate)} />
-          )}
+          {ddayLabel && <DDayBadge label={ddayLabel} />}
         </div>
         <button
           type="button"
@@ -239,6 +239,5 @@ export const EventCard = memo(function EventCard({
   prev.event.startDate === next.event.startDate &&
   prev.event.endDate === next.event.endDate &&
   prev.favoriteDisabled === next.favoriteDisabled &&
-  prev.isEnded === next.isEnded &&
   prev.shadow === next.shadow,
 );
