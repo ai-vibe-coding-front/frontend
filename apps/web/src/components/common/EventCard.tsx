@@ -6,6 +6,7 @@ import {
   type Category,
 } from "@/components/common/CategoryBadge";
 import { DDayBadge } from "@/components/common/DDayBadge";
+import { formatEventTitle } from "@/lib/htmlEntities";
 
 export interface EventCardData {
   id: string;
@@ -145,6 +146,7 @@ export const EventCard = memo(function EventCard({
   const category = normalizeCategory(event.realmName);
   const ddayLabel = event.endDate ? calcDDay(event.endDate) : null;
   const isEnded = ddayLabel === '종료';
+  const displayTitle = formatEventTitle(event.title);
   // imageUrl이 있어도 로드가 실패할 수 있으므로, 실패 시 기본 배경(#d9cfc5)으로 폴백
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(event.imageUrl) && !imageFailed;
@@ -161,7 +163,7 @@ export const EventCard = memo(function EventCard({
           onClick?.(event.id);
         }
       }}
-      aria-label={event.title}
+      aria-label={displayTitle}
       className={`bg-white rounded-[20px] w-full overflow-hidden cursor-pointer shrink-0 text-left ${shadow ? "shadow-[0px_4px_20px_0px_rgba(63,42,36,0.1)]" : ""}`}
     >
       {/* 썸네일 영역: 높이 고정(192px) + absolute 레이어로 이미지/배지/그라디언트를 쌓는 구조 */}
@@ -169,7 +171,7 @@ export const EventCard = memo(function EventCard({
         {showImage ? (
           <Image
             src={event.imageUrl as string}
-            alt={event.title}
+            alt={displayTitle}
             fill
             sizes={imageSizes}
             className="object-cover"
@@ -211,7 +213,7 @@ export const EventCard = memo(function EventCard({
       {/* 텍스트 정보 영역: 제목 + 장소/기간 meta row */}
       <div className="flex flex-col gap-1.5 px-4 pt-3 pb-4">
         <p className="font-bold text-[15px] text-[#251e19] leading-[22px] truncate">
-          {event.title}
+          {displayTitle}
         </p>
         <div className={metaRowClass}>
           <PinIcon />
