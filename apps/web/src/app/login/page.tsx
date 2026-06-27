@@ -5,10 +5,12 @@ import Image from 'next/image';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { CTAButton } from "@/components/common/CTAButton";
 import { Input } from "@/components/common/Input";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
+import { queryKeys } from "@/lib/query-keys";
 
 type LoginFormData = {
   email: string;
@@ -23,6 +25,7 @@ const fieldErrorClass = "text-[12px] text-red-500 leading-[18px] pl-1";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -48,6 +51,11 @@ function LoginForm() {
         redirect && redirect.startsWith('/') && !redirect.startsWith('//')
           ? redirect
           : ROUTES.home;
+      // 로그인 전에 캐시된 추천 결과는 isFavorited가 모두 false로 고정되어 있어 재요청 필요
+      const runId = destination.match(/^\/recommendations\/([^/?]+)/)?.[1];
+      if (runId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.recommendations.detail(runId) });
+      }
       router.push(destination);
     } catch (error) {
       if (error instanceof ApiClientError && error.errorCode === 'INVALID_CREDENTIALS') {
