@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ApiClientError, apiClient } from "@/lib/api-client";
+import { removeAuthScopedQueries } from "@/lib/auth-query-cache";
 import { ROUTES } from "@/constants/routes";
 import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
 
@@ -34,6 +36,7 @@ const SavedHeartIcon = () => (
 export function MyPageContent() {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { user, isLoading, error, isUnauthorized } = useCurrentUser();
   const [logoutErrorMessage, setLogoutErrorMessage] = useState<string | null>(
     null,
@@ -81,10 +84,12 @@ export function MyPageContent() {
       await apiClient<null>("/api/auth/logout", {
         method: "POST",
       });
+      removeAuthScopedQueries(queryClient);
       router.replace(ROUTES.home);
       router.refresh();
     } catch (error) {
       if (error instanceof ApiClientError && error.status === 401) {
+        removeAuthScopedQueries(queryClient);
         router.replace(ROUTES.home);
         router.refresh();
         return;
@@ -95,7 +100,7 @@ export function MyPageContent() {
       );
       setIsLoggingOut(false);
     }
-  }, [isLoggingOut, router]);
+  }, [isLoggingOut, queryClient, router]);
 
   const handleTabChange = useCallback(
     (tab: "home" | "curation" | "recommend" | "my") => {
