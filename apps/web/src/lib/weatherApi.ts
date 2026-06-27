@@ -77,7 +77,6 @@ async function fetchVar(
 
 function skyCodeToLabel(code: number | null): string | null {
   if (code === null) return null;
-  if (code === 2) return "구름조금";
   if (code === 3) return "구름많음";
   if (code === 4) return "흐림";
   return "맑음";
