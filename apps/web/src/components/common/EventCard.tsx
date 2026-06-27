@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { memo, useState } from "react";
 import Image from "next/image";
 import {
   CategoryBadge,
@@ -60,8 +60,8 @@ function calcDDay(endDate: Date | null): number {
 
 interface EventCardProps {
   event: EventCardData;
-  onClick?: () => void;
-  onFavorite?: () => void;
+  onClick?: (eventId: string) => void;
+  onFavorite?: (eventId: string, isFavorite?: boolean) => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
   /** 행사 종료 상태 */
@@ -131,7 +131,7 @@ const HeartIcon = ({ filled }: { filled?: boolean }) => (
   </svg>
 );
 
-export function EventCard({
+export const EventCard = memo(function EventCard({
   event,
   onClick,
   onFavorite,
@@ -149,11 +149,11 @@ export function EventCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={() => onClick?.(event.id)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onClick?.();
+          onClick?.(event.id);
         }
       }}
       aria-label={event.title}
@@ -195,7 +195,7 @@ export function EventCard({
         </div>
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
+          onClick={(e) => { e.stopPropagation(); onFavorite?.(event.id, event.isFavorite); }}
           disabled={favoriteDisabled}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
@@ -225,4 +225,17 @@ export function EventCard({
       </div>
     </div>
   );
-}
+},
+(prev, next) =>
+  prev.event.id === next.event.id &&
+  prev.event.isFavorite === next.event.isFavorite &&
+  prev.event.imageUrl === next.event.imageUrl &&
+  prev.event.title === next.event.title &&
+  prev.event.realmName === next.event.realmName &&
+  prev.event.place === next.event.place &&
+  prev.event.startDate === next.event.startDate &&
+  prev.event.endDate === next.event.endDate &&
+  prev.favoriteDisabled === next.favoriteDisabled &&
+  prev.isEnded === next.isEnded &&
+  prev.shadow === next.shadow,
+);
