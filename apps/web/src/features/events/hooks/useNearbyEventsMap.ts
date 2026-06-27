@@ -51,13 +51,6 @@ function createPinMarkerImage(fill: string): kakao.maps.MarkerImage {
   );
 }
 
-function createDefaultMarkerImage(): kakao.maps.MarkerImage {
-  return new window.kakao.maps.MarkerImage(
-    "/icons/map-pin.svg",
-    new window.kakao.maps.Size(34, 40),
-  );
-}
-
 type UseNearbyEventsMapOptions = {
   persistLocation?: boolean;
   excludeExpiredEvents?: boolean;
@@ -152,9 +145,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
         position: new window.kakao.maps.LatLng(event.lat, event.lng),
         map,
         clickable: true,
-        image: isSelected
-          ? createPinMarkerImage(ACTIVE_MARKER_FILL)
-          : createDefaultMarkerImage(),
+        ...(isSelected
+          ? { image: createPinMarkerImage(ACTIVE_MARKER_FILL) }
+          : {}),
       });
       window.kakao.maps.event.addListener(marker, "click", () => {
         handleMarkerClick(event);
