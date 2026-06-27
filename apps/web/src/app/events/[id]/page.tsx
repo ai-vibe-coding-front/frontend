@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, notFound } from 'next/navigation';
@@ -57,10 +57,6 @@ export default function EventDetailPage() {
   const [imageFailed, setImageFailed] = useState(false);
 
   const { data: event, isPending, error } = useEventDetail(id);
-
-  useEffect(() => {
-    setImageFailed(false);
-  }, [id, event?.imageUrl]);
 
   if (!id) notFound();
 

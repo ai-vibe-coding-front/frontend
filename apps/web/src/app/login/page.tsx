@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import Image from 'next/image';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -68,8 +69,11 @@ function LoginForm() {
   return (
     <>
       {/* TopAppBar */}
-      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center justify-center shrink-0">
-        <p className="font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</p>
+      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
+        <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
+          <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
+        </button>
+        <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
       </div>
 
       {/* Main Content */}
