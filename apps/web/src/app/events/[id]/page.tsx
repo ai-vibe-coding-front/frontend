@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import { CategoryBadge, type Category } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
@@ -15,6 +15,18 @@ import { ROUTES } from '@/constants/routes';
 
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
+
+function calcDday(endDate: string): string | null {
+  const end = new Date(endDate);
+  if (isNaN(end.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  const diff = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return '종료';
+  if (diff === 0) return 'D-DAY';
+  return `D-${diff}`;
+}
 
 function SkeletonLoader() {
   return (
@@ -51,6 +63,7 @@ function SkeletonLoader() {
 
 export default function EventDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = typeof params.id === 'string' ? params.id : '';
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -65,10 +78,10 @@ export default function EventDetailPage() {
       <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
         <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
           <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-            <Link href="/" className="size-4 shrink-0">
+            <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
               <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-            </Link>
-            <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</Link>
+            </button>
+            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
           </div>
           <SkeletonLoader />
         </div>
@@ -97,6 +110,7 @@ export default function EventDetailPage() {
   };
 
   const showImage = Boolean(event.imageUrl) && !imageFailed;
+  const dday = event.endDate ? calcDday(event.endDate) : null;
 
   const period =
     event.startDate && event.endDate
@@ -109,12 +123,12 @@ export default function EventDetailPage() {
 
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-          <Link href="/" className="size-4 shrink-0">
+          <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
             <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-          </Link>
-          <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+          </button>
+          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
             MUUD
-          </Link>
+          </p>
           <FavoriteButton
             eventItemId={event.eventItemId}
             initialFavorited={event.isFavorited}
@@ -134,10 +148,17 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          {/* 카테고리 */}
-          {event.realmName && (
-            <div className="flex items-center">
-              <CategoryBadge category={event.realmName as Category} size="large" />
+          {/* 카테고리 + D-day */}
+          {(event.realmName || dday) && (
+            <div className="flex items-center gap-1.5">
+              {event.realmName && (
+                <CategoryBadge category={event.realmName as Category} size="large" />
+              )}
+              {dday && (
+                <span className={`self-start text-[14px] leading-[14px] font-bold px-3 py-[6px] rounded-full border ${dday === '종료' ? 'border-[#e8e4de] bg-[#e8e4de] text-[#8c6e63]' : 'border-[#f25c3a] bg-[#fefefe] text-[#f25c3a]'}`}>
+                  {dday}
+                </span>
+              )}
             </div>
           )}
 
@@ -162,7 +183,7 @@ export default function EventDetailPage() {
                 <span className={infoValueClass}>{event.price ?? '-'}</span>
               </div>
               <div className="flex flex-col py-[15px] gap-[10px]">
-                <p className="font-bold text-[13px] text-[#8c6e63] leading-[19.5px]">행사정보</p>
+                <p className="font-medium text-[13px] text-[#8c6e63] leading-[19.5px]">행사정보</p>
                 <p className="font-normal text-[14px] text-[#3f2a24] leading-[23.8px] opacity-80">
                   {event.description}
                 </p>
@@ -184,7 +205,7 @@ export default function EventDetailPage() {
             <button
               type="button"
               onClick={handleExternalLink}
-              disabled={!event.bookingUrl}
+              disabled={!event.bookingUrl?.trim()}
               className="bg-[#8edfd2] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-full h-[48px] rounded-[16px] flex items-center justify-center gap-[10px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="font-bold text-[16px] text-[#245b6b] tracking-[-0.32px] leading-[24px]">
