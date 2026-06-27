@@ -52,10 +52,10 @@ function normalizeCategory(realmName: string | null): Category | null {
 function calcDDay(endDate: Date | null): string {
   if (!endDate) return 'D-DAY';
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const end = new Date(endDate);
-  end.setHours(0, 0, 0, 0);
-  const diff = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const endUTC = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  const diff = Math.round((endUTC - todayUTC) / (1000 * 60 * 60 * 24));
   if (diff < 0) return '종료';
   if (diff === 0) return 'D-DAY';
   return `D-${diff}`;
