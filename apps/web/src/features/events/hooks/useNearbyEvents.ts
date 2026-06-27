@@ -89,6 +89,13 @@ export function useNearbyEvents(options: UseNearbyEventsOptions = {}) {
       if (requestId !== requestIdRef.current) return;
 
       if (!response.ok) {
+        if (response.status === 404) {
+          const body = await response.json().catch(() => null);
+          if (body?.errorCode === "NEARBY_EVENTS_NOT_FOUND") {
+            updateCultureEvents([]);
+            return;
+          }
+        }
         setEventsError(true);
         updateCultureEvents([]);
         return;

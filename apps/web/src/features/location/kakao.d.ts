@@ -69,6 +69,7 @@ declare namespace kakao.maps {
     position: LatLng;
     map?: Map;
     image?: MarkerImage;
+    clickable?: boolean;
   }
 
   class Marker {
