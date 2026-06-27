@@ -109,8 +109,8 @@ export function EventResultList({ events, runId }: EventResultListProps) {
         <div key={event.id} className="relative">
           <EventCard
             event={event}
-            onClick={() => handleClickEvent(event.id)}
-            onFavorite={() => handleFavorite(event.id, event.isFavorite)}
+            onClick={handleClickEvent}
+            onFavorite={handleFavorite}
             favoriteDisabled={pendingIds.has(event.id)}
           />
           {errorIds.has(event.id) && (

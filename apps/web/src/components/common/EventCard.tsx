@@ -60,8 +60,8 @@ function calcDDay(endDate: Date | null): number {
 
 interface EventCardProps {
   event: EventCardData;
-  onClick?: () => void;
-  onFavorite?: () => void;
+  onClick?: (eventId: string) => void;
+  onFavorite?: (eventId: string, isFavorite?: boolean) => void;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
   /** 행사 종료 상태 */
@@ -149,11 +149,11 @@ export const EventCard = memo(function EventCard({
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={() => onClick?.(event.id)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onClick?.();
+          onClick?.(event.id);
         }
       }}
       aria-label={event.title}
@@ -195,7 +195,7 @@ export const EventCard = memo(function EventCard({
         </div>
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onFavorite?.(); }}
+          onClick={(e) => { e.stopPropagation(); onFavorite?.(event.id, event.isFavorite); }}
           disabled={favoriteDisabled}
           aria-label={event.isFavorite ? "좋아요 취소" : "좋아요"}
           aria-pressed={event.isFavorite}
