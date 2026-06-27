@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import { CategoryBadge, type Category } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
@@ -63,6 +63,7 @@ function SkeletonLoader() {
 
 export default function EventDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = typeof params.id === 'string' ? params.id : '';
 
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -77,10 +78,10 @@ export default function EventDetailPage() {
       <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
         <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
           <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-            <Link href="/" className="size-4 shrink-0">
+            <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
               <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-            </Link>
-            <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</Link>
+            </button>
+            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
           </div>
           <SkeletonLoader />
         </div>
@@ -121,12 +122,12 @@ export default function EventDetailPage() {
 
         {/* TopAppBar */}
         <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-          <Link href="/" className="size-4 shrink-0">
+          <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
             <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-          </Link>
-          <Link href="/" className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
+          </button>
+          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
             MUUD
-          </Link>
+          </p>
           <FavoriteButton
             eventItemId={event.eventItemId}
             initialFavorited={event.isFavorited}
