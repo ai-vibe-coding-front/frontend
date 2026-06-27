@@ -192,9 +192,8 @@ export const EventCard = memo(function EventCard({
         {/* 카테고리/D-Day 배지. z-index 미지정 → 그라디언트(아래)보다는 위지만 좋아요 버튼(z-20)보다는 아래. 새 오버레이 추가 시 z 순서 주의 */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
           {category && <CategoryBadge category={category} />}
-          {!isEnded && event.endDate && (
-            <DDayBadge label={calcDDay(event.endDate)} />
-          )}
+          {/* calcDDay가 종료 라벨까지 처리하므로 isEnded로 따로 가리지 않음 */}
+          {event.endDate && <DDayBadge label={calcDDay(event.endDate)} />}
         </div>
         <button
           type="button"
