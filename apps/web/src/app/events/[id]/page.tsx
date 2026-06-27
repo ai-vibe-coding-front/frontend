@@ -161,7 +161,7 @@ export default function EventDetailPage() {
               {event.title}
             </p>
             {dday && (
-              <span className={`self-start text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full ${dday === '종료' ? 'bg-[#e8e4de] text-[#8c6e63]' : 'bg-[#8edfd2] text-[#245b6b]'}`}>
+              <span className={`self-start text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full border ${dday === '종료' ? 'bg-[#e8e4de] border-[#e8e4de] text-[#8c6e63]' : 'bg-[#fefefe] border-[#f25c3a] text-[#f25c3a]'}`}>
                 {dday}
               </span>
             )}
