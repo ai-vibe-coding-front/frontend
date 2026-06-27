@@ -310,15 +310,8 @@ function LocationContent() {
                 : undefined;
 
             const buildingName = addressResult[0]?.road_address?.building_name;
-            const facilityName = buildingName
-              ? undefined
-              : await getNearbyFacilityName(lat, lng);
-
-            if (requestId !== requestIdRef.current) return;
-
             const districtName =
               buildingName ||
-              facilityName ||
               getShortAddressName(detailAddress) ||
               (region?.region_3depth_name || region?.region_2depth_name);
             const label =
@@ -337,6 +330,31 @@ function LocationContent() {
               stationName: region?.region_2depth_name,
               districtName,
             });
+
+            if (!buildingName) {
+              void getNearbyFacilityName(lat, lng)
+                .then((facilityName) => {
+                  if (!facilityName || requestId !== requestIdRef.current) return;
+
+                  setLocationInfo((currentLocationInfo) => {
+                    if (
+                      !currentLocationInfo ||
+                      currentLocationInfo.lat !== lat ||
+                      currentLocationInfo.lng !== lng
+                    ) {
+                      return currentLocationInfo;
+                    }
+
+                    return {
+                      ...currentLocationInfo,
+                      districtName: facilityName,
+                    };
+                  });
+                })
+                .catch((err) => {
+                  console.error("시설명을 확인하지 못했습니다.", err);
+                });
+            }
           } finally {
             finishResolvingIfCurrentRequest();
           }
