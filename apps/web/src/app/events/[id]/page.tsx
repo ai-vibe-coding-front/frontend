@@ -16,6 +16,18 @@ import { ROUTES } from '@/constants/routes';
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
 
+function calcDday(endDate: string): string | null {
+  const end = new Date(endDate);
+  if (isNaN(end.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  const diff = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return '종료';
+  if (diff === 0) return 'D-DAY';
+  return `D-${diff}`;
+}
+
 function SkeletonLoader() {
   return (
     <div className="flex-1 flex flex-col px-6 pt-3 pb-6 gap-4 overflow-y-auto animate-pulse">
@@ -142,9 +154,19 @@ export default function EventDetailPage() {
           )}
 
           {/* 제목 */}
-          <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
-            {event.title}
-          </p>
+          <div className="flex flex-col gap-[6px]">
+            <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
+              {event.title}
+            </p>
+            {event.endDate && (() => {
+              const dday = calcDday(event.endDate);
+              return dday ? (
+                <span className={`self-start text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full ${dday === '종료' ? 'bg-[#e8e4de] text-[#8c6e63]' : 'bg-[#8edfd2] text-[#245b6b]'}`}>
+                  {dday}
+                </span>
+              ) : null;
+            })()}
+          </div>
 
           {/* 정보 카드 */}
           <div className="bg-[#fefefe] border border-[#ded0be] rounded-[22px] shadow-[0px_2px_8px_0px_rgba(63,42,36,0.06)]">
@@ -162,7 +184,7 @@ export default function EventDetailPage() {
                 <span className={infoValueClass}>{event.price ?? '-'}</span>
               </div>
               <div className="flex flex-col py-[15px] gap-[10px]">
-                <p className="font-bold text-[13px] text-[#8c6e63] leading-[19.5px]">행사정보</p>
+                <p className="font-medium text-[13px] text-[#8c6e63] leading-[19.5px]">행사정보</p>
                 <p className="font-normal text-[14px] text-[#3f2a24] leading-[23.8px] opacity-80">
                   {event.description}
                 </p>
@@ -184,7 +206,7 @@ export default function EventDetailPage() {
             <button
               type="button"
               onClick={handleExternalLink}
-              disabled={!event.bookingUrl}
+              disabled={!event.bookingUrl?.trim()}
               className="bg-[#8edfd2] shadow-[0px_10px_12px_rgba(59,38,20,0.1)] w-full h-[48px] rounded-[16px] flex items-center justify-center gap-[10px] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span className="font-bold text-[16px] text-[#245b6b] tracking-[-0.32px] leading-[24px]">
