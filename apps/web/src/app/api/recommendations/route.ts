@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     const scored = scoreAndRankEvents(candidates, answersMap, session.lat, session.lng, indoorForced);
     const { items, nearbyExpanded } = filterAndSort(scored);
 
-    const curation = buildCurationMessage(weather, answersMap['q2'], answersMap['q4']);
+    const curation = buildCurationMessage(weather, dust, answersMap['q2'], answersMap['q4']);
 
     const userId = session.userId ?? null;
 
