@@ -148,24 +148,22 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          {/* 카테고리 */}
-          {event.realmName && (
-            <div className="flex items-center">
+          {/* 카테고리 + D-day */}
+          <div className="flex items-center gap-2">
+            {event.realmName && (
               <CategoryBadge category={event.realmName as Category} size="large" />
-            </div>
-          )}
-
-          {/* 제목 */}
-          <div className="flex flex-col gap-[6px]">
-            <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
-              {event.title}
-            </p>
+            )}
             {dday && (
-              <span className={`self-start text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full border ${dday === '종료' ? 'bg-[#e8e4de] border-[#e8e4de] text-[#8c6e63]' : 'bg-[#fefefe] border-[#f25c3a] text-[#f25c3a]'}`}>
+              <span className={`text-[12px] font-medium leading-[18px] px-[10px] py-[3px] rounded-full border ${dday === '종료' ? 'bg-[#e8e4de] border-[#e8e4de] text-[#8c6e63]' : 'bg-[#fefefe] border-[#f25c3a] text-[#f25c3a]'}`}>
                 {dday}
               </span>
             )}
           </div>
+
+          {/* 제목 */}
+          <p className="font-bold text-[22px] text-[#3f2a24] leading-[30.8px] tracking-[-0.88px]">
+            {event.title}
+          </p>
 
           {/* 정보 카드 */}
           <div className="bg-[#fefefe] border border-[#ded0be] rounded-[22px] shadow-[0px_2px_8px_0px_rgba(63,42,36,0.06)]">
