@@ -1,13 +1,16 @@
 'use client';
 
 import { Suspense } from 'react';
+import Image from 'next/image';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { CTAButton } from "@/components/common/CTAButton";
 import { Input } from "@/components/common/Input";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
+import { queryKeys } from "@/lib/query-keys";
 
 type LoginFormData = {
   email: string;
@@ -22,6 +25,7 @@ const fieldErrorClass = "text-[12px] text-red-500 leading-[18px] pl-1";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -47,6 +51,11 @@ function LoginForm() {
         redirect && redirect.startsWith('/') && !redirect.startsWith('//')
           ? redirect
           : ROUTES.home;
+      // 로그인 전에 캐시된 추천 결과는 isFavorited가 모두 false로 고정되어 있어 재요청 필요
+      const runId = destination.match(/^\/recommendations\/([^/?]+)/)?.[1];
+      if (runId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.recommendations.detail(runId) });
+      }
       router.push(destination);
     } catch (error) {
       if (error instanceof ApiClientError && error.errorCode === 'INVALID_CREDENTIALS') {
@@ -60,8 +69,11 @@ function LoginForm() {
   return (
     <>
       {/* TopAppBar */}
-      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center justify-center shrink-0">
-        <p className="font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">MUUD</p>
+      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
+        <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
+          <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
+        </button>
+        <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
       </div>
 
       {/* Main Content */}

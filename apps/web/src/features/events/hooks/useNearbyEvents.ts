@@ -47,6 +47,7 @@ export function useNearbyEvents(options: UseNearbyEventsOptions = {}) {
   const [visibleCount, setVisibleCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [eventsError, setEventsError] = useState(false);
 
   const loadMoreEvents = () => {
     if (isLoadingMore) return;
@@ -74,6 +75,7 @@ export function useNearbyEvents(options: UseNearbyEventsOptions = {}) {
     const requestId = requestIdRef.current;
 
     setIsLoadingEvents(true);
+    setEventsError(false);
     try {
       const params = new URLSearchParams({
         lat: String(lat),
@@ -87,6 +89,14 @@ export function useNearbyEvents(options: UseNearbyEventsOptions = {}) {
       if (requestId !== requestIdRef.current) return;
 
       if (!response.ok) {
+        if (response.status === 404) {
+          const body = await response.json().catch(() => null);
+          if (body?.errorCode === "NEARBY_EVENTS_NOT_FOUND") {
+            updateCultureEvents([]);
+            return;
+          }
+        }
+        setEventsError(true);
         updateCultureEvents([]);
         return;
       }
@@ -100,6 +110,7 @@ export function useNearbyEvents(options: UseNearbyEventsOptions = {}) {
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
       console.error("주변 이벤트를 가져오지 못했습니다.", err);
+      setEventsError(true);
       updateCultureEvents([]);
     } finally {
       if (requestId === requestIdRef.current) {
@@ -178,6 +189,7 @@ export function useNearbyEvents(options: UseNearbyEventsOptions = {}) {
     isLoadingMore,
     loadMoreEvents,
     favoriteError,
+    eventsError,
     fetchEvents,
     handleToggleFavorite,
   };
