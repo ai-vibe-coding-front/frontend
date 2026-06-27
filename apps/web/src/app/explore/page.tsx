@@ -48,23 +48,31 @@ function toEventCardData(event: CultureEvent): EventCardData {
 
 function ExploreSkeleton() {
   return (
-    <div className="absolute inset-0 z-20 bg-[#fbf9f4]">
+    <div className="absolute inset-0 z-20 bg-[#fbf9f4] animate-pulse">
       <div className="absolute inset-0 bg-[#d9cfc5]" />
 
+      {/* 카테고리 필터 자리 */}
+      <div className="absolute top-3 left-4 right-4 flex gap-2 overflow-hidden">
+        <div className="h-[30px] w-[52px] shrink-0 rounded-full bg-[#c7bdb3]" />
+        <div className="h-[30px] w-[68px] shrink-0 rounded-full bg-[#c7bdb3]" />
+        <div className="h-[30px] w-[80px] shrink-0 rounded-full bg-[#c7bdb3]" />
+        <div className="h-[30px] w-[56px] shrink-0 rounded-full bg-[#c7bdb3]" />
+      </div>
+
+      {/* 줌 + GPS 버튼 자리 */}
       <div className="absolute right-5 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-        <div className="size-[48px] rounded-[12px] bg-[#c7bdb3]" />
-        <div className="size-[48px] rounded-[12px] bg-[#c7bdb3]" />
+        <div className="w-[48px] h-[96px] rounded-[12px] bg-[#c7bdb3]" />
         <div className="size-[48px] rounded-[12px] bg-[#c7bdb3]" />
       </div>
 
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 p-4 w-full">
-        <div className="bg-[#fefefe] rounded-[32px] p-[25px] flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="h-[12px] w-1/3 bg-[#d9cfc5] rounded-[4px]" />
-            <div className="h-[20px] w-2/3 bg-[#d9cfc5] rounded-[4px]" />
+      {/* 하단 카드 시트 자리 */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full">
+        <div className="bg-white rounded-t-[32px] px-[25px] pt-[13px] pb-[25px] flex flex-col gap-3">
+          <div className="mx-auto w-10 h-1 rounded-full bg-[rgba(207,196,189,0.6)]" />
+          <div className="h-[20px] w-2/3 bg-[#d9cfc5] rounded-[4px]" />
+          <div className="rounded-[20px] overflow-hidden">
+            <div className="h-[140px] w-full bg-[#d9cfc5]" />
           </div>
-          <div className="h-[14px] w-3/4 bg-[#d9cfc5] rounded-[4px]" />
-          <div className="h-[48px] w-full bg-[#d9cfc5] rounded-2xl" />
         </div>
       </div>
     </div>
@@ -80,6 +88,25 @@ function EventCardSkeleton() {
         <div className="h-[14px] w-1/2 bg-[#d9cfc5] rounded-[4px]" />
         <div className="h-[14px] w-1/3 bg-[#d9cfc5] rounded-[4px]" />
       </div>
+    </div>
+  );
+}
+
+function EventListMessage({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-1 text-center">
+      <p className="font-bold text-[15px] leading-[22px] text-[#251e19]">
+        {title}
+      </p>
+      <p className="font-medium text-[13px] leading-[19px] text-[#8c6e63]">
+        {description}
+      </p>
     </div>
   );
 }
@@ -272,7 +299,7 @@ export default function ExplorePage() {
             {hasGpsLocation ? (
               <div
                 className={`pointer-events-auto bg-white border border-[rgba(207,196,189,0.3)] rounded-t-[32px] shadow-[0px_20px_25px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden transition-[max-height] duration-300 ${
-                  isEventsExpanded ? "max-h-full" : "max-h-[280px]"
+                  isEventsExpanded ? "max-h-full" : "min-h-[280px] max-h-[280px]"
                 }`}
               >
                 <div className="shrink-0 px-[25px] pt-[13px]">
@@ -358,18 +385,15 @@ export default function ExplorePage() {
                       )}
                     </>
                   ) : eventsError ? (
-                    <div className="flex flex-col items-center justify-center gap-[10px] py-6 text-center">
-                      <p className="font-bold text-[17px] leading-[26px] text-[#251e19]">
-                        이벤트를 불러오지 못했어요
-                      </p>
-                      <p className="font-medium text-[13px] leading-[19px] text-[#716456]">
-                        잠시 후 다시 시도해 주세요.
-                      </p>
-                    </div>
+                    <EventListMessage
+                      title="이벤트를 불러오지 못했어요"
+                      description="잠시 후 다시 시도해 주세요."
+                    />
                   ) : (
-                    <span className="font-medium text-[14px] text-[#6b6763] leading-[21px] text-center">
-                      주변에 이벤트를 찾을 수 없습니다
-                    </span>
+                    <EventListMessage
+                      title="주변에 이벤트를 찾을 수 없습니다"
+                      description="다른 지역에서 다시 찾아보세요."
+                    />
                   )}
                 </div>
               </div>
