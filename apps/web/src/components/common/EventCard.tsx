@@ -230,6 +230,11 @@ export const EventCard = memo(function EventCard({
   prev.event.id === next.event.id &&
   prev.event.isFavorite === next.event.isFavorite &&
   prev.event.imageUrl === next.event.imageUrl &&
+  prev.event.title === next.event.title &&
+  prev.event.realmName === next.event.realmName &&
+  prev.event.place === next.event.place &&
+  prev.event.startDate === next.event.startDate &&
+  prev.event.endDate === next.event.endDate &&
   prev.favoriteDisabled === next.favoriteDisabled &&
   prev.isEnded === next.isEnded &&
   prev.shadow === next.shadow,
