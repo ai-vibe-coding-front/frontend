@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { EventCard } from "@/components/common/EventCard";
 import type { EventCardData } from "@/components/common/EventCard";
 
+const HOME_CAROUSEL_IMAGE_SIZES = "(max-width: 390px) calc(100vw - 48px), 342px";
+
 interface EventCarouselProps {
   events: EventCardData[];
   onItemClick?: (event: EventCardData) => void;
@@ -201,6 +203,7 @@ export function EventCarousel({ events, onItemClick, onFavorite }: EventCarousel
                   shadow={false}
                   onClick={() => onItemClick?.(event)}
                   onFavorite={() => onFavorite?.(event)}
+                  imageSizes={HOME_CAROUSEL_IMAGE_SIZES}
                 />
               </div>
             ))}

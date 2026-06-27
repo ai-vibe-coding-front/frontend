@@ -62,6 +62,8 @@ interface EventCardProps {
   event: EventCardData;
   onClick?: () => void;
   onFavorite?: () => void;
+  /** next/image fill 사용 시 렌더링 폭에 맞춘 sizes */
+  imageSizes?: string;
   /** overflow 컨테이너 안에서 사용할 때 그림자가 잘리므로 false로 전달 */
   shadow?: boolean;
   /** 행사 종료 상태 */
@@ -135,6 +137,7 @@ export function EventCard({
   event,
   onClick,
   onFavorite,
+  imageSizes = "100vw",
   shadow = true,
   isEnded = false,
   favoriteDisabled = false,
@@ -166,7 +169,7 @@ export function EventCard({
             src={event.imageUrl as string}
             alt={event.title}
             fill
-            sizes="100vw"
+            sizes={imageSizes}
             className="object-cover"
             onError={() => setImageFailed(true)}
           />
