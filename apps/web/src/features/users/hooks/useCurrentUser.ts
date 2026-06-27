@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ApiClientError, apiClient } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
 
 export interface CurrentUser {
   id: string;
@@ -18,42 +19,15 @@ interface UseCurrentUserResult {
 }
 
 export function useCurrentUser(enabled = true): UseCurrentUserResult {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [isLoading, setIsLoading] = useState(enabled);
-  const [error, setError] = useState<Error | ApiClientError | null>(null);
-
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-
-    let ignore = false;
-
-    apiClient<CurrentUser>("/api/users/me")
-      .then((currentUser) => {
-        if (ignore) return;
-        setError(null);
-        setUser(currentUser);
-      })
-      .catch((unknownError: unknown) => {
-        if (ignore) return;
-
-        setUser(null);
-        setError(
-          unknownError instanceof Error
-            ? unknownError
-            : new Error("사용자 정보를 불러오지 못했습니다."),
-        );
-      })
-      .finally(() => {
-        if (ignore) return;
-        setIsLoading(false);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, [enabled]);
+  const query = useQuery({
+    queryKey: queryKeys.users.me(),
+    queryFn: () => apiClient<CurrentUser>("/api/users/me"),
+    enabled,
+    retry: (failureCount, error) => {
+      if (error instanceof ApiClientError && error.status === 401) return false;
+      return failureCount < 1;
+    },
+  });
 
   if (!enabled) {
     return {
@@ -64,9 +38,16 @@ export function useCurrentUser(enabled = true): UseCurrentUserResult {
     };
   }
 
+  const error =
+    query.error instanceof Error
+      ? query.error
+      : query.error
+        ? new Error("사용자 정보를 불러오지 못했습니다.")
+        : null;
+
   return {
-    user,
-    isLoading,
+    user: error ? null : query.data ?? null,
+    isLoading: query.isPending,
     error,
     isUnauthorized: error instanceof ApiClientError && error.status === 401,
   };

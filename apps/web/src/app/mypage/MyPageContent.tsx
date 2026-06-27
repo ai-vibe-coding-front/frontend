@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ApiClientError, apiClient } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
@@ -33,6 +33,7 @@ const SavedHeartIcon = () => (
 
 export function MyPageContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isLoading, error, isUnauthorized } = useCurrentUser();
   const [logoutErrorMessage, setLogoutErrorMessage] = useState<string | null>(
     null,
@@ -62,7 +63,16 @@ export function MyPageContent() {
 
   const errorMessage = logoutErrorMessage ?? userErrorMessage;
 
-  const handleLogout = async () => {
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  const handleOpenFavorites = useCallback(() => {
+    if (pathname === ROUTES.mypageFavorites) return;
+    router.push(ROUTES.mypageFavorites);
+  }, [pathname, router]);
+
+  const handleLogout = useCallback(async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     setLogoutErrorMessage(null);
@@ -85,7 +95,24 @@ export function MyPageContent() {
       );
       setIsLoggingOut(false);
     }
-  };
+  }, [isLoggingOut, router]);
+
+  const handleTabChange = useCallback(
+    (tab: "home" | "curation" | "recommend" | "my") => {
+      const nextPath =
+        tab === "home"
+          ? ROUTES.home
+          : tab === "curation"
+            ? ROUTES.questions
+            : tab === "recommend"
+              ? ROUTES.recommendations
+              : ROUTES.mypage;
+
+      if (pathname === nextPath) return;
+      router.push(nextPath);
+    },
+    [pathname, router],
+  );
 
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
@@ -93,7 +120,7 @@ export function MyPageContent() {
         <div className="bg-[#faf7f2] h-[56px] flex items-center justify-between px-5 shrink-0">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="size-10 flex items-center justify-center rounded-full"
           >
             <Image
@@ -139,7 +166,7 @@ export function MyPageContent() {
 
           <button
             type="button"
-            onClick={() => router.push(ROUTES.mypageFavorites)}
+            onClick={handleOpenFavorites}
             className="w-full flex items-center gap-4 p-6 text-left"
           >
             <div className="bg-[#f0e4d4] rounded-full size-12 flex items-center justify-center shrink-0">
@@ -186,11 +213,7 @@ export function MyPageContent() {
         <div className="shrink-0">
           <BottomNav
             activeTab="my"
-            onTabChange={(tab) => {
-              if (tab === "home") router.push(ROUTES.home);
-              if (tab === "curation") router.push(ROUTES.questions);
-              if (tab === "recommend") router.push(ROUTES.recommendations);
-            }}
+            onTabChange={handleTabChange}
           />
         </div>
       </div>
