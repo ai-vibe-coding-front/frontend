@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -39,13 +40,20 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const { user } = useCurrentUser(isLoggedIn);
   const userName = user?.nickname || FALLBACK_USER_NAME;
 
-  const goToLocationPermission = () => {
+  const goToLocationPermission = useCallback(() => {
     router.push(ROUTES.locationPermission);
-  };
+  }, [router]);
 
-  const goToLogin = () => {
+  const goToLogin = useCallback(() => {
     router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`);
-  };
+  }, [router]);
+
+  const handleRecentEventClick = useCallback(
+    (event: { id: string }) => {
+      router.push(ROUTES.eventDetail(event.id));
+    },
+    [router],
+  );
 
   return (
     <div className="flex min-h-dvh w-full justify-center bg-[#f0ebe3]">
@@ -79,9 +87,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
               ) : (
                 <EventCarousel
                   events={recent.events}
-                  onItemClick={(event) =>
-                    router.push(ROUTES.eventDetail(event.id))
-                  }
+                  onItemClick={handleRecentEventClick}
                   onFavorite={recent.toggleFavorite}
                 />
               )}

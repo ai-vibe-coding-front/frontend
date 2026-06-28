@@ -1,53 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { EventCard, type EventCardData } from "@/components/common/EventCard";
-import { ApiClientError, apiClient } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
-
-const FAVORITES_PAGE_LIMIT = 20;
-
-type FavoriteItem = {
-  eventItemId: string;
-  title: string;
-  realmName: string | null;
-  place: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  imageUrl: string | null;
-  isFavorited?: boolean;
-  favoritedAt: string;
-};
-
-type FavoritesResponse = {
-  items: FavoriteItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasNext: boolean;
-  };
-};
-
-function toDate(value: string | null): Date | null {
-  return value ? new Date(value) : null;
-}
-
-function toEventCardData(item: FavoriteItem): EventCardData {
-  return {
-    id: item.eventItemId,
-    title: item.title,
-    realmName: item.realmName,
-    place: item.place,
-    startDate: toDate(item.startDate),
-    endDate: toDate(item.endDate),
-    imageUrl: item.imageUrl,
-    isFavorite: item.isFavorited ?? true,
-  };
-}
+import { useFavoriteEvents } from "@/app/mypage/favorites/useFavoriteEvents";
 
 function LoadingList() {
   return (
@@ -62,104 +21,75 @@ function LoadingList() {
   );
 }
 
+const FavoriteEventCard = memo(function FavoriteEventCard({
+  event,
+  onClick,
+  onFavoriteRemove,
+}: {
+  event: EventCardData;
+  onClick: (eventId: string) => void;
+  onFavoriteRemove: (eventId: string) => void;
+}) {
+  const handleClick = useCallback(() => {
+    onClick(event.id);
+  }, [event.id, onClick]);
+
+  const handleFavorite = useCallback(() => {
+    onFavoriteRemove(event.id);
+  }, [event.id, onFavoriteRemove]);
+
+  return <EventCard event={event} onClick={handleClick} onFavorite={handleFavorite} />;
+});
+
 export function FavoritesContent() {
   const router = useRouter();
-  const [items, setItems] = useState<FavoriteItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [pendingIds, setPendingIds] = useState<Set<string>>(() => new Set());
+  const pathname = usePathname();
+  const {
+    events,
+    isLoading,
+    isLoadingMore,
+    hasNext,
+    errorMessage,
+    isUnauthorized,
+    loadMore,
+    removeFavorite,
+  } = useFavoriteEvents();
 
   useEffect(() => {
-    apiClient<FavoritesResponse>(`/api/favorites?page=1&limit=${FAVORITES_PAGE_LIMIT}`)
-      .then((data) => {
-        setItems(data.items);
-        setCurrentPage(data.pagination.page);
-        setHasNext(data.pagination.hasNext);
-        setErrorMessage(null);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof ApiClientError && error.status === 401) {
-          router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
-          return;
-        }
+    if (isUnauthorized) {
+      router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
+    }
+  }, [isUnauthorized, router]);
 
-        setErrorMessage("관심행사 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
-      })
-      .finally(() => setIsLoading(false));
+  const handleBack = useCallback(() => {
+    router.back();
   }, [router]);
 
-  const events = useMemo(() => items.map(toEventCardData), [items]);
+  const handleEventClick = useCallback(
+    (eventId: string) => {
+      const nextPath = ROUTES.eventDetail(eventId);
+      if (pathname === nextPath) return;
+      router.push(nextPath);
+    },
+    [pathname, router],
+  );
 
-  const handleLoadMore = async () => {
-    if (isLoadingMore || !hasNext) return;
+  const handleTabChange = useCallback(
+    (tab: "home" | "curation" | "recommend" | "my") => {
+      const nextPath =
+        tab === "home"
+          ? ROUTES.home
+          : tab === "curation"
+            ? ROUTES.questions
+            : tab === "recommend"
+              ? ROUTES.recommendations
+              : ROUTES.mypage;
 
-    const nextPage = currentPage + 1;
-    setIsLoadingMore(true);
-    setErrorMessage(null);
-
-    try {
-      const data = await apiClient<FavoritesResponse>(
-        `/api/favorites?page=${nextPage}&limit=${FAVORITES_PAGE_LIMIT}`,
-      );
-      setItems((current) => [...current, ...data.items]);
-      setCurrentPage(data.pagination.page);
-      setHasNext(data.pagination.hasNext);
-    } catch (error) {
-      if (error instanceof ApiClientError && error.status === 401) {
-        router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
-        return;
-      }
-
-      setErrorMessage("관심행사 목록을 더 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
-  const removePendingId = (eventItemId: string) => {
-    setPendingIds((current) => {
-      const next = new Set(current);
-      next.delete(eventItemId);
-      return next;
-    });
-  };
-
-  const handleFavoriteRemove = async (eventItemId: string) => {
-    if (pendingIds.has(eventItemId)) return;
-
-    const removedIndex = items.findIndex((item) => item.eventItemId === eventItemId);
-    const removedItem = items[removedIndex];
-    if (!removedItem) return;
-
-    setPendingIds((current) => new Set(current).add(eventItemId));
-    setItems((current) => current.filter((item) => item.eventItemId !== eventItemId));
-    setErrorMessage(null);
-
-    try {
-      await apiClient<{ eventItemId: string; isFavorited: boolean; favoriteCount: number }>(
-        `/api/favorites/${eventItemId}`,
-        { method: "DELETE" },
-      );
-    } catch (error) {
-      setItems((current) => [
-        ...current.slice(0, removedIndex),
-        removedItem,
-        ...current.slice(removedIndex),
-      ]);
-
-      if (error instanceof ApiClientError && error.status === 401) {
-        router.replace(`${ROUTES.login}?redirect=${ROUTES.mypageFavorites}`);
-        return;
-      }
-
-      setErrorMessage("관심행사 해제에 실패했습니다. 잠시 후 다시 시도해주세요.");
-    } finally {
-      removePendingId(eventItemId);
-    }
-  };
+      if (pathname === nextPath) return;
+      router.push(nextPath);
+    },
+    [pathname, router],
+  );
 
   return (
     <div className="flex h-dvh w-full justify-center overflow-hidden bg-[#f0ebe3]">
@@ -167,7 +97,7 @@ export function FavoritesContent() {
         <div className="flex h-[56px] shrink-0 items-center justify-between bg-[#faf7f2] px-5">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="flex size-10 items-center justify-center rounded-full"
           >
             <Image
@@ -186,7 +116,7 @@ export function FavoritesContent() {
         <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4 no-scrollbar">
           {isLoading ? (
             <LoadingList />
-          ) : errorMessage && items.length === 0 ? (
+          ) : errorMessage && events.length === 0 ? (
             <div
               role="alert"
               className="flex min-h-[320px] flex-col items-center justify-center rounded-[20px] bg-white px-6 text-center"
@@ -218,17 +148,17 @@ export function FavoritesContent() {
                 </p>
               )}
               {events.map((event) => (
-                <EventCard
+                <FavoriteEventCard
                   key={event.id}
                   event={event}
-                  onClick={() => router.push(ROUTES.eventDetail(event.id))}
-                  onFavorite={() => handleFavoriteRemove(event.id)}
+                  onClick={handleEventClick}
+                  onFavoriteRemove={removeFavorite}
                 />
               ))}
               {hasNext && (
                 <button
                   type="button"
-                  onClick={handleLoadMore}
+                  onClick={loadMore}
                   disabled={isLoadingMore}
                   className="mt-1 h-12 rounded-[16px] bg-[#3f2a24] px-4 text-[14px] font-bold leading-5 text-white disabled:opacity-50"
                 >
@@ -242,12 +172,7 @@ export function FavoritesContent() {
         <div className="shrink-0">
           <BottomNav
             activeTab="my"
-            onTabChange={(tab) => {
-              if (tab === "home") router.push(ROUTES.home);
-              if (tab === "curation") router.push(ROUTES.questions);
-              if (tab === "recommend") router.push(ROUTES.recommendations);
-              if (tab === "my") router.push(ROUTES.mypage);
-            }}
+            onTabChange={handleTabChange}
           />
         </div>
       </div>
