@@ -34,7 +34,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
   const recent = useRecentRecommendations(isLoggedIn);
   const mainClassName = [
-    "flex-1 overflow-y-auto no-scrollbar px-6 pb-4 flex flex-col gap-4",
+    "flex-1 overflow-y-auto px-6 pb-4 flex flex-col gap-4",
     !isLoggedIn ? "justify-center" : "",
   ].join(" ");
   const { user } = useCurrentUser(isLoggedIn);

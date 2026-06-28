@@ -75,7 +75,7 @@ export function FavoritesContent() {
       <div className="flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
         <Header title="관심 행사" backHref={ROUTES.mypage} />
 
-        <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4 no-scrollbar">
+        <main className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-4">
           {isLoading ? (
             <LoadingList />
           ) : errorMessage && events.length === 0 ? (
