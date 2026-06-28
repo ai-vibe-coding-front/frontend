@@ -66,7 +66,7 @@ function LoginForm() {
 
   return (
     <>
-      <Header title="MUUD" onBackClick={handleBack} size="large" />
+      <Header title="MUUD" titleHref="/" onBackClick={handleBack} size="large" />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-6 py-3">

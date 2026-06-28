@@ -79,7 +79,7 @@ export default function EventDetailPage() {
     return (
       <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
         <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
-          <Header title="MUUD" onBackClick={handleBack} size="large" />
+          <Header title="MUUD" titleHref="/" onBackClick={handleBack} size="large" />
           <SkeletonLoader />
         </div>
       </div>
@@ -120,6 +120,7 @@ export default function EventDetailPage() {
 
         <Header
           title="MUUD"
+          titleHref="/"
           onBackClick={handleBack}
           size="large"
           rightSlot={
