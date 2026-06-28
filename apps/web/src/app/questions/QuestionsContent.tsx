@@ -6,6 +6,7 @@ import { ROUTES } from "@/constants/routes";
 import { AnimatePresence, motion } from "framer-motion";
 import { QUESTIONS, type Answers } from "./questions";
 import { GuestLimitModal } from "./GuestLimitModal";
+import { Header } from "@/components/layout/Header";
 import { ApiClientError } from "@/lib/api-client";
 import { useExplorationSessionMe } from "@/features/exploration/hooks/useExplorationSessionMe";
 import { useRecommendationSubmit } from "@/features/recommendations/hooks/useRecommendationSubmit";
@@ -124,19 +125,7 @@ export function QuestionsContent() {
       )}
       {showModal && <GuestLimitModal onClose={() => setShowModal(false)} />}
 
-      {/* TopAppBar */}
-      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push(ROUTES.home)}
-          className="size-4 shrink-0"
-        >
-          <img src="/icons/back-arrow.svg" alt="홈으로" className="size-full" />
-        </button>
-        <p className="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px]">
-          큐레이션
-        </p>
-      </div>
+      <Header title="큐레이션" backHref={ROUTES.home} />
 
       {/* Content */}
       <div className="min-h-0 flex-1 flex flex-col px-6 pb-6 overflow-hidden">

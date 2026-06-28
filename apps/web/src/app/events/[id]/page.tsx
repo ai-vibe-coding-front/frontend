@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams, useRouter, notFound } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { CategoryBadge, type Category } from '@/components/common/CategoryBadge';
 import MapPinIcon from '@/components/common/MapPinIcon';
 import { useEventDetail } from '@/features/event-detail/hooks/useEventDetail';
 import { KakaoMap, KakaoMapFallback } from '@/features/event-detail/components/KakaoMap';
 import { LoginGuardModal } from '@/features/event-detail/components/LoginGuardModal';
 import { FavoriteButton } from '@/features/event-detail/components/FavoriteButton';
+import { Header } from '@/components/layout/Header';
 import { ApiClientError } from '@/lib/api-client';
 import { ROUTES } from '@/constants/routes';
+import { useSafeBack } from '@/hooks/useSafeBack';
 
 const infoLabelClass = 'font-medium text-[15px] text-[#8c6e63] leading-[24px] w-[72px] shrink-0';
 const infoValueClass = 'font-normal text-[15px] text-[#3f2a24] leading-[24px]';
@@ -63,11 +65,11 @@ function SkeletonLoader() {
 
 export default function EventDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const id = typeof params.id === 'string' ? params.id : '';
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const handleBack = useSafeBack();
 
   const { data: event, isPending, error } = useEventDetail(id);
 
@@ -77,12 +79,7 @@ export default function EventDetailPage() {
     return (
       <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
         <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
-          <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-            <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
-              <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-            </button>
-            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
-          </div>
+          <Header title="MUUD" onBackClick={handleBack} size="large" />
           <SkeletonLoader />
         </div>
       </div>
@@ -121,20 +118,18 @@ export default function EventDetailPage() {
     <div className="bg-[#f0ebe3] h-screen flex items-center justify-center">
       <div className="bg-[rgba(251,249,244,0.95)] w-[390px] h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
 
-        {/* TopAppBar */}
-        <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-          <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
-            <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-          </button>
-          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
-            MUUD
-          </p>
-          <FavoriteButton
-            eventItemId={event.eventItemId}
-            initialFavorited={event.isFavorited}
-            onAuthRequired={() => setShowLoginModal(true)}
-          />
-        </div>
+        <Header
+          title="MUUD"
+          onBackClick={handleBack}
+          size="large"
+          rightSlot={
+            <FavoriteButton
+              eventItemId={event.eventItemId}
+              initialFavorited={event.isFavorited}
+              onAuthRequired={() => setShowLoginModal(true)}
+            />
+          }
+        />
 
         {/* Scrollable content */}
         <div className="flex-1 flex flex-col px-6 pt-3 pb-6 gap-4 overflow-y-auto">

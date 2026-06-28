@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Header } from "@/components/layout/Header";
+import { useSafeBack } from "@/hooks/useSafeBack";
 import { EventCard, type EventCardData } from "@/components/common/EventCard";
 import { LocationPermissionModal } from "@/components/common/LocationPermissionModal";
 import { KakaoMap } from "@/features/location/KakaoMap";
@@ -113,6 +115,7 @@ function EventListMessage({
 
 export default function ExplorePage() {
   const router = useRouter();
+  const handleBack = useSafeBack();
   const {
     hasGpsLocation,
     isLoadingEvents,
@@ -175,24 +178,7 @@ export default function ExplorePage() {
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
       <div className="bg-[#fbf9f4] w-[390px] min-h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col relative overflow-hidden">
-        {/* TopAppBar */}
-        <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0 z-10">
-          <button
-            onClick={() => router.back()}
-            className="size-[16px] shrink-0"
-          >
-            <Image
-              src="/icons/back-arrow.svg"
-              alt="뒤로가기"
-              width={16}
-              height={16}
-              className="size-full"
-            />
-          </button>
-          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
-            문화 생활지도
-          </p>
-        </div>
+        <Header title="문화 생활지도" onBackClick={handleBack} />
 
         {/* Map Canvas */}
         <div className="flex-1 relative">

@@ -1,16 +1,17 @@
 'use client';
 
 import { Suspense } from 'react';
-import Image from 'next/image';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { CTAButton } from "@/components/common/CTAButton";
 import { Input } from "@/components/common/Input";
+import { Header } from "@/components/layout/Header";
 import { removeAuthScopedQueries } from "@/lib/auth-query-cache";
 import { apiClient, ApiClientError } from "@/lib/api-client";
 import { ROUTES } from "@/constants/routes";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 type LoginFormData = {
   email: string;
@@ -26,6 +27,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const handleBack = useSafeBack();
 
   const {
     register,
@@ -64,13 +66,7 @@ function LoginForm() {
 
   return (
     <>
-      {/* TopAppBar */}
-      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-        <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
-          <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-        </button>
-        <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
-      </div>
+      <Header title="MUUD" onBackClick={handleBack} size="large" />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-6 py-3">

@@ -1,14 +1,15 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { Input } from '@/components/common/Input';
 import { CTAButton } from '@/components/common/CTAButton';
+import { Header } from '@/components/layout/Header';
 import { apiClient, ApiClientError } from '@/lib/api-client';
 import { SIGNUP_ERRORS } from '@/features/auth/schemas/signupSchema';
 import { ROUTES } from '@/constants/routes';
+import { useSafeBack } from '@/hooks/useSafeBack';
 
 type SignupFormData = {
   nickname: string;
@@ -26,6 +27,7 @@ const fieldErrorClass = 'text-[12px] text-red-500 leading-[18px] pl-1';
 
 export default function SignupPage() {
   const router = useRouter();
+  const handleBack = useSafeBack();
   const {
     register,
     control,
@@ -82,13 +84,7 @@ export default function SignupPage() {
 
   return (
     <>
-      {/* TopAppBar */}
-      <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] relative flex items-center px-6 shrink-0">
-        <button type="button" onClick={() => router.back()} className="size-4 shrink-0">
-          <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} className="size-full" />
-        </button>
-        <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">MUUD</p>
-      </div>
+      <Header title="MUUD" onBackClick={handleBack} size="large" />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col px-6 py-3">

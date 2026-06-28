@@ -53,13 +53,13 @@ export function FavoriteButton({ eventItemId, initialFavorited, onAuthRequired }
   };
 
   return (
-    <>
+    <div className="relative flex items-center">
       <button
         type="button"
         onClick={handleToggle}
         disabled={isPending}
         aria-label={isFavorited ? '관심 행사 해제' : '관심 행사 저장'}
-        className={`absolute right-[13px] top-1/2 -translate-y-1/2 border-[1.5px] border-[#ded0be] rounded-[16px] flex items-center justify-center size-[43px] disabled:opacity-50 ${isFavorited ? 'bg-[#f0e4d4]' : 'bg-[#fefefe]'}`}
+        className={`border-[1.5px] border-[#ded0be] rounded-[16px] flex items-center justify-center size-[43px] disabled:opacity-50 ${isFavorited ? 'bg-[#f0e4d4]' : 'bg-[#fefefe]'}`}
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path
@@ -73,11 +73,11 @@ export function FavoriteButton({ eventItemId, initialFavorited, onAuthRequired }
       {errorMessage && (
         <p
           role="alert"
-          className="absolute right-[13px] top-[52px] text-[11px] text-[#c0392b] bg-[#fefefe] border border-[#ded0be] rounded-[8px] px-2 py-1 whitespace-nowrap shadow-sm z-10"
+          className="absolute right-0 top-full mt-2 text-[11px] text-[#c0392b] bg-[#fefefe] border border-[#ded0be] rounded-[8px] px-2 py-1 whitespace-nowrap shadow-sm z-10"
         >
           {errorMessage}
         </p>
       )}
-    </>
+    </div>
   );
 }
