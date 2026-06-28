@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import { BottomNav } from '@/components/layout/BottomNav';
+import { Header } from '@/components/layout/Header';
 import { CTAButton } from '@/components/common/CTAButton';
 import { WeatherCard } from '@/features/recommendations/WeatherCard';
 import { EventResultList } from '@/features/recommendations/EventResultList';
 import { useRecommendationRun } from '@/features/recommendations/hooks/useRecommendationRun';
 import type { EventCardData } from '@/components/common/EventCard';
 import { ApiClientError } from '@/lib/api-client';
+import { useSafeBack } from '@/hooks/useSafeBack';
 
 function SkeletonLoader() {
   return (
@@ -50,6 +52,7 @@ export default function RecommendationsPage() {
   const params = useParams();
   const router = useRouter();
   const runId = typeof params.runId === 'string' ? params.runId : '';
+  const handleBack = useSafeBack('/questions');
 
   const { data: run, isPending, error } = useRecommendationRun(runId);
 
@@ -73,18 +76,11 @@ export default function RecommendationsPage() {
   if (isPending) {
     return (
       <div className="flex justify-center h-dvh bg-[#f0ebe3]">
-        <div className="relative flex flex-col w-[390px] h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
-          <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
-            <Link href="/questions" className="size-4 shrink-0">
-              <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} />
-            </Link>
-            <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
-              오늘의 추천
-            </p>
-          </div>
+        <div className="relative flex flex-col w-full h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+          <Header title="오늘의 추천" onBackClick={handleBack} />
           <SkeletonLoader />
           <div className="shrink-0">
-            <BottomNav activeTab="recommend" />
+            <BottomNav />
           </div>
         </div>
       </div>
@@ -95,7 +91,7 @@ export default function RecommendationsPage() {
     if (error instanceof ApiClientError && error.status === 404) notFound();
     return (
       <div className="flex justify-center h-dvh bg-[#f0ebe3]">
-        <div className="relative flex flex-col items-center justify-center w-[390px] h-dvh bg-[#f9f4ec] shadow-[0px_16px_18px_0px_rgba(51,31,15,0.18)] px-6">
+        <div className="relative flex flex-col items-center justify-center w-full h-dvh bg-[#f9f4ec] shadow-[0px_16px_18px_0px_rgba(51,31,15,0.18)] px-6">
 
           {/* 일러스트 영역 */}
           <div className="relative flex items-center justify-center w-[220px] h-[180px]">
@@ -138,17 +134,9 @@ export default function RecommendationsPage() {
 
   return (
     <div className="flex justify-center h-dvh bg-[#f0ebe3]">
-      <div className="relative flex flex-col w-[390px] h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+      <div className="relative flex flex-col w-full h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
 
-        {/* TopAppBar */}
-        <div className="backdrop-blur-[6px] bg-[rgba(251,249,244,0.95)] h-[64px] flex items-center px-6 relative shrink-0">
-          <Link href="/questions" className="size-4 shrink-0">
-            <Image src="/icons/back-arrow.svg" alt="뒤로가기" width={16} height={16} />
-          </Link>
-          <p className="absolute inset-0 flex items-center justify-center font-bold text-[24px] text-[#251e19] tracking-[-1.2px] leading-[36px] pointer-events-none">
-            오늘의 추천
-          </p>
-        </div>
+        <Header title="오늘의 추천" onBackClick={handleBack} />
 
         {/* Content */}
         <div className="flex-1 flex flex-col px-6 pt-3 pb-4 gap-6 overflow-y-auto">
@@ -193,7 +181,7 @@ export default function RecommendationsPage() {
 
         {/* BottomNav */}
         <div className="shrink-0">
-          <BottomNav activeTab="recommend" />
+          <BottomNav />
         </div>
       </div>
     </div>

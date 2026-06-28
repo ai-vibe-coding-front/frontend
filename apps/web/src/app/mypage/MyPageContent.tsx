@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Header } from "@/components/layout/Header";
 import { ApiClientError, apiClient } from "@/lib/api-client";
 import { removeAuthScopedQueries } from "@/lib/auth-query-cache";
 import { ROUTES } from "@/constants/routes";
 import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
+import { useSafeBack } from "@/hooks/useSafeBack";
 
 const ChevronRightIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -37,6 +38,7 @@ export function MyPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
+  const handleBack = useSafeBack();
   const { user, isLoading, error, isUnauthorized } = useCurrentUser();
   const [logoutErrorMessage, setLogoutErrorMessage] = useState<string | null>(
     null,
@@ -65,10 +67,6 @@ export function MyPageContent() {
   }, [error, isUnauthorized]);
 
   const errorMessage = logoutErrorMessage ?? userErrorMessage;
-
-  const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
 
   const handleOpenFavorites = useCallback(() => {
     if (pathname === ROUTES.mypageFavorites) return;
@@ -102,47 +100,13 @@ export function MyPageContent() {
     }
   }, [isLoggingOut, queryClient, router]);
 
-  const handleTabChange = useCallback(
-    (tab: "home" | "curation" | "recommend" | "my") => {
-      const nextPath =
-        tab === "home"
-          ? ROUTES.home
-          : tab === "curation"
-            ? ROUTES.questions
-            : tab === "recommend"
-              ? ROUTES.recommendations
-              : ROUTES.mypage;
-
-      if (pathname === nextPath) return;
-      router.push(nextPath);
-    },
-    [pathname, router],
-  );
-
   return (
-    <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
-      <div className="bg-[rgba(251,249,244,0.95)] w-[390px] min-h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col">
-        <div className="bg-[#faf7f2] h-[56px] flex items-center justify-between px-5 shrink-0">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="size-10 flex items-center justify-center rounded-full"
-          >
-            <Image
-              src="/icons/back-arrow.svg"
-              alt="뒤로가기"
-              width={16}
-              height={16}
-            />
-          </button>
-          <p className="font-bold text-[20px] text-[#251e19] leading-[28px] tracking-[-0.5px]">
-            마이페이지
-          </p>
-          <div className="size-10" />
-        </div>
+    <div className="flex h-dvh w-full justify-center overflow-hidden bg-[#f0ebe3]">
+      <div className="flex h-dvh w-full flex-col overflow-hidden bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+        <Header title="마이페이지" onBackClick={handleBack} />
 
         <div className="flex-1 flex flex-col gap-6 items-center px-5 pt-3 pb-6 overflow-y-auto">
-          <div className="bg-[#fefefe] shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)] rounded-[32px] w-[350px] flex flex-col items-center justify-center p-6 gap-1">
+          <div className="bg-[#fefefe] shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)] rounded-[32px] w-full flex flex-col items-center justify-center p-6 gap-1">
             {user ? (
               <>
                 <p className="font-bold text-[22px] text-[#251e19] leading-[30px] tracking-[-0.3px]">
@@ -216,10 +180,7 @@ export function MyPageContent() {
         </div>
 
         <div className="shrink-0">
-          <BottomNav
-            activeTab="my"
-            onTabChange={handleTabChange}
-          />
+          <BottomNav />
         </div>
       </div>
     </div>

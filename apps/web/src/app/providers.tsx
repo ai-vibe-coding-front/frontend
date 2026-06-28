@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { InternalNavigationTracker } from '@/hooks/useSafeBack';
 
 export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
   const [queryClient] = useState(
@@ -20,7 +21,12 @@ export function Providers({ children }: Readonly<{ children: React.ReactNode }>)
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <InternalNavigationTracker />
+      {children}
+    </QueryClientProvider>
+  );
 }
 
 // Usage example:
