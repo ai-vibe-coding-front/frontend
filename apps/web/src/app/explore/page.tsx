@@ -389,15 +389,7 @@ export default function ExplorePage() {
 
         {/* BottomNav */}
         <div className="shrink-0">
-          <BottomNav
-            activeTab="recommend"
-            onTabChange={(tab) => {
-              if (tab === "home") router.push("/");
-              if (tab === "curation") router.push("/recommendations");
-              if (tab === "recommend") router.push("/explore");
-              if (tab === "my") router.push("/mypage");
-            }}
-          />
+          <BottomNav />
         </div>
       </div>
     </div>

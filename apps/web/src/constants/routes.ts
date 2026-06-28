@@ -4,6 +4,7 @@ export const ROUTES = {
   signup: '/signup',
   locationPermission: '/location-permission',
   location: '/location',
+  explore: '/explore',
   questions: '/questions',
   recommendations: '/recommendations',
   recommendationResult: (runId: string) => `/recommendations/${runId}`,

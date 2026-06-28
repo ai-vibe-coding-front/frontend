@@ -440,7 +440,7 @@ function LocationContent() {
   return (
     <div className="bg-[#f0ebe3] min-h-screen flex items-center justify-center">
       <div className="bg-[#fbf9f4] w-[390px] min-h-screen shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)] flex flex-col relative overflow-hidden">
-        <Header title="위치 검색" onBackClick={handleBack} />
+        <Header title="맞춤 추천을 위한 위치 설정" onBackClick={handleBack} />
 
         <div className="flex-1 relative">
           <KakaoMap
@@ -541,15 +541,7 @@ function LocationContent() {
         </div>
 
         <div className="shrink-0">
-          <BottomNav
-            activeTab="recommend"
-            onTabChange={(tab) => {
-              if (tab === "home") router.push(ROUTES.home);
-              if (tab === "curation") router.push(ROUTES.questions);
-              if (tab === "recommend") router.push(ROUTES.recommendations);
-              if (tab === "my") router.push(ROUTES.mypage);
-            }}
-          />
+          <BottomNav />
         </div>
       </div>
     </div>

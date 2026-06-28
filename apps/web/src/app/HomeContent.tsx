@@ -93,7 +93,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
           )}
         </main>
 
-        <BottomNav activeTab="home" />
+        <BottomNav />
       </div>
     </div>
   );

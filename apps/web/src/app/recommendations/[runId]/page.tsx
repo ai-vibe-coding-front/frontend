@@ -80,7 +80,7 @@ export default function RecommendationsPage() {
           <Header title="오늘의 추천" onBackClick={handleBack} />
           <SkeletonLoader />
           <div className="shrink-0">
-            <BottomNav activeTab="recommend" />
+            <BottomNav />
           </div>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function RecommendationsPage() {
 
         {/* BottomNav */}
         <div className="shrink-0">
-          <BottomNav activeTab="recommend" />
+          <BottomNav />
         </div>
       </div>
     </div>
