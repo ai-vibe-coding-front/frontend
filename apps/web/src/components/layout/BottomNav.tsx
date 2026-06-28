@@ -41,7 +41,7 @@ export function BottomNav() {
   const activeTab = getActiveTab(pathname);
 
   return (
-    <nav className="bg-[rgba(245,243,238,0.95)] flex h-[60px] w-full shadow-[0px_-8px_30px_0px_rgba(0,0,0,0.1)]">
+    <nav className="bg-[rgba(251,249,244,0.95)] flex h-[60px] w-full shadow-[0px_-8px_30px_0px_rgba(0,0,0,0.1)]">
       {TABS.map((tab) => {
         const isActive = tab.id === activeTab;
         return (

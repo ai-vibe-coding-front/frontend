@@ -57,7 +57,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
 
   return (
     <div className="flex min-h-dvh w-full justify-center bg-[#f0ebe3]">
-      <div className="relative flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-[#f9f4ec] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+      <div className="relative flex h-dvh w-full max-w-[390px] flex-col overflow-hidden bg-[#fbf9f4] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
         <Header title="MUUD" titleHref="/" size="large" />
 
         <main className={mainClassName}>
