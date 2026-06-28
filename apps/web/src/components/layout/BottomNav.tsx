@@ -47,10 +47,7 @@ export function BottomNav() {
         return (
           <button
             key={tab.id}
-            onClick={() => {
-              if (isActive) return;
-              router.push(tab.route);
-            }}
+            onClick={() => !isActive && router.push(tab.route)}
             aria-label={tab.label}
             aria-current={isActive ? "page" : undefined}
             className="flex flex-1 flex-col gap-1 h-[59px] items-center justify-center"
