@@ -170,9 +170,18 @@ export function filterAndSort(scored: ScoredEvent[]): {
 
 const SKY_LABEL_MAP: Record<string, [string, string]> = {
   맑음: ['맑은', '☀️'],
-  구름조금: ['구름 조금인', '🌤️'],
   구름많음: ['구름 많은', '⛅'],
   흐림: ['흐린', '☁️'],
+};
+
+const PTY_LABEL_MAP: Record<number, [string, string]> = {
+  1: ['비 오는', '🌧️'],
+  2: ['비/눈 오는', '🌨️'],
+  3: ['눈 오는', '❄️'],
+  4: ['비 오는', '🌧️'],
+  5: ['비 오는', '🌧️'],
+  6: ['비/눈 오는', '🌨️'],
+  7: ['눈 오는', '❄️'],
 };
 
 const Q2_MOOD_WORDS: Record<string, string> = {
@@ -190,21 +199,44 @@ const Q4_COMPANION_WORDS: Record<string, string> = {
   family: '가족과 함께할',
 };
 
+const DUST_LABEL_MAP: Array<{ minGrade: number; label: string; emoji: string }> = [
+  { minGrade: 4, label: '미세먼지 매우 나쁜', emoji: '😷' },
+  { minGrade: 3, label: '미세먼지 나쁜', emoji: '😷' },
+];
+
+function getDustEntry(dust: DustResult | null): [string, string] | null {
+  if (!dust) return null;
+  const max = Math.max(
+    parseInt(dust.pm10Grade ?? '0', 10) || 0,
+    parseInt(dust.pm25Grade ?? '0', 10) || 0,
+  );
+  const entry = DUST_LABEL_MAP.find((d) => max >= d.minGrade);
+  return entry ? [entry.label, entry.emoji] : null;
+}
+
 export function buildCurationMessage(
   weather: WeatherResult | null,
+  dust: DustResult | null,
   q2Answer: string,
   q4Answer: string,
 ): string {
   const moodWord = Q2_MOOD_WORDS[q2Answer] ?? '즐거운';
   const companionWord = Q4_COMPANION_WORDS[q4Answer] ?? '';
 
-  const skyEntry = weather?.skyLabel ? SKY_LABEL_MAP[weather.skyLabel] : null;
-  if (!skyEntry) {
+  const pty = weather?.pty ?? 0;
+  const weatherEntry =
+    pty > 0
+      ? (PTY_LABEL_MAP[pty] ?? null)
+      : (getDustEntry(dust) ?? (weather?.skyLabel ? (SKY_LABEL_MAP[weather.skyLabel] ?? null) : null));
+
+  if (!weatherEntry) {
     return `${companionWord} ${moodWord} 행사를 추천해요 🎶`.trim();
   }
 
-  const [skyAdj, skyEmoji] = skyEntry;
-  return `${skyAdj} 오늘, ${companionWord} ${moodWord} 행사를 추천해요 ${skyEmoji}`.trim();
+  const [weatherAdj, weatherEmoji] = weatherEntry;
+  const isIndoorCondition = pty > 0 || getDustEntry(dust) !== null;
+  const indoorWord = isIndoorCondition ? '실내 ' : '';
+  return `${weatherAdj} 오늘, ${companionWord} ${moodWord} ${indoorWord}행사를 추천해요 ${weatherEmoji}`.trim();
 }
 
 export async function getRecentRecommendations(params: {
