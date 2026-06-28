@@ -102,11 +102,11 @@ export function MyPageContent() {
 
   return (
     <div className="flex h-dvh w-full justify-center overflow-hidden bg-[#f0ebe3]">
-      <div className="flex h-dvh w-[390px] flex-col overflow-hidden bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+      <div className="flex h-dvh w-full flex-col overflow-hidden bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
         <Header title="마이페이지" onBackClick={handleBack} />
 
         <div className="flex-1 flex flex-col gap-6 items-center px-5 pt-3 pb-6 overflow-y-auto">
-          <div className="bg-[#fefefe] shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)] rounded-[32px] w-[350px] flex flex-col items-center justify-center p-6 gap-1">
+          <div className="bg-[#fefefe] shadow-[0px_2px_6px_0px_rgba(63,42,36,0.06)] rounded-[32px] w-full flex flex-col items-center justify-center p-6 gap-1">
             {user ? (
               <>
                 <p className="font-bold text-[22px] text-[#251e19] leading-[30px] tracking-[-0.3px]">

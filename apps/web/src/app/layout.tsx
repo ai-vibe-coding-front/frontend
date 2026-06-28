@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={pretendard.variable}>
       <body className="min-h-dvh w-full bg-[#f0ebe3] flex justify-center font-sans">
-        <div className="w-full max-w-[390px] min-h-dvh flex flex-col bg-[#fbf9f4] shadow-[4px_0_24px_rgba(0,0,0,0.08),-4px_0_24px_rgba(0,0,0,0.08)]">
+        <div className="w-full min-[390px]:max-w-[390px] min-h-dvh flex flex-col bg-[#fbf9f4] shadow-[4px_0_24px_rgba(0,0,0,0.08),-4px_0_24px_rgba(0,0,0,0.08)]">
           <Providers>{children}</Providers>
         </div>
       </body>

@@ -76,7 +76,7 @@ export default function RecommendationsPage() {
   if (isPending) {
     return (
       <div className="flex justify-center h-dvh bg-[#f0ebe3]">
-        <div className="relative flex flex-col w-[390px] h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+        <div className="relative flex flex-col w-full h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
           <Header title="오늘의 추천" onBackClick={handleBack} />
           <SkeletonLoader />
           <div className="shrink-0">
@@ -91,7 +91,7 @@ export default function RecommendationsPage() {
     if (error instanceof ApiClientError && error.status === 404) notFound();
     return (
       <div className="flex justify-center h-dvh bg-[#f0ebe3]">
-        <div className="relative flex flex-col items-center justify-center w-[390px] h-dvh bg-[#f9f4ec] shadow-[0px_16px_18px_0px_rgba(51,31,15,0.18)] px-6">
+        <div className="relative flex flex-col items-center justify-center w-full h-dvh bg-[#f9f4ec] shadow-[0px_16px_18px_0px_rgba(51,31,15,0.18)] px-6">
 
           {/* 일러스트 영역 */}
           <div className="relative flex items-center justify-center w-[220px] h-[180px]">
@@ -134,7 +134,7 @@ export default function RecommendationsPage() {
 
   return (
     <div className="flex justify-center h-dvh bg-[#f0ebe3]">
-      <div className="relative flex flex-col w-[390px] h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
+      <div className="relative flex flex-col w-full h-dvh bg-[rgba(251,249,244,0.95)] shadow-[0px_16px_36px_0px_rgba(51,31,15,0.18)]">
 
         <Header title="오늘의 추천" onBackClick={handleBack} />
 
