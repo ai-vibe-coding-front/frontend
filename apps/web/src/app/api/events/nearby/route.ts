@@ -26,10 +26,6 @@ export async function GET(request: Request) {
 
     const result = await findNearbyEvents({ ...parsed.data, userId });
 
-    if (result.items.length === 0) {
-      return fail('NEARBY_EVENTS_NOT_FOUND', '주변 행사가 없습니다.', 404);
-    }
-
     return ok(result);
   } catch (err) {
     console.error('주변 행사 조회 실패', err);

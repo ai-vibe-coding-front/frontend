@@ -18,8 +18,6 @@ AI를 활용한 코드 작성은 허용한다. 단, AI가 작성한 코드의 �
 
 ## 3. AI 사용 가능 범위
 
-AI는 다음 작업에 사용할 수 있다.
-
 - 담당 페이지의 UI 컴포넌트 초안 작성
 - 담당 API Route 초안 작성
 - 담당 기능의 hook, util 함수 초안 작성
@@ -65,23 +63,7 @@ AI는 다음 작업에 사용할 수 있다.
 - DB 스키마 변경은 팀장 승인 후 진행한다.
 - 팀원은 임의로 `apps/web/prisma/schema.prisma`를 수정하지 않는다.
 - 팀원은 임의로 `apps/web/prisma/migrations/**` 파일을 생성하지 않는다.
-- 스키마 변경이 필요하면 아래 형식으로 팀장에게 요청한다.
-
-```markdown
-## DB 스키마 변경 요청
-
-### 담당 기능
--
-
-### 필요한 변경
--
-
-### 이유
--
-
-### 예상 영향 범위
--
-```
+- 스키마 변경이 필요하면 담당 기능, 필요한 변경, 이유, 예상 영향 범위를 팀장에게 공유한다.
 
 ## 6. 공통 컴포넌트 변경 규칙
 
@@ -113,41 +95,13 @@ AI에게 작업을 요청할 때는 반드시 아래 정보를 포함한다.
 -
 ```
 
-예시:
-
-```markdown
-나는 즐겨찾기 페이지를 담당하고 있다.
-
-수정 가능한 파일:
-- apps/web/src/app/favorites/**
-- apps/web/src/components/favorites/**
-- apps/web/src/app/api/favorites/**
-
-수정 금지 파일:
-- apps/web/prisma/schema.prisma
-- apps/web/prisma/migrations/**
-- apps/web/src/auth.ts
-- apps/web/src/middleware.ts
-- apps/web/src/components/common/**
-- apps/web/src/components/layout/**
-- apps/web/src/types/**
-- apps/web/src/lib/**
-- apps/web/.env*
-
-요구사항:
-- 기존 API 응답 형식은 변경하지 않는다.
-- DB 스키마 변경이 필요하면 직접 수정하지 말고 변경 제안만 한다.
-- 공통 컴포넌트 변경이 필요하면 직접 수정하지 말고 변경 제안만 한다.
-```
-
 ## 8. 작업 후 검증 규칙
 
 AI가 작성한 코드를 적용한 뒤 담당자는 아래 항목을 확인한다.
 
 - [ ] 내가 이해하지 못하는 코드가 포함되지 않았는가?
 - [ ] 내 담당 범위 밖의 파일이 수정되지 않았는가?
-- [ ] `apps/web/prisma/schema.prisma` 또는 migration 파일이 변경되지 않았는가?
-- [ ] 공통 컴포넌트가 임의로 변경되지 않았는가?
+- [ ] 보호 파일이 승인 없이 변경되지 않았는가?
 - [ ] 인증/인가 로직이 임의로 변경되지 않았는가?
 - [ ] 기존 API 응답 형식이 바뀌지 않았는가?
 - [ ] 환경변수 또는 API Key가 노출되지 않았는가?
@@ -177,6 +131,18 @@ PR 본문에는 AI 사용 여부를 작성한다.
 - [ ] 설명할 수 없는 코드는 제거했습니다.
 - [ ] 수정 금지 파일이 변경되지 않았는지 확인했습니다.
 - [ ] lint/typecheck/build를 실행했습니다.
+```
+
+보호 파일을 변경하는 PR은 승인 기록을 함께 작성한다.
+
+```markdown
+## 보호 파일 변경 여부
+
+- 변경 여부: 있음 / 없음
+- 대상 파일:
+  - apps/web/src/lib/api-response.ts
+- 승인자: @팀장계정
+- 승인 사유: API 응답 공통 형식 정리
 ```
 
 ## 10. Merge 규칙

@@ -39,3 +39,6 @@ GitHub Labels는 별도 Multi-select 필드에 저장합니다.
 
 `docs`, `refactor`, `style`, `chore`, `question`은 GitHub label이지 Notion Type이 아닙니다.
 따라서 Type에는 넣지 않습니다.
+
+`fix` 라벨은 Bug Issue Type과 의미가 겹치므로 기본 분류는 Bug Type으로 합니다.
+다만 GitHub-Notion 자동 동기화 또는 빠른 필터링이 필요한 경우 `fix` 라벨을 보조 라벨로 사용할 수 있습니다.

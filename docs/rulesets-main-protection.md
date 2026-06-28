@@ -21,18 +21,18 @@
 
 ```txt
 1. Issue 생성
-2. docs/#이슈번호-작업명 브랜치 생성
+2. docs/이슈번호-작업명 브랜치 생성
 3. 문서 수정
 4. Commit 작성
 5. Pull Request 생성
 6. 리뷰 후 main에 병합
-7. 작업 브랜치 삭제
+7. 작업 브랜치 정리
 ```
 
 예시:
 
 ```txt
-Branch: docs/#19-rulesets-document-flow
+Branch: docs/19-rulesets-document-flow
 Commit: docs: main 보호 규칙 문서 추가 (#19)
 PR: [docs] Rulesets 적용 후 문서 수정 흐름 명시
 ```
