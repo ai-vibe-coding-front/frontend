@@ -39,11 +39,12 @@ export async function POST(request: Request) {
   const accessToken = cookieStore.get('accessToken')?.value;
   const userId = accessToken ? await verifyAccessToken(accessToken) : null;
   const isLoggedIn = userId != null;
-  const existingKey = cookieStore.get('guestSessionKey')?.value;
-  const sessionKey = existingKey ?? generateSessionKey();
+  const existingGuestKey = cookieStore.get('guestSessionKey')?.value;
+  const sessionKey = isLoggedIn ? generateSessionKey() : existingGuestKey ?? generateSessionKey();
+  const shouldSetGuestCookie = !isLoggedIn && !existingGuestKey;
 
-  if (!isLoggedIn && existingKey) {
-    const { hasUsed } = await checkGuestUsed(existingKey);
+  if (!isLoggedIn && existingGuestKey) {
+    const { hasUsed } = await checkGuestUsed(existingGuestKey);
     if (hasUsed) {
       return fail('GUEST_SESSION_LIMIT_EXCEEDED', '비회원 체험 1회 제한을 초과했습니다', 403);
     }
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       expiresAt: session.expiresAt,
     });
 
-    if (!existingKey) {
+    if (shouldSetGuestCookie) {
       response.cookies.set('guestSessionKey', sessionKey, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
