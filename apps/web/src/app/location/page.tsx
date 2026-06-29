@@ -488,12 +488,15 @@ function LocationContent() {
     locationInfo?.label ?? "현재 위치의 주소를 확인하고 있습니다.";
   const canConfirm =
     !isResolvingLocation && isCompleteLocationInfo(locationInfo);
+  const hasLocationPermissionError = searchParams.get("locationError") === "1";
   const locationStatusMessage = locationResolveError
     ? `${locationResolveError} ${
         canConfirm
           ? "선택한 위치 기준으로 계속 진행할 수 있어요."
           : "지도를 조금 이동하거나 현재 위치 버튼을 다시 눌러주세요."
       }`
+    : hasLocationPermissionError
+      ? "현재 위치를 확인하지 못했어요. 지도를 움직여 원하는 위치를 설정해 주세요."
     : isResolvingLocation
       ? "주소를 확인하고 있습니다."
       : detailAddress;
