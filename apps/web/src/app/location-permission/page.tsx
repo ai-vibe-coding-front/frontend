@@ -7,6 +7,10 @@ import {
   normalizeGeolocationError,
   type GeolocationErrorType,
 } from "@/features/location/geolocationError";
+import {
+  readLastKnownLocation,
+  type StoredLocation,
+} from "@/features/location/locationStorage";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 import { ROUTES } from "@/constants/routes";
 
@@ -48,6 +52,17 @@ export default function LocationPermissionPage() {
     router.push(`${ROUTES.location}?${params.toString()}`);
   };
 
+  const moveToStoredLocation = (storedLocation: StoredLocation) => {
+    const params = new URLSearchParams({
+      from: "permission",
+      source: "stored",
+      locationSource: storedLocation.source,
+      lat: String(storedLocation.lat),
+      lng: String(storedLocation.lng),
+    });
+    router.push(`${ROUTES.location}?${params.toString()}`);
+  };
+
   const moveToManualLocation = (errorType: GeolocationErrorType = "unknown") => {
     const params = new URLSearchParams({
       from: "permission",
@@ -59,6 +74,12 @@ export default function LocationPermissionPage() {
 
   const handleAllow = async () => {
     if (isRequestingLocation) return;
+
+    const storedLocation = readLastKnownLocation();
+    if (storedLocation) {
+      moveToStoredLocation(storedLocation);
+      return;
+    }
 
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
