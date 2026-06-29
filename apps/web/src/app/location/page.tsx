@@ -12,6 +12,10 @@ import {
   getGeolocationErrorMessageByType,
   type GeolocationErrorType,
 } from "@/features/location/geolocationError";
+import {
+  saveLastKnownLocation,
+  type StoredLocationSource,
+} from "@/features/location/locationStorage";
 import { KakaoMap } from "@/features/location/KakaoMap";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 import { ROUTES } from "@/constants/routes";
@@ -232,6 +236,28 @@ function getLocationErrorType(searchParams: URLSearchParams): GeolocationErrorTy
   return null;
 }
 
+function getInitialLocationSource(searchParams: URLSearchParams): StoredLocationSource {
+  const locationSource = searchParams.get("locationSource");
+  if (locationSource === "gps" || locationSource === "manual") return locationSource;
+
+  return searchParams.get("from") === "permission" &&
+    searchParams.has("lat") &&
+    searchParams.has("lng") &&
+    searchParams.get("source") !== "stored"
+    ? "gps"
+    : "manual";
+}
+
+function isSameCoordinates(
+  first: { lat: number; lng: number },
+  second: { lat: number; lng: number },
+) {
+  return (
+    Math.abs(first.lat - second.lat) < 0.000001 &&
+    Math.abs(first.lng - second.lng) < 0.000001
+  );
+}
+
 function LocationSkeleton() {
   return (
     <div className="absolute inset-0 z-20 bg-[#fbf9f4]">
@@ -265,9 +291,14 @@ function LocationContent() {
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const requestIdRef = useRef(0);
   const resolveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gpsLocationRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const initialCenter = useMemo(
     () => getInitialCenter(searchParams),
+    [searchParams],
+  );
+  const initialLocationSource = useMemo(
+    () => getInitialLocationSource(searchParams),
     [searchParams],
   );
 
@@ -276,6 +307,11 @@ function LocationContent() {
   const [isMapError, setIsMapError] = useState(false);
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
   const [locationResolveError, setLocationResolveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    gpsLocationRef.current =
+      initialLocationSource === "gps" ? initialCenter : null;
+  }, [initialCenter, initialLocationSource]);
 
   const clearResolveTimeout = useCallback(() => {
     if (!resolveTimeoutRef.current) return;
@@ -454,6 +490,7 @@ function LocationContent() {
     try {
       setLocationResolveError(null);
       const { lat, lng } = await getCurrentLocation();
+      gpsLocationRef.current = { lat, lng };
       moveMapTo(lat, lng);
     } catch (err) {
       console.error("현재 위치를 가져오지 못했습니다.", err);
@@ -479,6 +516,23 @@ function LocationContent() {
 
   const handleLocationConfirm = () => {
     if (isResolvingLocation || !isCompleteLocationInfo(locationInfo)) return;
+
+    const gpsLocation = gpsLocationRef.current;
+    const source: StoredLocationSource =
+      gpsLocation && isSameCoordinates(gpsLocation, locationInfo)
+        ? "gps"
+        : "manual";
+
+    saveLastKnownLocation({
+      lat: locationInfo.lat,
+      lng: locationInfo.lng,
+      nx: locationInfo.nx,
+      ny: locationInfo.ny,
+      sido: locationInfo.sido,
+      label: locationInfo.label,
+      stationName: locationInfo.stationName,
+      source,
+    });
 
     const params = new URLSearchParams();
     appendIfPresent(params, "lat", locationInfo.lat);

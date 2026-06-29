@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { getGeolocationErrorMessage } from "@/features/location/geolocationError";
+import {
+  getLastKnownLocationServerSnapshot,
+  hasLastKnownLocation,
+  readLastKnownLocation,
+  saveLastKnownLocation,
+  subscribeToLastKnownLocation,
+} from "@/features/location/locationStorage";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 import {
   useNearbyEvents,
@@ -34,8 +41,6 @@ function calculateDistanceMeters(
   return EARTH_RADIUS_M * c;
 }
 
-const LOCATION_STORAGE_KEY = "explore:lastGpsLocation";
-
 const GPS_PIN_OVERLAY_HTML = `
   <svg viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-[40px] h-[48px] drop-shadow-[0px_4px_1.5px_rgba(0,0,0,0.1)]">
     <path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.373 0 0 5.373 0 12C0 19.2 12 30 12 30C12 30 24 19.2 24 12C24 5.373 18.627 0 12 0ZM12 16C9.791 16 8 14.209 8 12C8 9.791 9.791 8 12 8C14.209 8 16 9.791 16 12C16 14.209 14.209 16 12 16Z" fill="#2D2926"/>
@@ -56,30 +61,6 @@ type UseNearbyEventsMapOptions = {
   persistLocation?: boolean;
   excludeExpiredEvents?: boolean;
 };
-
-function readStoredLocation(): { lat: number; lng: number } | null {
-  try {
-    const raw = sessionStorage.getItem(LOCATION_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (typeof parsed.lat !== "number" || typeof parsed.lng !== "number") return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function subscribeToStoredLocation() {
-  return () => {};
-}
-
-function getHasStoredLocationSnapshot(): boolean {
-  return readStoredLocation() !== null;
-}
-
-function getHasStoredLocationServerSnapshot(): boolean {
-  return false;
-}
 
 export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const { persistLocation = false, excludeExpiredEvents = false } = options;
@@ -109,9 +90,9 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
 
   const [rawHasGpsLocation, setHasGpsLocation] = useState(false);
   const hasStoredLocation = useSyncExternalStore(
-    subscribeToStoredLocation,
-    getHasStoredLocationSnapshot,
-    getHasStoredLocationServerSnapshot,
+    subscribeToLastKnownLocation,
+    hasLastKnownLocation,
+    getLastKnownLocationServerSnapshot,
   );
   const hasGpsLocation = rawHasGpsLocation || (persistLocation && hasStoredLocation);
   const [isEventsExpanded, setIsEventsExpanded] = useState(false);
@@ -227,7 +208,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     applyLocation(lat, lng);
 
     if (persistLocation) {
-      sessionStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify({ lat, lng }));
+      saveLastKnownLocation({ lat, lng, source: "gps" });
     }
 
     await fetchEvents(lat, lng, selectedCategory);
@@ -255,7 +236,7 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
 
   const restoreSavedLocation = async () => {
     if (!persistLocation) return;
-    const saved = readStoredLocation();
+    const saved = readLastKnownLocation();
     if (!saved) return;
 
     applyLocation(saved.lat, saved.lng);
