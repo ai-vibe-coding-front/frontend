@@ -126,6 +126,8 @@ export default function ExplorePage() {
     isMapError,
     selectedCategory,
     districtName,
+    locationErrorMessage,
+    isRequestingLocation,
     mapScaleMeters,
     selectedEventId,
     visibleCount,
@@ -193,6 +195,8 @@ export default function ExplorePage() {
           <LocationPermissionModal
             onAllow={handleGpsClick}
             onSkip={() => setIsLocationPromptDismissed(true)}
+            isAllowLoading={isRequestingLocation}
+            errorMessage={locationErrorMessage}
           />
         )}
         <div

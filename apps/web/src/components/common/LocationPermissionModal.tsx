@@ -7,12 +7,14 @@ interface LocationPermissionModalProps {
   onAllow: () => void;
   onSkip: () => void;
   isAllowLoading?: boolean;
+  errorMessage?: string | null;
 }
 
 export function LocationPermissionModal({
   onAllow,
   onSkip,
   isAllowLoading = false,
+  errorMessage,
 }: LocationPermissionModalProps) {
   return (
     <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50" role="presentation">
@@ -43,6 +45,14 @@ export function LocationPermissionModal({
             문화 행사를 추천해 드릴게요.
           </p>
         </div>
+        {errorMessage && (
+          <p
+            role="status"
+            className="font-medium text-[13px] text-[#dc2626] leading-[19px] text-center"
+          >
+            {errorMessage}
+          </p>
+        )}
 
         <div className="flex flex-col gap-2 w-full">
           <button
