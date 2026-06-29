@@ -7,7 +7,7 @@ const KAKAO_SDK_SRC = "https://dapi.kakao.com/v2/maps/sdk.js";
 let kakaoLoaderPromise: Promise<void> | null = null;
 
 function loadKakaoSdk(appKey: string): Promise<void> {
-  if (window.kakao?.maps) {
+  if (window.kakao?.maps?.services) {
     return Promise.resolve();
   }
 
