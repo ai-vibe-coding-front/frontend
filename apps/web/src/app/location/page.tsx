@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CTAButton } from "@/components/common/CTAButton";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -15,6 +15,7 @@ import { useSafeBack } from "@/hooks/useSafeBack";
 const DEFAULT_CENTER = { lat: 37.544581, lng: 127.055961 };
 const MIN_ZOOM_LEVEL = 1;
 const MAX_ZOOM_LEVEL = 14;
+const LOCATION_RESOLVE_TIMEOUT_MS = 8000;
 
 type LocationInfo = {
   lat: number;
@@ -185,19 +186,13 @@ function isCompleteLocationInfo(
 ): locationInfo is LocationInfo & {
   nx: number;
   ny: number;
-  sido: string;
-  label: string;
-  stationName: string;
 } {
   return Boolean(
     locationInfo &&
     Number.isFinite(locationInfo.lat) &&
     Number.isFinite(locationInfo.lng) &&
     Number.isFinite(locationInfo.nx) &&
-    Number.isFinite(locationInfo.ny) &&
-    locationInfo.sido &&
-    locationInfo.label &&
-    locationInfo.stationName,
+    Number.isFinite(locationInfo.ny),
   );
 }
 
@@ -247,6 +242,7 @@ function LocationContent() {
   const { getCurrentLocation } = useCurrentLocation();
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const requestIdRef = useRef(0);
+  const resolveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initialCenter = useMemo(
     () => getInitialCenter(searchParams),
@@ -257,18 +253,43 @@ function LocationContent() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [isMapError, setIsMapError] = useState(false);
   const [isResolvingLocation, setIsResolvingLocation] = useState(false);
+  const [locationResolveError, setLocationResolveError] = useState<string | null>(null);
+
+  const clearResolveTimeout = useCallback(() => {
+    if (!resolveTimeoutRef.current) return;
+    clearTimeout(resolveTimeoutRef.current);
+    resolveTimeoutRef.current = null;
+  }, []);
+
+  useEffect(() => clearResolveTimeout, [clearResolveTimeout]);
 
   const resolveLocationInfo = useCallback((lat: number, lng: number) => {
+    clearResolveTimeout();
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
     const grid = toWeatherGrid(lat, lng);
+    const applyFallbackIfCurrentRequest = (message: string) => {
+      if (requestId !== requestIdRef.current) return;
+
+      setLocationInfo({
+        lat,
+        lng,
+        nx: grid.nx,
+        ny: grid.ny,
+        label: "선택한 위치",
+        districtName: "선택한 위치",
+      });
+      setLocationResolveError(message);
+    };
     const finishResolvingIfCurrentRequest = () => {
       if (requestId === requestIdRef.current) {
+        clearResolveTimeout();
         setIsResolvingLocation(false);
       }
     };
 
     setIsResolvingLocation(true);
+    setLocationResolveError(null);
     setLocationInfo({
       lat,
       lng,
@@ -276,7 +297,13 @@ function LocationContent() {
       ny: grid.ny,
     });
 
+    resolveTimeoutRef.current = setTimeout(() => {
+      applyFallbackIfCurrentRequest("주소 확인이 지연되고 있어요.");
+      finishResolvingIfCurrentRequest();
+    }, LOCATION_RESOLVE_TIMEOUT_MS);
+
     if (!window.kakao.maps.services) {
+      applyFallbackIfCurrentRequest("주소를 정확히 확인하지 못했어요.");
       finishResolvingIfCurrentRequest();
       return;
     }
@@ -326,7 +353,7 @@ function LocationContent() {
               buildingName ||
               getShortAddressName(detailAddress) ||
               (region?.region_3depth_name || region?.region_2depth_name);
-            const label =
+            const resolvedLabel =
               detailAddress ??
               [
                 region?.region_1depth_name,
@@ -335,6 +362,7 @@ function LocationContent() {
               ]
                 .filter(Boolean)
                 .join(" ");
+            const hasDisplayLocation = Boolean(resolvedLabel || districtName);
 
             setLocationInfo({
               lat,
@@ -342,10 +370,13 @@ function LocationContent() {
               nx: grid.nx,
               ny: grid.ny,
               sido: region?.region_1depth_name,
-              label,
+              label: resolvedLabel || "선택한 위치",
               stationName: region?.region_2depth_name,
-              districtName,
+              districtName: districtName || "선택한 위치",
             });
+            setLocationResolveError(
+              hasDisplayLocation ? null : "주소를 정확히 확인하지 못했어요.",
+            );
 
             if (!buildingName) {
               void getNearbyFacilityName(lat, lng)
@@ -369,8 +400,11 @@ function LocationContent() {
                 })
                 .catch((err) => {
                   console.error("시설명을 확인하지 못했습니다.", err);
-                });
+              });
             }
+          } catch (err) {
+            console.error("주소 정보를 확인하지 못했습니다.", err);
+            applyFallbackIfCurrentRequest("주소를 정확히 확인하지 못했어요.");
           } finally {
             finishResolvingIfCurrentRequest();
           }
@@ -378,9 +412,10 @@ function LocationContent() {
       });
     } catch (err) {
       console.error("주소 정보를 확인하지 못했습니다.", err);
+      applyFallbackIfCurrentRequest("주소를 정확히 확인하지 못했어요.");
       finishResolvingIfCurrentRequest();
     }
-  }, []);
+  }, [clearResolveTimeout]);
 
   const moveMapTo = useCallback(
     (lat: number, lng: number) => {
@@ -395,10 +430,12 @@ function LocationContent() {
 
   const handleGpsClick = async () => {
     try {
+      setLocationResolveError(null);
       const { lat, lng } = await getCurrentLocation();
       moveMapTo(lat, lng);
     } catch (err) {
       console.error("현재 위치를 가져오지 못했습니다.", err);
+      setLocationResolveError("현재 위치를 가져오지 못했어요. 지도를 이동해서 위치를 선택해주세요.");
     }
   };
 
@@ -451,6 +488,16 @@ function LocationContent() {
     locationInfo?.label ?? "현재 위치의 주소를 확인하고 있습니다.";
   const canConfirm =
     !isResolvingLocation && isCompleteLocationInfo(locationInfo);
+  const locationStatusMessage = locationResolveError
+    ? `${locationResolveError} ${
+        canConfirm
+          ? "선택한 위치 기준으로 계속 진행할 수 있어요."
+          : "지도를 조금 이동하거나 현재 위치 버튼을 다시 눌러주세요."
+      }`
+    : isResolvingLocation
+      ? "주소를 확인하고 있습니다."
+      : detailAddress;
+  const accuracyLabel = locationResolveError ? "주소 확인 필요" : "정확도 높음";
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden bg-[#fbf9f4] relative">
@@ -533,7 +580,7 @@ function LocationContent() {
               </div>
               <div className="bg-[#f0fdf4] rounded-full px-3 py-1 shrink-0">
                 <span className="font-bold text-[11px] text-[#15803d] leading-[16.5px]">
-                  정확도 높음
+                  {accuracyLabel}
                 </span>
               </div>
             </div>
@@ -541,9 +588,7 @@ function LocationContent() {
             <div className="flex items-center gap-2 pb-2 border-b border-[rgba(207,196,189,0.2)]">
               <MapPinIcon className="w-[12px] h-[15px] shrink-0" />
               <span className="font-normal text-[14px] text-[#4d4540] leading-[21px]">
-                {isResolvingLocation
-                  ? "주소를 확인하고 있습니다."
-                  : detailAddress}
+                {locationStatusMessage}
               </span>
             </div>
 
