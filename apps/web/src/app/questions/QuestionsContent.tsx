@@ -38,8 +38,7 @@ export function QuestionsContent() {
     searchParams.get("lat") &&
     searchParams.get("lng") &&
     searchParams.get("nx") &&
-    searchParams.get("ny") &&
-    searchParams.get("stationName")
+    searchParams.get("ny")
   );
 
   useEffect(() => {

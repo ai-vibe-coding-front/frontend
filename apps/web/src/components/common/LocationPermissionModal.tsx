@@ -6,9 +6,14 @@ import MapPinIcon from "@/components/common/MapPinIcon";
 interface LocationPermissionModalProps {
   onAllow: () => void;
   onSkip: () => void;
+  isAllowLoading?: boolean;
 }
 
-export function LocationPermissionModal({ onAllow, onSkip }: LocationPermissionModalProps) {
+export function LocationPermissionModal({
+  onAllow,
+  onSkip,
+  isAllowLoading = false,
+}: LocationPermissionModalProps) {
   return (
     <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] flex items-center justify-center z-50" role="presentation">
       <div
@@ -40,7 +45,24 @@ export function LocationPermissionModal({ onAllow, onSkip }: LocationPermissionM
         </div>
 
         <div className="flex flex-col gap-2 w-full">
-          <CTAButton label="허용하기" onClick={onAllow} />
+          <button
+            type="button"
+            onClick={onAllow}
+            disabled={isAllowLoading}
+            aria-busy={isAllowLoading}
+            aria-live="polite"
+            className="bg-[#8edfd2] w-full flex items-center justify-center gap-2 px-[88px] py-3 rounded-2xl shadow-[0px_10px_12px_rgba(59,38,20,0.1)] disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          >
+            {isAllowLoading && (
+              <span
+                aria-hidden="true"
+                className="size-4 rounded-full border-2 border-[#245b6b]/30 border-t-[#245b6b] animate-spin"
+              />
+            )}
+            <span className="font-semibold text-sm text-[#245b6b] leading-[21px] whitespace-nowrap">
+              {isAllowLoading ? "위치 확인 중..." : "허용하기"}
+            </span>
+          </button>
           <CTAButton label="다음에 하기" onClick={onSkip} className="bg-transparent border border-[#8edfd2]" />
         </div>
       </div>
