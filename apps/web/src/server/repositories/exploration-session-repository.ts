@@ -21,7 +21,14 @@ export async function createExplorationSession(data: {
 
 export async function hasGuestUsedSession(sessionKey: string): Promise<boolean> {
   const session = await prisma.explorationSession.findFirst({
-    where: { sessionKey, isGuest: true },
+    where: {
+      sessionKey,
+      isGuest: true,
+      OR: [
+        { status: 'RECOMMENDATION_COMPLETED' },
+        { recommendationRuns: { some: {} } },
+      ],
+    },
     select: { id: true },
   });
   return session !== null;

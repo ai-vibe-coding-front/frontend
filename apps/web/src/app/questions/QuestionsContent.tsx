@@ -49,7 +49,7 @@ export function QuestionsContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { data: sessionMeData } = useExplorationSessionMe();
+  const { data: sessionMeData, isLoading: isCheckingLimit } = useExplorationSessionMe();
   const isBlocked = sessionMeData?.hasUsed ?? false;
 
   const { mutate: submitAnswers, isPending: isSubmitting } =
@@ -59,9 +59,10 @@ export function QuestionsContent() {
   const isFirst = step === 0;
   const isLast = step === TOTAL_STEPS - 1;
   const currentAnswer = answers[question.key];
+  const shouldShowLimitModal = showModal || isBlocked;
 
   const goNext = () => {
-    if (!currentAnswer || isBlocked || isSubmitting || isNavigating) return;
+    if (!currentAnswer || isBlocked || isCheckingLimit || isSubmitting || isNavigating) return;
     if (isLast) {
       const lat = searchParams.get("lat");
       const lng = searchParams.get("lng");
@@ -104,6 +105,7 @@ export function QuestionsContent() {
   };
 
   const selectAnswer = (value: string) => {
+    if (isCheckingLimit) return;
     if (isBlocked) {
       setShowModal(true);
       return;
@@ -123,7 +125,14 @@ export function QuestionsContent() {
           </p>
         </div>
       )}
-      {showModal && <GuestLimitModal onClose={() => setShowModal(false)} />}
+      {shouldShowLimitModal && (
+        <GuestLimitModal
+          onClose={() => {
+            setShowModal(false);
+            if (isBlocked) router.replace(ROUTES.home);
+          }}
+        />
+      )}
 
       <Header title="큐레이션" backHref={ROUTES.home} />
 
@@ -231,9 +240,9 @@ export function QuestionsContent() {
           <button
             type="button"
             onClick={goNext}
-            disabled={!currentAnswer || isSubmitting || isNavigating}
+            disabled={!currentAnswer || isBlocked || isCheckingLimit || isSubmitting || isNavigating}
             className={`flex-1 bg-[#8edfd2] rounded-[16px] py-3 flex items-center justify-center shadow-[0px_10px_12px_rgba(59,38,20,0.1)] transition-opacity ${
-              currentAnswer && !isSubmitting && !isNavigating
+              currentAnswer && !isBlocked && !isCheckingLimit && !isSubmitting && !isNavigating
                 ? "opacity-100"
                 : "opacity-50 cursor-not-allowed"
             }`}

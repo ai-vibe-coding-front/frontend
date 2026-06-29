@@ -8,6 +8,8 @@ import { TodayMoodCard } from "@/features/recommendations/TodayMoodCard";
 import { EventCarousel } from "@/features/recommendations/EventCarousel";
 import { useRecentRecommendations } from "@/features/recommendations/hooks/useRecentRecommendations";
 import { ROUTES } from "@/constants/routes";
+import { GuestLimitModal } from "@/app/questions/GuestLimitModal";
+import { useStartRecommendationFlow } from "@/features/exploration/hooks/useStartRecommendationFlow";
 
 import { useCurrentUser } from "@/features/users/hooks/useCurrentUser";
 
@@ -33,16 +35,17 @@ function RecentRecommendationsEmptyState() {
 export function HomeContent({ isLoggedIn }: HomeContentProps) {
   const router = useRouter();
   const recent = useRecentRecommendations(isLoggedIn);
+  const {
+    isLimitModalOpen,
+    closeLimitModal,
+    startRecommendationFlow,
+  } = useStartRecommendationFlow();
   const mainClassName = [
     "flex-1 overflow-y-auto px-6 pb-4 flex flex-col gap-4",
     !isLoggedIn ? "justify-center" : "",
   ].join(" ");
   const { user } = useCurrentUser(isLoggedIn);
   const userName = user?.nickname || FALLBACK_USER_NAME;
-
-  const goToLocationPermission = useCallback(() => {
-    router.push(ROUTES.locationPermission);
-  }, [router]);
 
   const goToLogin = useCallback(() => {
     router.push(`${ROUTES.login}?redirect=${ROUTES.locationPermission}`);
@@ -63,9 +66,9 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
         <main className={mainClassName}>
           <TodayMoodCard
             isLoggedIn={isLoggedIn}
-            onCTAClick={isLoggedIn ? goToLocationPermission : goToLogin}
+            onCTAClick={isLoggedIn ? startRecommendationFlow : goToLogin}
             userName={userName}
-            onGuestClick={goToLocationPermission}
+            onGuestClick={startRecommendationFlow}
           />
 
           {isLoggedIn && (
@@ -94,6 +97,7 @@ export function HomeContent({ isLoggedIn }: HomeContentProps) {
         </main>
 
         <BottomNav />
+        {isLimitModalOpen && <GuestLimitModal onClose={closeLimitModal} />}
       </div>
     </div>
   );
