@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LocationPermissionModal } from "@/components/common/LocationPermissionModal";
+import {
+  normalizeGeolocationError,
+  type GeolocationErrorType,
+} from "@/features/location/geolocationError";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 import { ROUTES } from "@/constants/routes";
 
@@ -44,8 +48,13 @@ export default function LocationPermissionPage() {
     router.push(`${ROUTES.location}?${params.toString()}`);
   };
 
-  const moveToManualLocation = () => {
-    router.push(`${ROUTES.location}?from=permission&locationError=1`);
+  const moveToManualLocation = (errorType: GeolocationErrorType = "unknown") => {
+    const params = new URLSearchParams({
+      from: "permission",
+      locationError: "1",
+      locationErrorType: errorType,
+    });
+    router.push(`${ROUTES.location}?${params.toString()}`);
   };
 
   const handleAllow = async () => {
@@ -70,7 +79,7 @@ export default function LocationPermissionPage() {
 
       requestIdRef.current += 1;
       setIsRequestingLocation(false);
-      moveToManualLocation();
+      moveToManualLocation("timeout");
     }, LOCATION_PERMISSION_TIMEOUT_MS);
 
     try {
@@ -85,7 +94,7 @@ export default function LocationPermissionPage() {
 
       clearPermissionTimeout();
       moveToLocation(coordinates);
-    } catch {
+    } catch (err) {
       if (
         !isMountedRef.current ||
         hasSkippedRef.current ||
@@ -95,7 +104,7 @@ export default function LocationPermissionPage() {
       }
 
       clearPermissionTimeout();
-      moveToManualLocation();
+      moveToManualLocation(normalizeGeolocationError(err).type);
     } finally {
       if (isMountedRef.current && requestId === requestIdRef.current) {
         clearPermissionTimeout();

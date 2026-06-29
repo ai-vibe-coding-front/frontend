@@ -7,6 +7,11 @@ import { CTAButton } from "@/components/common/CTAButton";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Header } from "@/components/layout/Header";
 import MapPinIcon from "@/components/common/MapPinIcon";
+import {
+  getGeolocationErrorMessage,
+  getGeolocationErrorMessageByType,
+  type GeolocationErrorType,
+} from "@/features/location/geolocationError";
 import { KakaoMap } from "@/features/location/KakaoMap";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 import { ROUTES } from "@/constants/routes";
@@ -208,6 +213,23 @@ function getInitialCenter(searchParams: URLSearchParams) {
   return Number.isFinite(lat) && Number.isFinite(lng)
     ? { lat, lng }
     : DEFAULT_CENTER;
+}
+
+function getLocationErrorType(searchParams: URLSearchParams): GeolocationErrorType | null {
+  const type = searchParams.get("locationErrorType");
+
+  if (
+    type === "unsupported" ||
+    type === "insecure_context" ||
+    type === "permission_denied" ||
+    type === "position_unavailable" ||
+    type === "timeout" ||
+    type === "unknown"
+  ) {
+    return type;
+  }
+
+  return null;
 }
 
 function LocationSkeleton() {
@@ -435,7 +457,7 @@ function LocationContent() {
       moveMapTo(lat, lng);
     } catch (err) {
       console.error("현재 위치를 가져오지 못했습니다.", err);
-      setLocationResolveError("현재 위치를 가져오지 못했어요. 지도를 이동해서 위치를 선택해주세요.");
+      setLocationResolveError(getGeolocationErrorMessage(err));
     }
   };
 
@@ -489,6 +511,7 @@ function LocationContent() {
   const canConfirm =
     !isResolvingLocation && isCompleteLocationInfo(locationInfo);
   const hasLocationPermissionError = searchParams.get("locationError") === "1";
+  const locationPermissionErrorType = getLocationErrorType(searchParams);
   const locationStatusMessage = locationResolveError
     ? `${locationResolveError} ${
         canConfirm
@@ -496,7 +519,7 @@ function LocationContent() {
           : "지도를 조금 이동하거나 현재 위치 버튼을 다시 눌러주세요."
       }`
     : hasLocationPermissionError
-      ? "현재 위치를 확인하지 못했어요. 지도를 움직여 원하는 위치를 설정해 주세요."
+      ? getGeolocationErrorMessageByType(locationPermissionErrorType)
     : isResolvingLocation
       ? "주소를 확인하고 있습니다."
       : detailAddress;

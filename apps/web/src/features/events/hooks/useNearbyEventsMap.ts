@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { getGeolocationErrorMessage } from "@/features/location/geolocationError";
 import { useCurrentLocation } from "@/features/location/useCurrentLocation";
 import {
   useNearbyEvents,
@@ -117,6 +118,8 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   const [isMapReady, setIsMapReady] = useState(false);
   const [isMapError, setIsMapError] = useState(false);
   const [districtName, setDistrictName] = useState<string | null>(null);
+  const [locationErrorMessage, setLocationErrorMessage] = useState<string | null>(null);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [mapScaleMeters, setMapScaleMeters] = useState<number | null>(null);
   const [rawSelectedEventId, setRawSelectedEventId] = useState<string | null>(
     null,
@@ -231,14 +234,22 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
   };
 
   const handleGpsClick = async () => {
+    if (isRequestingLocation) return;
+
+    setIsRequestingLocation(true);
+    setLocationErrorMessage(null);
+
     try {
       const { lat, lng } = await getCurrentLocation();
       await applyKnownLocation(lat, lng);
     } catch (err) {
       console.error(
-        "현재 위치를 가져오지 못했습니다. GPS 안 켜져 있습니다",
+        "현재 위치를 가져오지 못했습니다.",
         err,
       );
+      setLocationErrorMessage(getGeolocationErrorMessage(err));
+    } finally {
+      setIsRequestingLocation(false);
     }
   };
 
@@ -308,6 +319,8 @@ export function useNearbyEventsMap(options: UseNearbyEventsMapOptions = {}) {
     isMapError,
     selectedCategory,
     districtName,
+    locationErrorMessage,
+    isRequestingLocation,
     mapScaleMeters,
     selectedEventId,
     visibleCount,
