@@ -554,29 +554,3 @@ PR에는 아래 내용을 포함합니다.
 | Notion API 명세서                 | 내부 API 요청·응답 기준                      |
 | Notion Troubleshooting Records | 해결된 문제와 학습 기록                        |
 | Notion Issues DB               | GitHub Issue와 PR 작업 추적               |
-
-## 이미지 자료 TODO
-
-README 최종 제출 전 아래 이미지를 추가합니다.
-
-| 이미지             | 필요 이유                                   |
-| --------------- | --------------------------------------- |
-| 서비스 대표 화면       | 첫인상과 서비스 목적 전달                          |
-| 핵심 사용자 플로우      | 추천 진입부터 결과까지의 흐름 설명                     |
-| 주요 화면 스크린샷      | 구현 결과 시각화                               |
-| 위치 fallback 플로우 | 위치 실패 대응 구조 설명                          |
-| ERD 이미지         | 데이터 구조 설명                               |
-| 시스템 아키텍처        | Next.js, Prisma, Supabase, 외부 API 관계 설명 |
-
-권장 경로:
-
-```txt
-docs/images/readme/
-├─ service-main.png
-├─ user-flow.png
-├─ recommendation-flow.png
-├─ location-fallback-flow.png
-├─ screenshots.png
-├─ erd.png
-└─ architecture.png
-```
