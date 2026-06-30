@@ -181,24 +181,6 @@ src/
 }
 ```
 
-예시:
-
-```json
-{
-  "success": false,
-  "errorCode": "USER_NOT_FOUND",
-  "message": "사용자를 찾을 수 없습니다."
-}
-```
-
-```json
-{
-  "success": false,
-  "errorCode": "INVALID_PASSWORD",
-  "message": "비밀번호가 올바르지 않습니다."
-}
-```
-
 현재 공통 응답 유틸과 타입은 `errorCode` 필드를 사용합니다. 문서와 API 명세도 `code`가 아니라 `errorCode`로 통일합니다.
 
 에러 메시지는 화면에서 사용자에게 보여줄 수 있는 수준으로 작성합니다. 다만 내부 구현 정보, SQL 오류, 서버 경로 등은 응답에 포함하지 않습니다.
@@ -287,6 +269,16 @@ DB 변경 사항 예시:
 - 토큰, 비밀번호, API Key 등 민감한 값은 로그에 남기지 않습니다.
 - 비밀번호는 평문으로 저장하지 않습니다.
 
+### 10.1 추천 진입 제한 기준
+
+추천받기 진입은 화면 이동만으로 처리하지 않고 서버 기준으로 가능 여부를 확인합니다.
+
+- 로그인 사용자는 사용자 ID 기준으로 추천 흐름을 판단합니다.
+- 비회원 사용자는 서버가 관리하는 브라우저 단위 식별자를 기준으로 사용 이력을 판단합니다.
+- 비회원 추천 제한은 단순 세션 존재 여부가 아니라 추천 완료 상태 또는 추천 실행 기록 기준으로 판단합니다.
+- 추천 진입이 제한되는 경우 화면은 제한 모달을 표시하고 질문 페이지로 직접 진입하지 않습니다.
+- `/questions` 직접 접근 시에도 동일한 제한 확인을 유지합니다.
+
 ## 11. 환경변수 규칙
 
 환경변수는 `.env.local`에 작성하되, 실제 값은 GitHub에 올리지 않습니다.
@@ -296,6 +288,11 @@ DB 변경 사항 예시:
 - 브라우저에 노출되어도 되는 값만 `NEXT_PUBLIC_` prefix를 사용합니다.
 - DB URL, Secret, API Key 등 민감한 값에는 `NEXT_PUBLIC_`을 붙이지 않습니다.
 - 배포 환경에 필요한 환경변수는 README 또는 배포 문서에 정리합니다.
+- README의 로컬 실행 방법은 `apps/web/.env.example`을 기준으로 작성합니다.
+- `DATABASE_URL`은 앱 실행과 빌드에 필요한 기본 DB URL입니다.
+- `DIRECT_URL`은 Prisma migration 및 schema 변경 담당자용 값이며, 일반 개발자 필수 환경변수로 안내하지 않습니다.
+- 서버에서 호출하는 공공 API 키는 `WEATHER_API_KEY`, `CULTURE_API_KEY`, `DUST_API_KEY`, `GEMINI_API_KEY`처럼 서버 전용 환경변수로 관리합니다.
+- 카카오맵 클라이언트 키만 `NEXT_PUBLIC_KAKAO_MAP_KEY`로 관리합니다.
 
 ## 12. 로그 규칙
 
@@ -343,8 +340,9 @@ Query key는 `apps/web/src/lib/query-keys.ts`의 `queryKeys`에서만 생성합�
 import { queryKeys } from '@/lib/query-keys';
 
 queryKeys.users.me();
+queryKeys.explorationSessions.all();
 queryKeys.recommendations.detail(runId);
-queryKeys.recommendations.recent();
+queryKeys.recommendations.recent(limit);
 queryKeys.events.detail(eventItemId);
 queryKeys.events.nearby.list({ lat, lng, radiusKm, limit, category });
 queryKeys.favorites.list();
@@ -369,10 +367,11 @@ queryKeys.favorites.count();
 | `POST /api/auth/refresh` | mutation, 자동 retry는 별도 이슈 |
 | `GET /api/users/me` | `queryKeys.users.me()` |
 | `POST /api/exploration-sessions` | mutation |
+| `GET /api/exploration-sessions/me` | 추천 진입 전 사용 가능 여부 확인. hook 내부에서 직접 호출하거나 `queryKeys.explorationSessions.all()` 하위 key 추가 후 사용 |
 | `PATCH /api/exploration-sessions/:explorationSessionId/status` | mutation |
 | `POST /api/recommendations` | mutation |
 | `GET /api/recommendations/:runId` | `queryKeys.recommendations.detail(runId)` |
-| `GET /api/recommendations/recent` | `queryKeys.recommendations.recent()` |
+| `GET /api/recommendations/recent` | `queryKeys.recommendations.recent(limit)` |
 | `GET /api/events/:eventItemId` | `queryKeys.events.detail(eventItemId)` |
 | `GET /api/events/nearby` | `queryKeys.events.nearby.list(query)` |
 | `POST /api/favorites` | mutation |
@@ -382,3 +381,15 @@ queryKeys.favorites.count();
 | `POST /api/event-logs` | mutation, 화면 데이터 무효화 없음 |
 
 질문 Q1~Q4 답변은 질문마다 mutation hook으로 저장하지 않습니다. 요구사항 정의서 v1.0과 ERD v1.0 기준대로 프론트 상태에 임시 보관하고 `POST /api/recommendations` 요청에서 한 번에 전달합니다.
+
+## 16. 위치 권한 및 최근 위치 저장 기준
+
+위치 권한과 위치 설정은 추천받기와 주변 탐색 모두에 영향을 주는 공통 흐름입니다.
+
+- 브라우저 Geolocation API 실패는 공통 에러 타입으로 정규화합니다.
+- 화면에서는 공통 메시지 기준을 사용해 권한 거부, API 미지원, 보안 컨텍스트 오류, 위치 확인 실패, timeout을 구분합니다.
+- 위치 요청이 오래 pending 상태로 남는 경우에는 timeout 이후 수동 위치 설정으로 이동할 수 있어야 합니다.
+- 위치 설정 페이지는 Kakao 주소 조회가 실패하거나 지연되어도 `lat`, `lng`, `nx`, `ny`가 있으면 추천 흐름을 계속 진행할 수 있어야 합니다.
+- 추천 플로우와 주변 탐색은 같은 최근 위치 저장 기준을 사용합니다.
+- 최근 위치 저장은 브라우저 세션 범위에서만 재사용하고, 만료되었거나 형식이 맞지 않는 값은 제거합니다.
+- 저장 위치는 사용자 계정의 기본 위치나 장기 위치 이력으로 취급하지 않습니다.
