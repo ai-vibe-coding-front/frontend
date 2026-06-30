@@ -133,18 +133,18 @@ MUUD는 현재 MVP 개발 및 배포 단계에 있습니다.
 <summary>주요 페이지 보기</summary>
 
 | 경로                   | 설명                     |
-| ---------------------- | ------------------------ |
-| `/`                    | 홈 또는 서비스 진입 화면 |
-| `/onboarding`          | 온보딩 화면              |
-| `/login`               | 로그인                   |
-| `/signup`              | 회원가입                 |
-| `/location-permission` | 위치 권한 요청           |
-| `/location`            | 위치 설정                |
-| `/questions`           | 추천 질문 플로우         |
-| `/recommendations`     | 추천 결과                |
-| `/explore`             | 주변 문화생활 탐색       |
-| `/favorites`           | 관심 행사 목록           |
-| `/mypage`              | 마이페이지               |
+| ------------------------------ | ------------------------ |
+| `/`                            | 홈 또는 서비스 진입 화면       |
+| `/onboarding`                  | 온보딩 화면                 |
+| `/login`                       | 로그인                     |
+| `/signup`                      | 회원가입                   |
+| `/location-permission`         | 위치 권한 요청              |
+| `/location`                    | 위치 설정                  |
+| `/questions`                   | 추천 질문 플로우             |
+| `/recommendations/[runid]`     | 추천 결과                  |
+| `/explore`                     | 주변 문화생활 탐색           |
+| `/favorites`                   | 관심 행사 목록              |
+| `/mypage`                      | 마이페이지                 |
 
 </details>
 
