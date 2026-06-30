@@ -41,10 +41,10 @@ MUUD는 현재 MVP 개발 및 배포 단계에 있습니다.
 | Organization | Good Vibe Team               |
 
 <p>
-  <img src="./docs/images/readme/home.png" width="220" alt="홈 화면">
-  <img src="./docs/images/readme/location.png" width="220" alt="위치설정화면">
-  <img src="./docs/images/readme/questions.png" width="220" alt="질문선택화면">
-  <img src="./docs/images/readme/questions_result.png" width="220" alt="결과화면">
+  <img src="./docs/images/readme/home.png" width="200" alt="홈 화면">
+  <img src="./docs/images/readme/location.png" width="200" alt="위치설정화면">
+  <img src="./docs/images/readme/questions.png" width="200" alt="질문선택화면">
+  <img src="./docs/images/readme/questions_result.png" width="200" alt="결과화면">
 </p>
 
 ## 주요 기능
